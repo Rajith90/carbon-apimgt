@@ -31,7 +31,6 @@ import org.wso2.carbon.apimgt.lifecycle.manager.impl.ManagedLifecycleImpl;
 import org.wso2.carbon.apimgt.lifecycle.manager.impl.beans.InputBean;
 import org.wso2.carbon.apimgt.lifecycle.manager.sql.dao.LifecycleMgtDAO;
 import org.wso2.carbon.apimgt.lifecycle.manager.sql.utils.LifecycleMgtDBUtil;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedReader;
@@ -58,10 +57,9 @@ import static org.testng.Assert.assertTrue;
     public static ManagedLifecycleImpl managedLifecycleImpl;
     private static Log log = LogFactory.getLog(LCOperationsTest.class);
 
-    @BeforeClass protected void setUp() throws Exception {
+    @BeforeClass
+    protected void setUp() throws Exception {
         String dbConfigPath = System.getProperty("LCManagerDBConfigurationPath");
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(-1234);
-        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain("carbon.super");
         initializeDatabase(dbConfigPath);
         LifecycleMgtDBUtil.initialize();
         lifecycleMgtDAO = LifecycleMgtDAO.getInstance();

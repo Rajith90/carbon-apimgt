@@ -127,10 +127,9 @@
                             javax.xml.parsers; version=0.0.0,
                             javax.xml.transform.*; version=0.0.0,
                             javax.xml.validation; version=0.0.0,
-                            org.apache.commons.io; version=1.2.0,
+                            org.apache.commons*; version=1.2.0,
                             javax.xml.validation; version=0.0.0,
                             org.w3c.dom; version=0.0.0,
-                            org.apache.commons.logging; version=1.2.0,
                             org.osgi.framework; version=1.7.0,
                             org.osgi.service.component; version=1.7.0
                             javax.naming*; version=0.0.0,
@@ -166,15 +165,26 @@
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.utils</artifactId>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.wso2.carbon</groupId>-->
+            <!--<artifactId>org.wso2.carbon.core</artifactId>-->
+            <!--<version>5.1.0</version>-->
+            <!--<exclusions>-->
+            <!--<exclusion>-->
+                <!--<groupId>commons-dbcp.wso2</groupId>-->
+                <!--<artifactId>commons-dbcp</artifactId>-->
+            <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.lifecycle.manager.sql</artifactId>
             <version>6.0.6-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>commons-scxml.wso2</groupId>
-            <artifactId>commons-scxml</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>commons-scxml.wso2</groupId>-->
+            <!--<artifactId>commons-scxml</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>com.h2database.wso2</groupId>
             <artifactId>h2-database-engine</artifactId>
