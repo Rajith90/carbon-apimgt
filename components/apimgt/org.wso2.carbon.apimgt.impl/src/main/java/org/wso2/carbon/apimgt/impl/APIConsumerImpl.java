@@ -1761,6 +1761,230 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         }
         return false;
     }
+    
+    @Override
+    public Map<String,Object> searchPaginatedAPIs(String searchTerm, String searchType, String requestedTenantDomain,int start,int end, boolean isLazyLoad)
+            throws APIManagementException {
+        Map<String,Object> result = new HashMap<String,Object>();
+        boolean isTenantFlowStarted = false;
+        try {
+            boolean isTenantMode=(requestedTenantDomain != null);
+            if (isTenantMode && !org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(requestedTenantDomain)) {
+                isTenantFlowStarted = true;
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(requestedTenantDomain, true);
+            } else {
+                requestedTenantDomain = org.wso2.carbon.base.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+                isTenantFlowStarted = true;
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(requestedTenantDomain, true);
+
+            }
+
+            Registry userRegistry;
+            int tenantIDLocal = 0;
+            String userNameLocal = this.username;
+            if ((isTenantMode && this.tenantDomain==null) || (isTenantMode && isTenantDomainNotMatching(requestedTenantDomain))) {//Tenant store anonymous mode
+            	tenantIDLocal = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                        .getTenantId(requestedTenantDomain);
+                userRegistry = ServiceReferenceHolder.getInstance().
+                        getRegistryService().getGovernanceUserRegistry(CarbonConstants.REGISTRY_ANONNYMOUS_USERNAME, tenantIDLocal);
+                userNameLocal = CarbonConstants.REGISTRY_ANONNYMOUS_USERNAME;
+            } else {
+                userRegistry = this.registry;
+                tenantIDLocal = tenantId;
+            }
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(userNameLocal);
+
+            if (APIConstants.DOCUMENTATION_SEARCH_TYPE_PREFIX.equalsIgnoreCase(searchType)) {
+                Map<Documentation, API> apiDocMap =
+                        APIUtil.searchAPIsByDoc(userRegistry, tenantIDLocal, userNameLocal, searchTerm,
+                                                APIConstants.STORE_CLIENT);
+                result.put("apis", apiDocMap);
+            	/*Pagination for Document search results is not supported yet, hence length is sent as end-start*/
+            	if (apiDocMap.isEmpty()) {
+            		result.put("length", 0);
+            	} else {
+            		result.put("length", end-start);
+            	}
+        	}
+            else if ("subcontext".equalsIgnoreCase(searchType)) {
+                result = APIUtil.searchAPIsByURLPattern(userRegistry, searchTerm, start,end);               ;
+
+            }else {
+            	result=searchPaginatedAPIs(userRegistry, searchTerm, searchType,start,end,isLazyLoad);
+            }
+
+        } catch (Exception e) {
+            handleException("Failed to Search APIs", e);
+        } finally {
+            if (isTenantFlowStarted) {
+                PrivilegedCarbonContext.endTenantFlow();
+            }
+        }
+        return result;
+    }
+    
+    
+    /**
+	 * Pagination API search based on solr indexing
+	 *
+	 * @param registry
+	 * @param searchTerm
+	 * @param searchType
+	 * @return
+	 * @throws APIManagementException
+	 */
+
+    public Map<String,Object> searchPaginatedAPIs(Registry registry, String searchTerm, String searchType,int start,int end, boolean limitAttributes) throws APIManagementException {
+        SortedSet<API> apiSet = new TreeSet<API>(new APINameComparator());
+        List<API> apiList = new ArrayList<API>();
+
+        searchTerm = searchTerm.trim();
+        Map<String,Object> result=new HashMap<String, Object>();
+        int totalLength=0;
+        boolean isMore = false;
+        String criteria=APIConstants.API_OVERVIEW_NAME;
+        try {
+            String paginationLimit = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                    .getAPIManagerConfiguration()
+                    .getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
+
+            // If the Config exists use it to set the pagination limit
+            final int maxPaginationLimit;
+            if (paginationLimit != null) {
+                // The additional 1 added to the maxPaginationLimit is to help us determine if more
+                // APIs may exist so that we know that we are unable to determine the actual total
+                // API count. We will subtract this 1 later on so that it does not interfere with
+                // the logic of the rest of the application
+                int pagination = Integer.parseInt(paginationLimit);
+
+                // Because the store jaggery pagination logic is 10 results per a page we need to set pagination
+                // limit to at least 11 or the pagination done at this level will conflict with the store pagination
+                // leading to some of the APIs not being displayed
+                if (pagination < 11) {
+                    pagination = 11;
+                    log.warn("Value of '" + APIConstants.API_STORE_APIS_PER_PAGE + "' is too low, defaulting to 11");
+                }
+                maxPaginationLimit = start + pagination + 1;
+            }
+            // Else if the config is not specified we go with default functionality and load all
+            else {
+                maxPaginationLimit = Integer.MAX_VALUE;
+            }
+            GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
+            PaginationContext.init(start, end, "ASC", APIConstants.API_OVERVIEW_NAME, maxPaginationLimit);
+            if (artifactManager != null) {
+
+                if (APIConstants.API_PROVIDER.equalsIgnoreCase(searchType)) {
+                    criteria = APIConstants.API_OVERVIEW_PROVIDER;
+                    searchTerm = searchTerm.replaceAll("@", "-AT-");
+                } else if (APIConstants.API_VERSION_LABEL.equalsIgnoreCase(searchType)) {
+                    criteria = APIConstants.API_OVERVIEW_VERSION;
+                } else if (APIConstants.API_CONTEXT.equalsIgnoreCase(searchType)) {
+                    criteria = APIConstants.API_OVERVIEW_CONTEXT;
+                } else if (APIConstants.API_DESCRIPTION.equalsIgnoreCase(searchType)) {
+                    criteria = APIConstants.API_OVERVIEW_DESCRIPTION;
+                } else if (APIConstants.API_TAG.equalsIgnoreCase(searchType)) {
+                    criteria = APIConstants.API_OVERVIEW_TAG;
+                }
+
+                //Create the search attribute map for PUBLISHED APIs
+                final String searchValue = searchTerm;
+                Map<String, List<String>> listMap = new HashMap<String, List<String>>();
+                listMap.put(criteria, new ArrayList<String>() {{
+                    add(searchValue);
+                }});
+
+                boolean displayAPIsWithMultipleStatus = APIUtil.isAllowDisplayAPIsWithMultipleStatus();
+
+                //This is due to take only the published APIs from the search if there is no need to return APIs with
+                //multiple status. This is because pagination is breaking when we do a another filtering with the API Status
+                if (!displayAPIsWithMultipleStatus) {
+                    listMap.put(APIConstants.API_OVERVIEW_STATUS, new ArrayList<String>() {{
+                        add(APIConstants.PUBLISHED);
+                    }});
+                }
+
+                GenericArtifact[] genericArtifacts = artifactManager.findGenericArtifacts(listMap);
+                totalLength = PaginationContext.getInstance().getLength();
+
+                boolean isFound = true;
+                if (genericArtifacts == null || genericArtifacts.length == 0) {
+
+                    if (APIConstants.API_OVERVIEW_PROVIDER.equals(criteria)) {
+                        genericArtifacts = searchAPIsByOwner(artifactManager, searchValue);
+                        if (genericArtifacts == null || genericArtifacts.length == 0) {
+                            isFound = false;
+                        }
+                    }
+                    else {
+                        isFound = false;
+                    }
+                }
+
+                if (!isFound) {
+                    result.put("apis", apiSet);
+                    result.put("length", 0);
+                    result.put("isMore", isMore);
+                    return result;
+                }
+
+                // Check to see if we can speculate that there are more APIs to be loaded
+                if (maxPaginationLimit == totalLength) {
+                    isMore = true;  // More APIs exist, cannot determine total API count without incurring perf hit
+                    --totalLength; // Remove the additional 1 added earlier when setting max pagination limit
+                }
+
+                int tempLength =0;
+                for (GenericArtifact artifact : genericArtifacts) {
+                    String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+
+                    if (APIUtil.isAllowDisplayAPIsWithMultipleStatus()) {
+                        if (APIConstants.PROTOTYPED.equals(status) || APIConstants.PUBLISHED.equals(status)
+                            || APIConstants.DEPRECATED.equals(status)) {
+                            API resultAPI;
+                            if (limitAttributes) {
+                                resultAPI = APIUtil.getAPI(artifact);
+                            } else {
+                                resultAPI = APIUtil.getAPI(artifact, registry);
+                            }
+                            if (resultAPI != null) {
+                                apiList.add(resultAPI);
+                            }
+                        }
+                    } else {
+                        if (APIConstants.PROTOTYPED.equals(status) || APIConstants.PUBLISHED.equals(status)) {
+                            API resultAPI;
+                            if (limitAttributes) {
+                                resultAPI = APIUtil.getAPI(artifact);
+                            } else {
+                                resultAPI = APIUtil.getAPI(artifact, registry);
+                            }
+                            if (resultAPI != null) {
+                                apiList.add(resultAPI);
+                            }
+                        }
+                    }
+                    // Ensure the APIs returned matches the length, there could be an additional API
+                    // returned due incrementing the pagination limit when getting from registry
+                    tempLength++;
+                    if (tempLength >= totalLength){
+                        break;
+                    }
+                }
+
+                apiSet.addAll(apiList);
+            }
+        } catch (RegistryException e) {
+            handleException("Failed to search APIs with type", e);
+        }
+        result.put("apis",apiSet);
+        result.put("length",totalLength);
+        result.put("isMore", isMore);
+        return result;
+    }
+
 
     private  GenericArtifact[] searchAPIsByOwner(GenericArtifactManager artifactManager, final String searchValue) throws GovernanceException {
         Map<String, List<String>> listMap = new HashMap<String, List<String>>();
@@ -2929,6 +3153,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
     	}
     	return true;
     }
+
+	@Override
+	public Set<API> searchAPI(String searchTerm, String searchType, String tenantDomain)
+	                                                                                    throws APIManagementException {
+		return null;
+	}
 
 	public Set<Scope> getScopesBySubscribedAPIs(List<APIIdentifier> identifiers)
 			throws APIManagementException {
