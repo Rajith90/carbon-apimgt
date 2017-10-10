@@ -152,6 +152,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.cache.Cache;
 import javax.cache.Caching;
 import javax.xml.namespace.QName;
@@ -1528,22 +1529,12 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
     private Map<String, String> publishToGateway(API api) throws APIManagementException {
         Map<String, String> failedEnvironment;
-        APITemplateBuilder builder = null;
         String tenantDomain = null;
         if (api.getId().getProviderName().contains("AT")) {
             String provider = api.getId().getProviderName().replace("-AT-", "@");
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
-
-        try{
-            builder = getAPITemplateBuilder(api);
-        }catch(Exception e){
-            handleException("Error while publishing to Gateway ", e);
-        }
-
-
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        failedEnvironment = gatewayManager.publishToGateway(api, builder, tenantDomain);
+        failedEnvironment = publishToGateway(api, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " published to gateway";
@@ -1581,9 +1572,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             String provider = api.getId().getProviderName().replace("-AT-", "@");
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
-
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        failedEnvironment = gatewayManager.removeFromGateway(api, tenantDomain);
+        
+        failedEnvironment = removeFromGateway(api, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " deleted from gateway";
@@ -1668,8 +1658,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
             Map<String, String> properties = new HashMap<String, String>();
 
-            APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
-                    .getAPIManagerConfiguration();
             boolean isGlobalThrottlingEnabled =  APIUtil.isAdvanceThrottlingEnabled();
             if (api.getProductionMaxTps() != null) {
                 properties.put("productionMaxCount", api.getProductionMaxTps());
@@ -1783,7 +1771,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      */
     public void createNewAPIVersion(API api, String newVersion) throws DuplicateAPIException, APIManagementException {
         String apiSourcePath = APIUtil.getAPIPath(api.getId());
-
+        
         String targetPath = APIConstants.API_LOCATION + RegistryConstants.PATH_SEPARATOR +
                             api.getId().getProviderName() +
                             RegistryConstants.PATH_SEPARATOR + api.getId().getApiName() +
@@ -2005,7 +1993,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             int tenantId;
             String tenantDomain = MultitenantUtils.getTenantDomain(APIUtil.replaceEmailDomainBack(api.getId().getProviderName()));
             try {
-                tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getTenantId(tenantDomain);
+                tenantId = getTenantId(tenantDomain);
             } catch (UserStoreException e) {
                 throw new APIManagementException("Error in retrieving Tenant Information while adding api :"
                         +api.getId().getApiName(),e);
@@ -2062,7 +2050,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                             .NOTIFICATION_TYPE_NEW_VERSION);
                     notificationDTO.setTenantID(tenantId);
                     notificationDTO.setTenantDomain(tenantDomain);
-                    new NotificationExecutor().sendAsyncNotifications(notificationDTO);
+                    sendAsncNotification(notificationDTO);
 
                 }
             } catch (NotificationException e) {
@@ -2092,6 +2080,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 handleException("Error while rolling back the transaction for API: " + api.getId(), ex);
             }
         }
+    }
+
+    protected void sendAsncNotification(NotificationDTO notificationDTO) throws NotificationException {
+        new NotificationExecutor().sendAsyncNotifications(notificationDTO);        
     }
 
     /**
@@ -2378,7 +2370,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      * @param api API
      * @throws APIManagementException if failed to create API
      */
-    private void createAPI(API api) throws APIManagementException {
+    protected void createAPI(API api) throws APIManagementException {
         GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
 
         //Validate Transports
@@ -2915,10 +2907,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      */
     private String getExtensionHandlerPosition() throws APIManagementException {
         String extensionHandlerPosition = null;
-        APIMRegistryService apimRegistryService = new APIMRegistryServiceImpl();
         try {
-            String content = apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
-                    .API_TENANT_CONF_LOCATION);
+            String content = getTenantConfigContent();
             if (content != null) {
                 JSONParser jsonParser = new JSONParser();
                 JSONObject tenantConf = (JSONObject) jsonParser.parse(content);
@@ -4940,5 +4930,32 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         if(wfDTO != null && WorkflowStatus.CREATED == wfDTO.getStatus()){
             apiStateChangeWFExecutor.cleanUpPendingTask(wfDTO.getExternalWorkflowReference());
         }
+    }
+    
+    protected String getTenantConfigContent() throws RegistryException, UserStoreException {
+        APIMRegistryService apimRegistryService = new APIMRegistryServiceImpl();
+
+        return apimRegistryService
+                .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION);
+    }
+    
+    protected Map<String, String> publishToGateway(API api, String tenantDomain) throws APIManagementException {
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        APITemplateBuilder builder = null;
+        try {
+            builder = getAPITemplateBuilder(api);
+        } catch (Exception e) {
+            handleException("Error while publishing to Gateway ", e);
+        }
+        return gatewayManager.publishToGateway(api, builder, tenantDomain);
+    }
+    
+    protected Map<String, String> removeFromGateway(API api, String tenantDomain) {
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        return gatewayManager.removeFromGateway(api, tenantDomain);
+    }
+    
+    protected int getTenantId(String tenantDomain) throws UserStoreException {
+        return ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getTenantId(tenantDomain);
     }
 }

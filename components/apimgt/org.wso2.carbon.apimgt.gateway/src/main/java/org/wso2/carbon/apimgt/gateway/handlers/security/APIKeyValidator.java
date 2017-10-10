@@ -238,13 +238,11 @@ public class APIKeyValidator {
                     //Add the tenant domain as a reference to the super tenant cache so we know from which tenant cache
                     //to remove the entry when the need occurs to clear this particular cache entry.
                     try {
-                        PrivilegedCarbonContext.startTenantFlow();
-                        PrivilegedCarbonContext.getThreadLocalCarbonContext().
-                                setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, true);
+                        startTenantFlow();
 
                         getGatewayTokenCache().put(apiKey, tenantDomain);
                     } finally {
-                        PrivilegedCarbonContext.endTenantFlow();
+                        endTenantFlow();
                     }
                 }
             }
@@ -258,6 +256,16 @@ public class APIKeyValidator {
         }
 
 
+    }
+
+    protected void endTenantFlow() {
+        PrivilegedCarbonContext.endTenantFlow();
+    }
+
+    protected void startTenantFlow() {
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().
+                setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, true);
     }
 
     protected String getTenantDomain() {
@@ -490,7 +498,7 @@ public class APIKeyValidator {
         //Cache hit
         if (verb != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Got Resource from cache for key: ".concat(resourceCacheKey));
+                log.debug("Got Resource from cache for key: " + resourceCacheKey);
             }
             //Set cache key in the message context so that it can be used by the subsequent handlers.
             synCtx.setProperty(APIConstants.API_RESOURCE_CACHE_KEY, resourceCacheKey);
@@ -498,7 +506,7 @@ public class APIKeyValidator {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Cache miss for Resource for key: ".concat(resourceCacheKey));
+            log.debug("Cache miss for Resource for key: " + resourceCacheKey);
         }
 
         String apiCacheKey = APIUtil.getAPIInfoDTOCacheKey(apiContext, apiVersion);
@@ -717,5 +725,9 @@ public class APIKeyValidator {
     protected ArrayList<URITemplate> getAllURITemplates(String context, String apiVersion)
             throws APISecurityException {
         return dataStore.getAllURITemplates(context, apiVersion);
+    }
+
+    protected void setGatewayAPIResourceValidationEnabled(boolean gatewayAPIResourceValidationEnabled) {
+        isGatewayAPIResourceValidationEnabled = gatewayAPIResourceValidationEnabled;
     }
 }
