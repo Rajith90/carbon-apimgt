@@ -20,10 +20,23 @@ package org.wso2.carbon.apimgt.keymgt.util;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.apimgt.keymgt.APIKeyMgtException;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2TokenValidationRequestDTO;
+import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.sql.Connection;
 import java.util.Map;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({APIKeyMgtDataHolder.class,IdentityDatabaseUtil.class})
 public class APIKeyMgtUtilTestCase {
 
     @Test
@@ -52,5 +65,43 @@ public class APIKeyMgtUtilTestCase {
         Assert.assertNull(paramMap);
     }
 
+    @Test
+    public void testGetTenantDomainFromTenantId() throws Exception {
+
+        PowerMockito.mockStatic(APIKeyMgtDataHolder.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        PowerMockito.when(APIKeyMgtDataHolder.getRealmService()).thenReturn(realmService);
+
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getDomain(Mockito.anyInt())).thenReturn("carbon.super");
+
+        Assert.assertNotNull(APIKeyMgtUtil.getTenantDomainFromTenantId(-1234));
+    }
+
+
+    @Test(expected = APIKeyMgtException.class)
+    public void testGetTenantDomainFromTenantIdForException() throws Exception {
+
+        PowerMockito.mockStatic(APIKeyMgtDataHolder.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        PowerMockito.when(APIKeyMgtDataHolder.getRealmService()).thenReturn(realmService);
+
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.doThrow(UserStoreException.class).when(tenantManager).getDomain(Mockito.anyInt());
+
+        APIKeyMgtUtil.getTenantDomainFromTenantId(-1234);
+    }
+
+    @Test
+    public void testGetDBConnection() throws Exception {
+
+        PowerMockito.mockStatic(IdentityDatabaseUtil.class);
+        Connection connection = Mockito.mock(Connection.class);
+        PowerMockito.when(IdentityDatabaseUtil.getDBConnection()).thenReturn(connection);
+
+        Assert.assertNotNull(APIKeyMgtUtil.getDBConnection());
+    }
 
 }

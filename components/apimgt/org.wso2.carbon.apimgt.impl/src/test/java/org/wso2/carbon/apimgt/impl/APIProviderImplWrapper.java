@@ -18,10 +18,12 @@
 
 package org.wso2.carbon.apimgt.impl;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.axis2.AxisFault;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
 import org.wso2.carbon.apimgt.api.model.API;
@@ -29,9 +31,12 @@ import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
+import org.wso2.carbon.apimgt.api.model.policy.GlobalPolicy;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.notification.NotificationDTO;
 import org.wso2.carbon.apimgt.impl.notification.exception.NotificationException;
+import org.wso2.carbon.apimgt.impl.template.ThrottlePolicyTemplateBuilder;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 
@@ -112,6 +117,22 @@ public class APIProviderImplWrapper extends APIProviderImpl {
     @Override
     protected void sendAsncNotification(NotificationDTO notificationDTO) throws NotificationException {
         //do nothing
+    }
+    
+    @Override
+    protected void invalidateResourceCache(String apiContext, String apiVersion, String resourceURLContext, 
+            String httpVerb, Environment environment) throws AxisFault {
+        //do nothing
+    }
+    
+    @Override
+    protected ThrottlePolicyTemplateBuilder getThrottlePolicyTemplateBuilder() {
+        final String POLICY_LOCATION = "src" + File.separator + "test" + File.separator + "resources"
+                + File.separator + "repository" + File.separator + "resources" + File.separator + "policy_templates"
+                + File.separator + "";
+        ThrottlePolicyTemplateBuilder policyBuilder =  new ThrottlePolicyTemplateBuilder();
+        policyBuilder.setPolicyTemplateLocation(POLICY_LOCATION);
+        return policyBuilder;
     }
     
     /*protected String getTenantConfigContent() throws RegistryException, UserStoreException {

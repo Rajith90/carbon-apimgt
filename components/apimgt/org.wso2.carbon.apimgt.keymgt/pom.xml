@@ -122,10 +122,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>slf4j.wso2</groupId>
-			<artifactId>slf4j</artifactId>
-			<version>1.5.10.wso2v1</version>
-		</dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
 
 	<build>
@@ -150,6 +150,10 @@
                                 <name>IdentityConfigurationPath</name>
                                 <value>${basedir}/src/test/resources/identity.xml</value>
                             </property>
+							<property>
+								<name>WSO2CarbonJksFilePath</name>
+								<value>${basedir}/src/test/resources/wso2carbon.jks</value>
+							</property>
                         </systemProperties>
 				</configuration>
 			</plugin>

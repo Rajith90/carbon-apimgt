@@ -24,6 +24,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
+import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -33,6 +35,8 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class TestUtils {
@@ -93,6 +97,36 @@ public class TestUtils {
         PowerMockito.when(sh.getAPIManagerConfigurationService()).thenReturn(amConfigService);
         PowerMockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
         PowerMockito.when(amConfig.getFirstProperty(propertyName)).thenReturn(value);
+        
+        Map<String, Environment> apiGatewayEnvironments = new HashMap<String, Environment>();
+        Environment env1 = new Environment();
+        apiGatewayEnvironments.put("PROD", env1);
+        //Mocking some commonly used configs
+        PowerMockito.when(amConfig.getApiGatewayEnvironments()).thenReturn(apiGatewayEnvironments);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_GATEWAY_TYPE)).
+                            thenReturn(APIConstants.API_GATEWAY_TYPE_SYNAPSE);
+    }
+    
+    public static void mockAPIMConfiguration() throws RegistryException,
+            UserStoreException {
+        ServiceReferenceHolder sh = mockRegistryAndUserRealm(-1234);
+        APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
+        APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
+
+        PowerMockito.when(sh.getAPIManagerConfigurationService()).thenReturn(amConfigService);
+        PowerMockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
+
+        Map<String, Environment> apiGatewayEnvironments = new HashMap<String, Environment>();
+        Environment env1 = new Environment();
+        apiGatewayEnvironments.put("PROD", env1);
+        // Mocking some commonly used configs
+        PowerMockito.when(amConfig.getApiGatewayEnvironments()).thenReturn(apiGatewayEnvironments);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_GATEWAY_TYPE)).thenReturn(
+                APIConstants.API_GATEWAY_TYPE_SYNAPSE);
+        
+        ThrottleProperties throttleProperties = new ThrottleProperties();
+        PowerMockito.when(amConfig.getThrottleProperties()).thenReturn(throttleProperties);
+        
     }
     
     public static ServiceReferenceHolder getServiceReferenceHolder() {

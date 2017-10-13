@@ -32,7 +32,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 public class BlockingConditionRetrieverTest {
     @Rule
     public WireMockRule wireMockRule;
-    public static WireMockConfiguration wireMockConfiguration = new WireMockConfiguration();
+    public static WireMockConfiguration wireMockConfiguration = new WireMockConfiguration().port(8083);
 
     @Test
     public void run() throws Exception {
@@ -49,7 +49,7 @@ public class BlockingConditionRetrieverTest {
         blockCondition.setUsername("admin");
         blockCondition.setPassword("admin");
         blockCondition.setEnabled(true);
-        blockCondition.setServiceUrl("http://localhost:" + wireMockConfiguration.portNumber() + "/throttle/data/v1");
+        blockCondition.setServiceUrl("http://localhost:8083/throttle/data/v1");
         ThrottleDataHolder throttleDataHolder = new ThrottleDataHolder();
         throttleProperties.setBlockCondition(blockCondition);
         BlockingConditionRetriever blockingConditionRetriever = new BlockingConditionRetrieverWrapper

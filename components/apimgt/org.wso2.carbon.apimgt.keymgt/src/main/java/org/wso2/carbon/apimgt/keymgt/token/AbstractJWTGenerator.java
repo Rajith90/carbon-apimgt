@@ -90,7 +90,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
         signatureAlgorithm = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService().
                 getAPIManagerConfiguration().getFirstProperty(APIConstants.JWT_SIGNATURE_ALGORITHM);
         if (signatureAlgorithm == null || !(NONE.equals(signatureAlgorithm)
-                                            || SHA256_WITH_RSA.equals(signatureAlgorithm))) {
+                || SHA256_WITH_RSA.equals(signatureAlgorithm))) {
             signatureAlgorithm = SHA256_WITH_RSA;
         }
 
@@ -100,7 +100,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
 
         if (claimsRetrieverImplClass != null) {
             try {
-                claimsRetriever = (ClaimsRetriever) APIUtil.getClassForName(claimsRetrieverImplClass).newInstance();
+                claimsRetriever = getClaimsRetrieverInstance(claimsRetrieverImplClass);
                 claimsRetriever.init();
             } catch (ClassNotFoundException e) {
                 log.error("Cannot find class: " + claimsRetrieverImplClass, e);
@@ -131,7 +131,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
         return Base64Utils.encode(stringToBeEncoded);
     }
 
-    public String generateToken(TokenValidationContext validationContext) throws APIManagementException{
+    public String generateToken(TokenValidationContext validationContext) throws APIManagementException {
 
         String jwtHeader = buildHeader(validationContext);
 
@@ -205,7 +205,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
             Map<String, Object> claims = new HashMap<String, Object>();
             JWTClaimsSet claimsSet = new JWTClaimsSet();
 
-            if(standardClaims != null) {
+            if (standardClaims != null) {
                 Iterator<String> it = new TreeSet(standardClaims.keySet()).iterator();
                 while (it.hasNext()) {
                     String claimURI = it.next();
@@ -327,8 +327,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
                 if (apimKeyCacheExpiry != null) {
                     ttl = Long.parseLong(apimKeyCacheExpiry);
                 }
-            }
-            else {
+            } else {
                 String ttlValue = config.getFirstProperty(APIConstants.JWT_EXPIRY_TIME);
                 if (ttlValue != null) {
                     ttl = Long.parseLong(ttlValue);
@@ -386,7 +385,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
                 byte[] der = publicCert.getEncoded();
                 digestValue.update(der);
                 byte[] digestInBytes = digestValue.digest();
-                Base64  base64 = new Base64(true);
+                Base64 base64 = new Base64(true);
                 String base64UrlEncodedThumbPrint = base64.encodeToString(digestInBytes).trim();
                 StringBuilder jwtHeader = new StringBuilder();
                 //Sample header
@@ -424,41 +423,18 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
     }
 
     /**
-     * Helper method to hexify a byte array.
-     * TODO:need to verify the logic
-     *
-     * @param bytes - The input byte array
-     * @return hexadecimal representation
-     */
-    private String hexify(byte bytes[]) {
-
-        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7',
-                '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-        StringBuilder buf = new StringBuilder(bytes.length * 2);
-
-        for (byte aByte : bytes) {
-            buf.append(hexDigits[(aByte & 0xf0) >> 4]);
-            buf.append(hexDigits[aByte & 0x0f]);
-        }
-
-        return buf.toString();
-    }
-
-    /**
      * Get the JWS compliant signature algorithm code of the algorithm used to sign the JWT.
+     *
      * @param signatureAlgorithm - The algorithm used to sign the JWT. If signing is disabled, the value will be NONE.
      * @return - The JWS Compliant algorithm code of the signature algorithm.
      */
-    public String getJWSCompliantAlgorithmCode(String signatureAlgorithm){
+    public String getJWSCompliantAlgorithmCode(String signatureAlgorithm) {
 
-        if (signatureAlgorithm == null || NONE.equals(signatureAlgorithm)){
+        if (signatureAlgorithm == null || NONE.equals(signatureAlgorithm)) {
             return JWTSignatureAlg.NONE.getJwsCompliantCode();
-        }
-        else if(SHA256_WITH_RSA.equals(signatureAlgorithm)){
+        } else if (SHA256_WITH_RSA.equals(signatureAlgorithm)) {
             return JWTSignatureAlg.SHA256_WITH_RSA.getJwsCompliantCode();
-        }
-        else{
+        } else {
             return signatureAlgorithm;
         }
     }
@@ -469,7 +445,8 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
             RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
 
             if (realmService != null && tenantId != MultitenantConstants.INVALID_TENANT_ID) {
-                UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+                UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId)
+                        .getUserStoreManager();
 
 
                 realmConfiguration = userStoreManager.getRealmConfiguration();
@@ -483,8 +460,20 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
             }
         } catch (UserStoreException e) {
             log.error("Error occurred while getting the realm configuration, User store properties might not be " +
-                      "returned", e);
+                    "returned", e);
         }
         return null;
     }
+
+    /**
+     * Gets the class for the given class name
+     *
+     * @param className Name of the class
+     * @return Class
+     */
+    protected ClaimsRetriever getClaimsRetrieverInstance(String className) throws IllegalAccessException,
+            InstantiationException, ClassNotFoundException {
+        return (ClaimsRetriever) APIUtil.getClassForName(className).newInstance();
+    }
+
 }

@@ -82,9 +82,7 @@ import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.BandwidthLimit;
-import org.wso2.carbon.apimgt.api.model.policy.GlobalPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.Limit;
-import org.wso2.carbon.apimgt.api.model.policy.Pipeline;
 import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.api.model.policy.QuotaPolicy;
@@ -183,6 +181,12 @@ import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -5489,15 +5493,36 @@ public final class APIUtil {
         SchemeRegistry registry = new SchemeRegistry();
         SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
         String ignoreHostnameVerification = System.getProperty("org.wso2.ignoreHostnameVerification");
+        String sslValue = null;
+
+        AxisConfiguration axis2Config = ServiceReferenceHolder.getContextService().getServerConfigContext()
+                .getAxisConfiguration();
+        org.apache.axis2.description.Parameter sslVerifyClient = axis2Config.getTransportIn(APIConstants.HTTPS_PROTOCOL)
+                .getParameter(APIConstants.SSL_VERIFY_CLIENT);
+        if (sslVerifyClient != null) {
+            sslValue = (String) sslVerifyClient.getValue();
+        }
+
         if (ignoreHostnameVerification != null && "true".equalsIgnoreCase(ignoreHostnameVerification)) {
             X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
             socketFactory.setHostnameVerifier(hostnameVerifier);
         }
         if (APIConstants.HTTPS_PROTOCOL.equals(protocol)) {
-            if (port >= 0) {
-                registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, port, socketFactory));
-            } else {
-                registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, 443, socketFactory));
+            try {
+                if (APIConstants.SSL_VERIFY_CLIENT_STATUS_REQUIRE.equals(sslValue)) {
+                    socketFactory = createSocketFactory();
+                    if (ignoreHostnameVerification != null && "true".equalsIgnoreCase(ignoreHostnameVerification)) {
+                        X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+                        socketFactory.setHostnameVerifier(hostnameVerifier);
+                    }
+                }
+                if (port >= 0) {
+                    registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, port, socketFactory));
+                } else {
+                    registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, 443, socketFactory));
+                }
+            } catch (APIManagementException e) {
+                log.error(e);
             }
         } else if (APIConstants.HTTP_PROTOCOL.equals(protocol)) {
             if (port >= 0) {
@@ -5510,6 +5535,36 @@ public final class APIUtil {
         ThreadSafeClientConnManager tcm = new ThreadSafeClientConnManager(registry);
         return new DefaultHttpClient(tcm, params);
 
+    }
+
+    private static SSLSocketFactory createSocketFactory() throws APIManagementException {
+        KeyStore keyStore;
+        String keyStorePath = null;
+        String keyStorePassword;
+        try {
+            keyStorePath = CarbonUtils.getServerConfiguration().getFirstProperty("Security.KeyStore.Location");
+            keyStorePassword = CarbonUtils.getServerConfiguration()
+                    .getFirstProperty("Security.KeyStore.Password");
+            keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(new FileInputStream(keyStorePath), keyStorePassword.toCharArray());
+            SSLSocketFactory sslSocketFactory = new SSLSocketFactory(keyStore, keyStorePassword);
+
+            return sslSocketFactory;
+
+        } catch (KeyStoreException e) {
+            handleException("Failed to read from Key Store", e);
+        } catch (CertificateException e) {
+            handleException("Failed to read Certificate", e);
+        } catch (NoSuchAlgorithmException e) {
+            handleException("Failed to load Key Store from " + keyStorePath, e);
+        } catch (IOException e) {
+            handleException("Key Store not found in " + keyStorePath, e);
+        } catch (UnrecoverableKeyException e) {
+            handleException("Failed to load key from" + keyStorePath, e);
+        } catch (KeyManagementException e) {
+            handleException("Failed to load key from" + keyStorePath, e);
+        }
+         return null;
     }
 
     /**
