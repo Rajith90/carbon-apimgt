@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -34,7 +35,7 @@ import org.powermock.core.classloader.annotations.SuppressStaticInitializationFo
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
-import org.wso2.carbon.apimgt.api.UnsupportedPolicyTypeException;
+import org.wso2.carbon.apimgt.api.PolicyDeploymentFailureException;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -47,7 +48,10 @@ import org.wso2.carbon.apimgt.api.model.Subscriber;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
+import org.wso2.carbon.apimgt.api.model.policy.Condition;
 import org.wso2.carbon.apimgt.api.model.policy.GlobalPolicy;
+import org.wso2.carbon.apimgt.api.model.policy.HTTPVerbCondition;
+import org.wso2.carbon.apimgt.api.model.policy.Pipeline;
 import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.api.model.policy.QuotaPolicy;
@@ -71,6 +75,7 @@ import org.wso2.carbon.governance.api.exception.GovernanceException;
 import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
+import org.wso2.carbon.governance.custom.lifecycles.checklist.util.LifecycleBeanPopulator;
 import org.wso2.carbon.registry.core.Association;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.RegistryConstants;
@@ -98,7 +103,7 @@ import javax.xml.stream.XMLStreamReader;
 @SuppressStaticInitializationFor("org.wso2.carbon.context.PrivilegedCarbonContext")
 @PrepareForTest({ServiceReferenceHolder.class, ApiMgtDAO.class, APIUtil.class, APIGatewayManager.class, 
     GovernanceUtils.class, PrivilegedCarbonContext.class, WorkflowExecutorFactory.class, 
-    ThrottlePolicyDeploymentManager.class})
+    ThrottlePolicyDeploymentManager.class, LifecycleBeanPopulator.class})
 public class APIProviderImplTest {
 
     @BeforeClass
@@ -1485,21 +1490,9 @@ public class APIProviderImplTest {
     }
     
     @Test
-    public void testAddPolicyAPIType() throws RegistryException, UserStoreException, APIManagementException {               
+    public void testAddPolicyAPIType() throws RegistryException, UserStoreException, APIManagementException { 
         
-        RequestCountLimit limit = new RequestCountLimit();
-        limit.setRequestCount(10000);
-        limit.setTimeUnit("Minutes");
-        limit.setUnitTime(60);
-        
-        QuotaPolicy quota = new QuotaPolicy();
-        quota.setLimit(limit);
-        quota.setType(PolicyConstants.REQUEST_COUNT_TYPE);
-        
-        APIPolicy policy = new APIPolicy("100kTier");
-        policy.setDescription("Allows 100000 requests per minute");
-        policy.setDisplayName("100kTier");
-        policy.setDefaultQuotaPolicy(quota);
+        APIPolicy policy = getPolicyAPILevelPerUser();
         
         TestUtils.mockRegistryAndUserRealm(-1234);
         TestUtils.mockAPIMConfiguration();
@@ -1512,8 +1505,6 @@ public class APIProviderImplTest {
         
         ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
         PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
-        
-        PowerMockito.when(APIUtil.isAPIManagementEnabled()).thenReturn(false);
         
         APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
         
@@ -1525,19 +1516,7 @@ public class APIProviderImplTest {
     @Test
     public void testAddPolicyAPPType() throws RegistryException, UserStoreException, APIManagementException {               
         
-        RequestCountLimit limit = new RequestCountLimit();
-        limit.setRequestCount(10000);
-        limit.setTimeUnit("Minutes");
-        limit.setUnitTime(60);
-        
-        QuotaPolicy quota = new QuotaPolicy();
-        quota.setLimit(limit);
-        quota.setType(PolicyConstants.REQUEST_COUNT_TYPE);
-        
-        ApplicationPolicy policy = new ApplicationPolicy("AppTier");
-        policy.setDescription("Allows 100000 requests per minute");
-        policy.setDisplayName("100kTier");
-        policy.setDefaultQuotaPolicy(quota);
+        ApplicationPolicy policy = getPolicyAppLevel();
         
         TestUtils.mockRegistryAndUserRealm(-1234);
         TestUtils.mockAPIMConfiguration();
@@ -1557,21 +1536,9 @@ public class APIProviderImplTest {
     }
     
     @Test
-    public void testAddPolicySubType() throws RegistryException, UserStoreException, APIManagementException {               
+    public void testAddPolicySubsType() throws RegistryException, UserStoreException, APIManagementException { 
         
-        RequestCountLimit limit = new RequestCountLimit();
-        limit.setRequestCount(10000);
-        limit.setTimeUnit("Minutes");
-        limit.setUnitTime(60);
-        
-        QuotaPolicy quota = new QuotaPolicy();
-        quota.setLimit(limit);
-        quota.setType(PolicyConstants.REQUEST_COUNT_TYPE);
-        
-        SubscriptionPolicy policy = new SubscriptionPolicy("100kTier");
-        policy.setDescription("Allows 100000 requests per minute");
-        policy.setDisplayName("100kTier");
-        policy.setDefaultQuotaPolicy(quota);
+        SubscriptionPolicy policy = getPolicySubscriptionLevelperUser();
         
         TestUtils.mockRegistryAndUserRealm(-1234);
         TestUtils.mockAPIMConfiguration();
@@ -1592,17 +1559,7 @@ public class APIProviderImplTest {
     
     @Test
     public void testAddPolicyGlobalType() throws RegistryException, UserStoreException, APIManagementException, 
-                                                                            APITemplateException {               
-        
-        RequestCountLimit limit = new RequestCountLimit();
-        limit.setRequestCount(10000);
-        limit.setTimeUnit("Minutes");
-        limit.setUnitTime(60);
-        
-        QuotaPolicy quota = new QuotaPolicy();
-        quota.setLimit(limit);
-        quota.setType(PolicyConstants.REQUEST_COUNT_TYPE);
-        
+                                                                            APITemplateException { 
         GlobalPolicy policy = getPolicyGlobalLevel();
         
         TestUtils.mockRegistryAndUserRealm(-1234);
@@ -1645,8 +1602,494 @@ public class APIProviderImplTest {
             apiProvider.addPolicy(policy); 
         } catch(Exception e) {
             Assert.assertEquals("Policy type " + policy.getClass().getName() + " is not supported", e.getMessage());
+        }               
+    }
+    
+    @Test
+    public void testUpdatePolicyAPIType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        APIPolicy policy = getPolicyAPILevelPerUser();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getAPIPolicy(policy.getPolicyName(), policy.getTenantId())).thenReturn(policy);
+        Mockito.when(apimgtDAO.updateAPIPolicy(policy)).thenReturn(policy);
+        
+        apiProvider.updatePolicy(policy);
+    }
+    
+    @Test
+    public void testUpdatePolicyAppType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        SubscriptionPolicy policy = getPolicySubscriptionLevelperUser();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getSubscriptionPolicy(policy.getPolicyName(), policy.getTenantId())).thenReturn(policy);
+        Mockito.doNothing().when(apimgtDAO).updateSubscriptionPolicy(policy);
+        
+        apiProvider.updatePolicy(policy);
+    }
+    
+    @Test
+    public void testUpdatePolicyGlobalType() throws RegistryException, UserStoreException, APIManagementException, 
+                    APITemplateException {
+        
+        GlobalPolicy policy = getPolicyGlobalLevel();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getGlobalPolicy(policy.getPolicyName())).thenReturn(policy);
+        Mockito.doNothing().when(apimgtDAO).updateGlobalPolicy(policy);
+        
+        String policyString = apiProvider.getThrottlePolicyTemplateBuilder().getThrottlePolicyForGlobalLevel(policy);
+        Mockito.when(manager.validateExecutionPlan(policyString)).thenReturn(true);
+        
+        apiProvider.updatePolicy(policy);
+    }
+    
+    @Test
+    public void testUpdatePolicyGlobalTypeInvalidPlan() throws RegistryException, UserStoreException, 
+            APIManagementException, APITemplateException {
+        
+        GlobalPolicy policy = getPolicyGlobalLevel();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getGlobalPolicy(policy.getPolicyName())).thenReturn(policy);
+        Mockito.doNothing().when(apimgtDAO).updateGlobalPolicy(policy);
+        
+        String policyString = apiProvider.getThrottlePolicyTemplateBuilder().getThrottlePolicyForGlobalLevel(policy);
+        Mockito.when(manager.validateExecutionPlan(policyString)).thenReturn(false);
+        
+        try {
+            apiProvider.updatePolicy(policy);
+        } catch(Exception e) {
+            Assert.assertEquals("Invalid Execution Plan", e.getMessage());
         }
-               
+    }
+    
+    @Test
+    public void testUpdatePolicyGlobalTypeAlreadyExist() throws RegistryException, UserStoreException, 
+            APIManagementException, APITemplateException {
+        
+        GlobalPolicy policy = getPolicyGlobalLevel();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getGlobalPolicy(policy.getPolicyName())).thenReturn(policy);
+        Mockito.doNothing().when(apimgtDAO).updateGlobalPolicy(policy);
+        
+        String policyString = apiProvider.getThrottlePolicyTemplateBuilder().getThrottlePolicyForGlobalLevel(policy);
+        Mockito.when(manager.validateExecutionPlan(policyString)).thenReturn(true);
+        
+        Mockito.when(apimgtDAO.isKeyTemplatesExist(policy)).thenReturn(true);
+        
+        try {
+            apiProvider.updatePolicy(policy);
+        } catch(Exception e) {
+            Assert.assertEquals("Key Template Already Exist", e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testUpdatePolicySubsType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        ApplicationPolicy policy = getPolicyAppLevel();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getApplicationPolicy(policy.getPolicyName(), policy.getTenantId())).thenReturn(policy);
+        Mockito.doNothing().when(apimgtDAO).updateApplicationPolicy(policy);
+        
+        apiProvider.updatePolicy(policy);
+    }
+    
+    @Test
+    public void testUpdatePolicyWrongType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        Policy policy = new Policy("Test");
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        try {
+            apiProvider.updatePolicy(policy);
+        } catch(Exception e) {
+            Assert.assertEquals("Policy type " + policy.getClass().getName() + " is not supported", e.getMessage());
+        }    
+    }
+    
+    @Test
+    public void testUpdatePolicyAPITypeErrorWhileDeploying() throws RegistryException, UserStoreException, 
+                                                APIManagementException {
+        
+        APIPolicy policy = getPolicyAPILevelPerUser();
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getAPIPolicy(policy.getPolicyName(), policy.getTenantId())).thenReturn(policy);
+        Mockito.when(apimgtDAO.updateAPIPolicy(policy)).thenReturn(policy);
+        
+        Mockito.doThrow(new APIManagementException("")).when(manager).undeployPolicyFromGlobalCEP(Matchers.anyString());
+        
+        try {
+            apiProvider.updatePolicy(policy);
+        } catch(Exception e) {
+            Assert.assertEquals("Error while deploying policy to gateway", e.getMessage());
+            Assert.assertEquals(PolicyDeploymentFailureException.class, e.getClass());
+        }  
+    }
+    
+    @Test
+    public void testDeletePolicyAPIType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        APIPolicy policy = getPolicyAPILevelPerUser();
+        policy.setDeployed(true);
+        String policyName = "custom1";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getAPIPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_API, policyName);
+    }
+    
+    @Test
+    public void testDeletePolicyAPItypeErrorWhileDeploying() throws RegistryException, UserStoreException, 
+                APIManagementException {
+        
+        APIPolicy policy = getPolicyAPILevelPerUser();
+        policy.setDeployed(true);
+        String policyName = "custom1";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getAPIPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        List<String> policyFileNames = new ArrayList<String>();
+        String policyFile = policy.getTenantDomain() + "_" + PolicyConstants.POLICY_LEVEL_RESOURCE + "_" + policyName;
+        policyFileNames.add(policyFile + "_default");
+        for (Pipeline pipeline : policy.getPipelines()) {
+            policyFileNames.add(policyFile + "_condition_" + pipeline.getId());
+        }
+        Mockito.doThrow(new APIManagementException("")).when(manager).undeployPolicyFromGatewayManager(
+                policyFileNames.toArray(new String[policyFileNames.size()]));
+        
+        try {
+            apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_API, policyName);
+        } catch(Exception e) {
+            Assert.assertEquals("Error while undeploying policy: ", e.getMessage());
+            Assert.assertEquals(APIManagementException.class, e.getClass());
+        }        
+    }
+    
+    @Test
+    public void testDeletePolicyAppType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        ApplicationPolicy policy = getPolicyAppLevel();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getApplicationPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_APP, policyName);
+    }
+    
+    @Test
+    public void testDeletePolicyAppTypeErrorWhileDeploying() throws RegistryException, UserStoreException, 
+                    APIManagementException {
+        
+        ApplicationPolicy policy = getPolicyAppLevel();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getApplicationPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        List<String> policyFileNames = new ArrayList<String>();
+        String policyFile = policy.getTenantDomain() + "_" + PolicyConstants.POLICY_LEVEL_APP + "_" + policyName;
+        policyFileNames.add(policyFile);
+        Mockito.doThrow(new APIManagementException("")).when(manager).undeployPolicyFromGatewayManager(
+                policyFileNames.toArray(new String[policyFileNames.size()]));
+        
+        try {
+            apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_APP, policyName);
+        } catch(Exception e) {
+            Assert.assertEquals("Error while undeploying policy: ", e.getMessage());
+            Assert.assertEquals(APIManagementException.class, e.getClass());
+        }     
+    }
+    
+    @Test
+    public void testDeletePolicySubType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        SubscriptionPolicy policy = getPolicySubscriptionLevelperUser();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getSubscriptionPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_SUB, policyName);
+    }
+    
+    @Test
+    public void testDeletePolicySubTypeErrorWhileDeploying() throws RegistryException, UserStoreException, 
+                    APIManagementException {
+        
+        SubscriptionPolicy policy = getPolicySubscriptionLevelperUser();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getSubscriptionPolicy(policyName, APIUtil.getTenantId("admin"))).thenReturn(policy);
+        
+        List<String> policyFileNames = new ArrayList<String>();
+        String policyFile = policy.getTenantDomain() + "_" + PolicyConstants.POLICY_LEVEL_SUB + "_" + policyName;
+        policyFileNames.add(policyFile);
+        Mockito.doThrow(new APIManagementException("")).when(manager).undeployPolicyFromGatewayManager(
+                policyFileNames.toArray(new String[policyFileNames.size()]));
+        
+        try {
+            apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_SUB, policyName);
+        } catch(Exception e) {
+            Assert.assertEquals("Error while undeploying policy: ", e.getMessage());
+            Assert.assertEquals(APIManagementException.class, e.getClass());
+        }        
+    }
+    
+    @Test
+    public void testDeletePolicyGlobalType() throws RegistryException, UserStoreException, APIManagementException {
+        
+        GlobalPolicy policy = getPolicyGlobalLevel();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getGlobalPolicy(policyName)).thenReturn(policy);
+        
+        apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_GLOBAL, policyName);
+    }
+    
+    @Test
+    public void testDeletePolicyGlobalTypeErrorWhileDeploying() throws RegistryException, UserStoreException, 
+                    APIManagementException {
+        
+        GlobalPolicy policy = getPolicyGlobalLevel();
+        policy.setDeployed(true);
+        String policyName = "gold";
+        
+        TestUtils.mockRegistryAndUserRealm(-1234);
+        TestUtils.mockAPIMConfiguration();
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ThrottlePolicyDeploymentManager.class);
+        
+        ApiMgtDAO apimgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apimgtDAO);
+        
+        ThrottlePolicyDeploymentManager manager = Mockito.mock(ThrottlePolicyDeploymentManager.class);
+        PowerMockito.when(ThrottlePolicyDeploymentManager.getInstance()).thenReturn(manager);
+        
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null, null);
+        
+        Mockito.when(apimgtDAO.getGlobalPolicy(policyName)).thenReturn(policy);
+        
+        List<String> policyFileNames = new ArrayList<String>();
+        String policyFile = PolicyConstants.POLICY_LEVEL_GLOBAL + "_" + policyName;
+        policyFileNames.add(policyFile);
+        Mockito.doThrow(new APIManagementException("")).when(manager).undeployPolicyFromGatewayManager(
+                policyFileNames.toArray(new String[policyFileNames.size()]));
+        
+        try {
+            apiProvider.deletePolicy("admin", PolicyConstants.POLICY_LEVEL_GLOBAL, policyName);
+        } catch(Exception e) {
+            Assert.assertEquals("Error while undeploying policy: ", e.getMessage());
+            Assert.assertEquals(APIManagementException.class, e.getClass());
+        }        
     }
     
     private GlobalPolicy getPolicyGlobalLevel(){
@@ -1655,7 +2098,8 @@ public class APIProviderImplTest {
         policy.setDescription("Description");    
         String siddhiQuery = 
                 "FROM RequestStream\n"
-                + "SELECT 'global_1' AS rule, messageID, true AS isEligible, (cast(map:get(propertiesMap,’ip’),’string’) == 3232235778) as isLocallyThrottled,"
+                + "SELECT 'global_1' AS rule, messageID, true AS isEligible, (cast(map:get(propertiesMap,’ip’),’string’)"
+                + " == 3232235778) as isLocallyThrottled,"
                 + " 'global_1_key' AS throttle_key\n"
                 + "INSERT INTO EligibilityStream;";
         policy.setSiddhiQuery(siddhiQuery); 
@@ -1677,6 +2121,109 @@ public class APIProviderImplTest {
         }
 
         return builder.getDocumentElement();
+    }
+    
+    private APIPolicy getPolicyAPILevelPerUser(){
+        APIPolicy policy = new APIPolicy("custom1");
+        
+        policy.setUserLevel(PolicyConstants.PER_USER);
+        policy.setDescription("Description");    
+        //policy.setPolicyLevel("api");
+        policy.setTenantDomain("carbon.super");
+
+        RequestCountLimit defaultLimit = new RequestCountLimit();
+        defaultLimit.setTimeUnit("min");
+        defaultLimit.setUnitTime(5);
+        defaultLimit.setRequestCount(400);
+      
+        
+        QuotaPolicy defaultQuotaPolicy = new QuotaPolicy();
+        defaultQuotaPolicy.setLimit(defaultLimit);
+        defaultQuotaPolicy.setType("RequestCount");
+        
+        policy.setDefaultQuotaPolicy(defaultQuotaPolicy);
+        
+        
+        List<Pipeline> pipelines;
+        Pipeline p;
+        QuotaPolicy quotaPolicy;
+        List<Condition> condition;
+        RequestCountLimit countlimit;     
+        Condition cond;
+        pipelines = new ArrayList<Pipeline>();
+        
+       
+        ///////////pipeline item start//////
+        p = new Pipeline();
+        
+        quotaPolicy = new QuotaPolicy();
+        quotaPolicy.setType("RequestCount");     
+        countlimit = new RequestCountLimit();
+        countlimit.setTimeUnit("min");
+        countlimit.setUnitTime(5);
+        countlimit.setRequestCount(100);
+        quotaPolicy.setLimit(countlimit);   
+
+        condition =  new ArrayList<Condition>();
+        HTTPVerbCondition verbCond = new HTTPVerbCondition();
+        verbCond.setHttpVerb("POST");   
+        condition.add(verbCond);
+            
+        
+        p.setQuotaPolicy(quotaPolicy);
+        p.setConditions(condition);
+        pipelines.add(p);
+        ///////////pipeline item end//////    
+      
+        
+        
+        policy.setPipelines(pipelines);
+        
+        return policy;
+    }
+    
+    private ApplicationPolicy getPolicyAppLevel(){
+        ApplicationPolicy policy = new ApplicationPolicy("gold");
+        
+       // policy.setUserLevel(PolicyConstants.ACROSS_ALL); 
+        policy.setDescription("Description");    
+       // policy.setPolicyLevel("app");
+        policy.setTenantDomain("carbon.super");
+        RequestCountLimit defaultLimit = new RequestCountLimit();
+        defaultLimit.setTimeUnit("min");
+        defaultLimit.setUnitTime(5);
+        defaultLimit.setRequestCount(1000);
+      
+        
+        QuotaPolicy defaultQuotaPolicy = new QuotaPolicy();
+        defaultQuotaPolicy.setLimit(defaultLimit);
+        defaultQuotaPolicy.setType("RequestCount");
+        
+        policy.setDefaultQuotaPolicy(defaultQuotaPolicy);    
+        
+        return policy;
+    }
+    
+    private SubscriptionPolicy getPolicySubscriptionLevelperUser(){
+        SubscriptionPolicy policy = new SubscriptionPolicy("gold");
+        
+      
+        policy.setDescription("Description");    
+        //policy.setPolicyLevel("sub");
+       
+        RequestCountLimit defaultLimit = new RequestCountLimit();
+        defaultLimit.setTimeUnit("min");
+        defaultLimit.setUnitTime(5);
+        defaultLimit.setRequestCount(200);
+      
+        
+        QuotaPolicy defaultQuotaPolicy = new QuotaPolicy();
+        defaultQuotaPolicy.setLimit(defaultLimit);
+        defaultQuotaPolicy.setType("RequestCount");
+        
+        policy.setDefaultQuotaPolicy(defaultQuotaPolicy);    
+      
+        return policy;
     }
     
     private byte[] getTenantConfigContent() {

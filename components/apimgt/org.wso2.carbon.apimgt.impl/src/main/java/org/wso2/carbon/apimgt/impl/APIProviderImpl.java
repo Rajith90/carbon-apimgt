@@ -4391,7 +4391,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     public void updatePolicy(Policy policy) throws APIManagementException {
 
         ThrottlePolicyDeploymentManager deploymentManager = ThrottlePolicyDeploymentManager.getInstance();
-        ThrottlePolicyTemplateBuilder policyBuilder = new ThrottlePolicyTemplateBuilder();
+        ThrottlePolicyTemplateBuilder policyBuilder = getThrottlePolicyTemplateBuilder();
         Map<String, String> executionFlows = new HashMap<String, String>();
         String policyLevel = null;
         String oldKeyTemplate = null;

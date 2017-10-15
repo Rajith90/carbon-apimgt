@@ -908,7 +908,7 @@ public class WSO2APIPublisher implements APIPublisher {
                                            HttpContext httpContext, String displayName, String externalPublisher)
             throws APIManagementException {
         boolean added;
-        HttpClient httpclient = new DefaultHttpClient();
+        HttpClient httpclient = getDefaultHttpClient();
         if (storeEndpoint.contains("/store")) {
             storeEndpoint = getPublisherURLFromStoreURL(storeEndpoint) + APIConstants.APISTORE_COPY_URL;
         } else if (!generateEndpoint(storeEndpoint)) {
