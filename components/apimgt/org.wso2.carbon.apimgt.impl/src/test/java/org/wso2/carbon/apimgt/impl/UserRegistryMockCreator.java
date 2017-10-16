@@ -14,6 +14,7 @@ public class UserRegistryMockCreator {
 
         Mockito.when(registry.resourceExists(Mockito.anyString())).thenReturn(isResourceExists);
         Mockito.when(registry.get(Mockito.anyString())).thenReturn(resourceMockCreator.getMock());
+        Mockito.when(registry.newResource()).thenReturn(resourceMockCreator.getMock());
     }
 
     UserRegistry getMock() {

@@ -13,6 +13,11 @@ public class RegistryServiceMockCreator {
         registryMockCreator = new UserRegistryMockCreator(isResourceExists, content);
 
         Mockito.when(registryService.getConfigSystemRegistry(Mockito.anyInt())).thenReturn(registryMockCreator.getMock());
+        Mockito.when(registryService.getConfigSystemRegistry()).thenReturn(registryMockCreator.getMock());
+    }
+
+    public UserRegistryMockCreator getRegistryMockCreator() {
+        return registryMockCreator;
     }
 
     RegistryService getMock() {
