@@ -31,6 +31,19 @@ public class ServiceReferenceHolderMockCreator {
     private static ConfigurationContextServiceMockCreator configurationContextServiceMockCreator =
             new ConfigurationContextServiceMockCreator();
     private ServiceReferenceHolder serviceReferenceHolder;
+
+    public ConfigurationServiceMockCreator getConfigurationServiceMockCreator() {
+        return configurationServiceMockCreator;
+    }
+
+    public RealmServiceMockCreator getRealmServiceMockCreator() {
+        return realmServiceMockCreator;
+    }
+
+    public RegistryServiceMockCreator getRegistryServiceMockCreator() {
+        return registryServiceMockCreator;
+    }
+
     private RealmServiceMockCreator realmServiceMockCreator;
     private RegistryServiceMockCreator registryServiceMockCreator;
 
