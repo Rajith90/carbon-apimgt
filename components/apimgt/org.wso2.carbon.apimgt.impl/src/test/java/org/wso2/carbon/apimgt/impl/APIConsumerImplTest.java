@@ -31,7 +31,17 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.WorkflowStatus;
 
-import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.api.model.Application;
+import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
+import org.wso2.carbon.apimgt.api.model.AccessTokenRequest;
+import org.wso2.carbon.apimgt.api.model.KeyManager;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
+import org.wso2.carbon.apimgt.api.model.Scope;
+import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
+import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationRegistrationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
@@ -429,14 +439,11 @@ public class APIConsumerImplTest {
         ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         apiConsumer.apiMgtDAO = apiMgtDAO;
         Set<SubscribedAPI> originalSubscribedAPIs = new HashSet<SubscribedAPI>();
-
         SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
         originalSubscribedAPIs.add(subscribedAPI);
         Subscriber subscriber = new Subscriber("Subscriber");
         PowerMockito.mockStatic(APIUtil.class);
-
         Tier tier = Mockito.mock(Tier.class);
-
         when(apiMgtDAO.getSubscribedAPIs(subscriber, "testApplication","testID")).
                 thenReturn(originalSubscribedAPIs);
         when(subscribedAPI.getTier()).thenReturn(tier);
