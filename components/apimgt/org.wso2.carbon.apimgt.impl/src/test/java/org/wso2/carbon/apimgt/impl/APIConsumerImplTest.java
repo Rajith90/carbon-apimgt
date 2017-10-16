@@ -21,6 +21,7 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -431,6 +432,8 @@ public class APIConsumerImplTest {
         APIIdentifier apiIdentifier = new APIIdentifier("admin", "TestAPI", "1.0.0");
         Mockito.when(apiMgtDAO.addComment(apiIdentifier, "testComment", "testUser")).thenReturn(1111);
         apiConsumer.addComment(apiIdentifier, "testComment", "testUser");
+        Mockito.verify(apiMgtDAO, Mockito.times(1)).
+                addComment(apiIdentifier, "testComment", "testUser");
     }
 
     @Test
@@ -465,6 +468,7 @@ public class APIConsumerImplTest {
         Mockito.when(apiMgtDAO.getApplicationIdAndTokenTypeByConsumerKey("testKey")).
                 thenReturn(applicationIdAndTokenTypeMap);
         apiConsumer.deleteOAuthApplication("testKey");
+        Assert.assertNotNull(KeyManagerHolder.getKeyManagerInstance());
     }
 
     @Test
@@ -547,5 +551,6 @@ public class APIConsumerImplTest {
         Mockito.when(apiMgtDAO.getRegistrationApprovalState(1111, APIConstants.API_KEY_TYPE_PRODUCTION)).
                 thenReturn("CREATED");
         apiConsumer.removeApplication(application);
+        Mockito.verify(apiMgtDAO, Mockito.times(1)).getPendingSubscriptionsByApplicationId(1111);
     }
 }
