@@ -21,6 +21,7 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -37,16 +38,19 @@ import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
 import org.wso2.carbon.apimgt.api.model.AccessTokenRequest;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.dto.ApplicationRegistrationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.utils.APINameComparator;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.ApplicationUtils;
+import org.wso2.carbon.apimgt.impl.workflow.AbstractApplicationRegistrationWorkflowExecutor;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowExecutorFactory;
 import org.wso2.carbon.governance.api.common.dataobjects.GovernanceArtifact;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
@@ -79,7 +83,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({WorkflowExecutorFactory.class, APIUtil.class, GovernanceUtils.class, ApplicationUtils.class,
-        KeyManagerHolder.class})
+        KeyManagerHolder.class, WorkflowExecutorFactory.class, AbstractApplicationRegistrationWorkflowExecutor.class})
 @SuppressStaticInitializationFor("org.wso2.carbon.apimgt.impl.utils.ApplicationUtils")
 public class APIConsumerImplTest {
 
@@ -334,7 +338,7 @@ public class APIConsumerImplTest {
     }
 
     @Test
-    public void getSubscribedAPIs() throws APIManagementException {
+    public void getSubscribedAPIsTest() throws APIManagementException {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
         ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         apiConsumer.apiMgtDAO = apiMgtDAO;
@@ -398,7 +402,6 @@ public class APIConsumerImplTest {
         List<APIIdentifier> identifiers = new ArrayList<APIIdentifier>();
         Set<Scope> scopes = new HashSet<Scope>();
         when(apiMgtDAO.getScopesBySubscribedAPIs(identifiers)).thenReturn(scopes);
-        apiConsumer.apiMgtDAO = apiMgtDAO;
         assertEquals(scopes, apiConsumer.getScopesBySubscribedAPIs(identifiers));
     }
 
@@ -408,7 +411,6 @@ public class APIConsumerImplTest {
         ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         apiConsumer.apiMgtDAO = apiMgtDAO;
         when(apiMgtDAO.getScopesByToken("testToken")).thenReturn("valid");
-        apiConsumer.apiMgtDAO = apiMgtDAO;
         assertEquals("valid", apiConsumer.getScopesByToken("testToken"));
     }
 
@@ -419,7 +421,136 @@ public class APIConsumerImplTest {
         apiConsumer.apiMgtDAO = apiMgtDAO;
         Set<Scope> scopes = new HashSet<Scope>();
         when(apiMgtDAO.getScopesByScopeKeys("testKey", 1234)).thenReturn(scopes);
-        apiConsumer.apiMgtDAO = apiMgtDAO;
         assertEquals(scopes, apiConsumer.getScopesByScopeKeys("testKey", 1234));
+    }
+
+    @Test
+    public void addCommentTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        APIIdentifier apiIdentifier = new APIIdentifier("admin", "TestAPI", "1.0.0");
+        Mockito.when(apiMgtDAO.addComment(apiIdentifier, "testComment", "testUser")).thenReturn(1111);
+        apiConsumer.addComment(apiIdentifier, "testComment", "testUser");
+        Mockito.verify(apiMgtDAO, Mockito.times(1)).
+                addComment(apiIdentifier, "testComment", "testUser");
+    }
+
+    @Test
+    public void getSubscribedAPIsWithAppTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Set<SubscribedAPI> originalSubscribedAPIs = new HashSet<SubscribedAPI>();
+        SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
+        originalSubscribedAPIs.add(subscribedAPI);
+        Subscriber subscriber = new Subscriber("Subscriber");
+        PowerMockito.mockStatic(APIUtil.class);
+        Tier tier = Mockito.mock(Tier.class);
+        when(apiMgtDAO.getSubscribedAPIs(subscriber, "testApplication","testID")).
+                thenReturn(originalSubscribedAPIs);
+        when(subscribedAPI.getTier()).thenReturn(tier);
+        when(tier.getName()).thenReturn("tier");
+        assertNotNull(apiConsumer.getSubscribedAPIs(subscriber, "testApplication","testID"));
+    }
+
+    @Test
+    public void deleteOAuthApplicationTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Map<String, String> applicationIdAndTokenTypeMap =new HashMap<String, String>();
+        applicationIdAndTokenTypeMap.put("application_id", "testId");
+        applicationIdAndTokenTypeMap.put("token_type", "testType");
+        PowerMockito.mockStatic(KeyManagerHolder.class);
+        KeyManager keyManager = Mockito.mock(KeyManager.class);
+        Mockito.when(KeyManagerHolder.getKeyManagerInstance()).thenReturn(keyManager);
+        Mockito.when(apiMgtDAO.getApplicationIdAndTokenTypeByConsumerKey("testKey")).
+                thenReturn(applicationIdAndTokenTypeMap);
+        apiConsumer.deleteOAuthApplication("testKey");
+        Assert.assertNotNull(KeyManagerHolder.getKeyManagerInstance());
+    }
+
+    @Test
+    public void getApplicationsByNameTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Subscriber subscriber = new Subscriber("subscriber");
+        Application application = new Application("testApp", subscriber);
+        Mockito.when(apiMgtDAO.getApplicationByName("testApp", "testId", "testGroup")).
+                thenReturn(application);
+        assertEquals(application, apiConsumer.
+                getApplicationsByName("testId", "testApp", "testGroup"));
+
+    }
+
+    @Test
+    public void getApplicationByIdTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Application application = new Application("testID");
+        Mockito.when(apiMgtDAO.getApplicationById(1111)).
+                thenReturn(application);
+        assertEquals(application, apiConsumer.getApplicationById(1111));
+    }
+
+    @Test
+    public void getApplicationStatusByIdTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Mockito.when(apiMgtDAO.getApplicationStatusById(1111)).
+                thenReturn("testStatus");
+        assertEquals("testStatus", apiConsumer.getApplicationStatusById(1111));
+    }
+
+    @Test
+    public void completeApplicationRegistrationTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Subscriber subscriber = new Subscriber("testId");
+        Application application = new Application("testApp", subscriber);
+        Mockito.when(apiMgtDAO.getApplicationByName("testApp", "testId", "testGroup")).
+                thenReturn(application);
+        Mockito.when(apiMgtDAO.getRegistrationApprovalState(application.getId(), "PRODUCTION")).thenReturn("APPROVED");
+        Mockito.when(apiMgtDAO.getWorkflowReference("testApp", "testId")).thenReturn("testWorkFlow");
+
+        WorkflowExecutorFactory workflowExecutorFactory = Mockito.mock(WorkflowExecutorFactory.class);
+        PowerMockito.mockStatic(WorkflowExecutorFactory.class);
+        ApplicationRegistrationWorkflowDTO workflowDTO = new ApplicationRegistrationWorkflowDTO();
+        AccessTokenInfo accessTokenInfo = Mockito.mock(AccessTokenInfo.class);
+        workflowDTO.setAccessTokenInfo(accessTokenInfo);
+        OAuthApplicationInfo oAuthApplicationInfo = Mockito.mock(OAuthApplicationInfo.class);
+        workflowDTO.setApplicationInfo(oAuthApplicationInfo);
+
+        Mockito.when(WorkflowExecutorFactory.getInstance()).thenReturn(workflowExecutorFactory);
+        Mockito.when(workflowExecutorFactory.createWorkflowDTO("AM_APPLICATION_REGISTRATION_PRODUCTION")).
+                thenReturn(workflowDTO);
+        PowerMockito.mockStatic(AbstractApplicationRegistrationWorkflowExecutor.class);
+        AbstractApplicationRegistrationWorkflowExecutor.dogenerateKeysForApplication(workflowDTO);
+        assertNotNull(apiConsumer.completeApplicationRegistration("testId", "testApp",
+                "PRODUCTION", "testScope", "testGroup"));
+    }
+
+    @Test
+    public void removeApplicationTest() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Subscriber subscriber = new Subscriber("subscriber");
+        Application application = new Application("testID", subscriber);
+        application.setId(1111);
+        application.setUUID("testId");
+        Mockito.when(apiMgtDAO.getApplicationByUUID("testId")).thenReturn(application);
+        Set<Integer> pendingSubscriptions = new HashSet<Integer>();
+        pendingSubscriptions.add(1);
+        Mockito.when(apiMgtDAO.getPendingSubscriptionsByApplicationId(1111)).thenReturn(pendingSubscriptions);
+        Mockito.when(apiMgtDAO.getRegistrationApprovalState(1111, APIConstants.API_KEY_TYPE_PRODUCTION)).
+                thenReturn("CREATED");
+        apiConsumer.removeApplication(application);
+        Mockito.verify(apiMgtDAO, Mockito.times(1)).getPendingSubscriptionsByApplicationId(1111);
     }
 }
