@@ -249,6 +249,7 @@
                     <excludes>
                         <exclude>**/AuthenticationException*</exclude>
                         <exclude>**/AuthenticatorService*</exclude>
+                        <exclude>*</exclude>
                     </excludes>
                 </configuration>
             </plugin>

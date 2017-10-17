@@ -2,8 +2,11 @@ package org.wso2.carbon.apimgt.gateway.handlers;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPHeader;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -21,6 +24,7 @@ import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import static junit.framework.Assert.fail;
@@ -75,6 +79,8 @@ public class UtilsTestCase {
         Mockito.when(messageContext.getEnvelope()).thenReturn(soapEnvelope);
         Mockito.when(soapEnvelope.getBody()).thenReturn(soapBody);
         Utils.setFaultPayload(messageContext, omElement);
+        Assert.assertTrue(true);  // No error has occurred. hence test passes.
+
     }
 
     @Test
@@ -103,5 +109,24 @@ public class UtilsTestCase {
     @Test
     public void testSend() {
         Utils.send(messageContext, 200);
+        Assert.assertTrue(true);  // No error has occurred. hence test passes.
+
+    }
+
+    @Test
+    public void testSetSOAPFault() {
+        SOAPEnvelope soapEnvelope = Mockito.mock(SOAPEnvelope.class);
+        SOAPHeader soapHeader = Mockito.mock(SOAPHeader.class);
+        Iterator iterator = Mockito.mock(Iterator.class);
+        OMNode soapHeaderBlock = Mockito.mock(OMNode.class);
+        Mockito.when(messageContext.getMessageID()).thenReturn("123");
+        Mockito.when(messageContext.getEnvelope()).thenReturn(soapEnvelope);
+        Mockito.when(soapEnvelope.getHeader()).thenReturn(soapHeader);
+        Mockito.when(soapHeader.examineAllHeaderBlocks()).thenReturn(iterator);
+        Mockito.when(iterator.hasNext()).thenReturn(true, false);
+        Mockito.when(iterator.next()).thenReturn(soapHeaderBlock);
+        Utils.setSOAPFault(messageContext, "", "code", "detail");
+        Assert.assertTrue(true);  // No error has occurred. hence test passes.
+
     }
 }
