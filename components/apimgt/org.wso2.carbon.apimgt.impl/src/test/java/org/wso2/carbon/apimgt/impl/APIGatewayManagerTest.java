@@ -19,12 +19,14 @@
 package org.wso2.carbon.apimgt.impl;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.stubbing.OngoingStubbing;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -32,14 +34,19 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.gateway.dto.stub.APIData;
+import org.wso2.carbon.apimgt.gateway.dto.stub.ResourceData;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.template.APITemplateBuilder;
+import org.wso2.carbon.apimgt.impl.template.APITemplateBuilderImpl;
 import org.wso2.carbon.apimgt.impl.utils.APIGatewayAdminClient;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
+import org.wso2.carbon.registry.core.exceptions.RegistryException;
 
+import javax.xml.stream.XMLStreamException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -49,7 +56,7 @@ import java.util.Set;
  * APIGatewayManager test cases
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({APIGatewayManager.class, PrivilegedCarbonContext.class})
+@PrepareForTest({APIGatewayManager.class, PrivilegedCarbonContext.class, APIUtil.class})
 public class APIGatewayManagerTest {
 
     private APIManagerConfiguration config;
@@ -67,22 +74,14 @@ public class APIGatewayManagerTest {
     private String prodEnvironmentName = "production";
     private String sandBoxEnvironmentName = "sandbox";
     private String tenantDomain = "carbon.super";
-    private String inSequence =
-            "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"in-sequence\">\n" +
+    private String inSequenceName = "in-sequence";
+    private String outSequenceName = "out-sequence";
+    private String faultSequenceName = "fault-sequence";
+    private int tenantID = -1234;
+    private String testSequenceDefinition =
+            "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"test-sequence\">\n" +
                     " <log level=\"custom\">\n" +
-                    "    <property name=\"Test\" value=\"API In Sequence\"/>\n" +
-                    " </log>\n" +
-                    "</sequence>";
-    private String outSequence =
-            "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"out-sequence\">\n" +
-                    " <log level=\"custom\">\n" +
-                    "    <property name=\"Test\" value=\"API Out Sequence\"/>\n" +
-                    " </log>\n" +
-                    "</sequence>";
-    private String faultSequence =
-            "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"fault-sequence\">\n" +
-                    " <log level=\"custom\">\n" +
-                    "    <property name=\"Test\" value=\"API Fault Sequence\"/>\n" +
+                    "    <property name=\"Test\" value=\"Test Sequence\"/>\n" +
                     " </log>\n" +
                     "</sequence>";
     private String prodEndpointConfig =
@@ -112,7 +111,15 @@ public class APIGatewayManagerTest {
         APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl(config);
         ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(apiManagerConfigurationService);
         PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.when(APIUtil.isProductionEndpointsExists((API)Mockito.anyObject())).thenCallRealMethod();
+        PowerMockito.when(APIUtil.isSandboxEndpointsExists((API)Mockito.anyObject())).thenCallRealMethod();
+        PowerMockito.when(APIUtil.getSequenceExtensionName((API)Mockito.anyObject())).thenCallRealMethod();
+        PowerMockito.when(APIUtil.isSequenceDefined(Mockito.anyString())).thenCallRealMethod();
+        PowerMockito.when(APIUtil.extractEnvironmentsForAPI(Mockito.anyString())).thenCallRealMethod();
+
         PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).thenReturn(tenantID);
         PowerMockito.doNothing().when(carbonContext).setTenantDomain(tenantDomain, true);
         PowerMockito.whenNew(APIGatewayAdminClient.class).withAnyArguments().thenReturn(apiGatewayAdminClient);
 
@@ -125,12 +132,12 @@ public class APIGatewayManagerTest {
         prodEnvironment.setPassword("admin");
 
         Environment sandboxEnvironment = new Environment();
-        prodEnvironment.setApiGatewayEndpoint("http://localhost:8281/");
-        prodEnvironment.setName("Sandbox");
-        prodEnvironment.setType("sandbox");
-        prodEnvironment.setServerURL("https://localhost:9444/services");
-        prodEnvironment.setUserName("admin");
-        prodEnvironment.setPassword("admin");
+        sandboxEnvironment.setApiGatewayEndpoint("http://localhost:8281/");
+        sandboxEnvironment.setName("Sandbox");
+        sandboxEnvironment.setType("sandbox");
+        sandboxEnvironment.setServerURL("https://localhost:9444/services");
+        sandboxEnvironment.setUserName("admin");
+        sandboxEnvironment.setPassword("admin");
 
         Map<String, Environment> environments = new HashMap<String, Environment>(0);
         environments.put(prodEnvironmentName, prodEnvironment);
@@ -144,7 +151,7 @@ public class APIGatewayManagerTest {
     public void testRemovingRESTAPIWithInSequenceFromGateway() throws AxisFault {
         API api = new API(apiIdentifier);
         api.setType("HTTP");
-        api.setInSequence(inSequence);
+        api.setInSequence(inSequenceName);
         api.setAsPublishedDefaultVersion(true);
         Set<String> environments = new HashSet<String>();
         environments.add(prodEnvironmentName);
@@ -162,7 +169,7 @@ public class APIGatewayManagerTest {
     public void testRemovingRESTAPIWithOutSequenceFromGateway() throws AxisFault {
         API api = new API(apiIdentifier);
         api.setType("HTTP");
-        api.setOutSequence(outSequence);
+        api.setOutSequence(outSequenceName);
         api.setAsPublishedDefaultVersion(true);
         Set<String> environments = new HashSet<String>();
         environments.add(prodEnvironmentName);
@@ -180,8 +187,8 @@ public class APIGatewayManagerTest {
     public void testRemovingRESTAPIWithFaultSequenceFromGateway() throws AxisFault {
         API api = new API(apiIdentifier);
         api.setType("HTTP");
-        api.setFaultSequence(faultSequence);
-        api.setInSequence(inSequence);
+        api.setFaultSequence(faultSequenceName);
+        api.setInSequence(inSequenceName);
         api.setAsPublishedDefaultVersion(true);
         Set<String> environments = new HashSet<String>();
         environments.add(prodEnvironmentName);
@@ -202,9 +209,9 @@ public class APIGatewayManagerTest {
         API api = new API(apiIdentifier);
         api.setType("WS");
         api.setContext(apiContext);
-        api.setInSequence(inSequence);
-        api.setOutSequence(outSequence);
-        api.setFaultSequence(faultSequence);
+        api.setInSequence(inSequenceName);
+        api.setOutSequence(outSequenceName);
+        api.setFaultSequence(faultSequenceName);
         Set<String> environments = new HashSet<String>();
         environments.add(prodEnvironmentName);
         environments.add(null);
@@ -222,9 +229,9 @@ public class APIGatewayManagerTest {
         API api = new API(apiIdentifier);
         api.setType("HTTP");
         api.setContext(apiContext);
-        api.setInSequence(inSequence);
-        api.setOutSequence(outSequence);
-        api.setFaultSequence(faultSequence);
+        api.setInSequence(inSequenceName);
+        api.setOutSequence(outSequenceName);
+        api.setFaultSequence(faultSequenceName);
         Set<String> environments = new HashSet<String>();
         environments.add(prodEnvironmentName);
         api.setEnvironments(environments);
@@ -361,5 +368,348 @@ public class APIGatewayManagerTest {
         } catch (APIManagementException e) {
             Assert.fail("Unexpected APIManagementException occurred while checking, whether the API is published");
         }
+    }
+
+    @Test
+    public void testRetrievingDigestAuthAPIEndpointSecurityType() throws AxisFault {
+        API api = new API(apiIdentifier);
+        ResourceData resourceData = new ResourceData();
+        resourceData.setInSeqXml("<sequence><DigestAuthMediator/></sequence>");
+        ResourceData[] resources = {null, new ResourceData(), resourceData};
+        Mockito.when(apiData.getResources()).thenReturn(resources);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(apiData);
+        try {
+            //When 'DigestAuthMediator' is present in In sequence configuration, 'DigestAuth' should be retrieved as
+            //the endpoint security type
+            String endpointSecurityType = gatewayManager.getAPIEndpointSecurityType(api, tenantDomain);
+            Assert.assertEquals(endpointSecurityType, "DigestAuth");
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving endpoint security type");
+        }
+    }
+
+    @Test
+    public void testFailureWhileRetrievingEndpointSecurityType() throws AxisFault {
+        API api = new API(apiIdentifier);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenThrow(new AxisFault("Error while " +
+                "retrieving endpoint security type"));
+        try {
+            //When 'DigestAuthMediator' is present in In sequence configuration, 'DigestAuth' should be retrieved as
+            //the endpoint security type
+            String endpointSecurityType = gatewayManager.getAPIEndpointSecurityType(api, tenantDomain);
+            Assert.assertEquals(endpointSecurityType, "BasicAuth");
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving endpoint security type");
+        }
+    }
+
+    @Test
+    public void testPublishingNewAPIToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(null);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+
+        //Test when environments are not defined for API
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test when API's environment endpoint configuration is not available
+        api.setEnvironments(environments);
+        api.setEndpointConfig(sandBoxEndpointConfig);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying 'INLINE' type REST API to gateway
+        api.setImplementation("INLINE");
+        api.setEndpointConfig(prodEndpointConfig);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying 'ENDPOINT' type REST API to gateway
+        api.setImplementation("ENDPOINT");
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying default version of the API and updating the existing default API
+        Mockito.when(apiGatewayAdminClient.getDefaultApi(tenantDomain, apiIdentifier)).thenReturn(defaultAPIdata);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying API, if secure vault is enabled
+        api.setEndpointSecured(true);
+        Mockito.when(config.getFirstProperty(APIConstants.API_SECUREVAULT_ENABLE)).thenReturn("true");
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test publishing WebSocket API
+        api.setType("WS");
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+    }
+
+    @Test
+    public void testPublishingNewRESTAPIWithAPIFaultSequence() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setFaultSequence(faultSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(null);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(faultSequenceName, tenantID,"fault", api.getId())).thenReturn
+                (AXIOMUtil.stringToOM(testSequenceDefinition));
+
+        //Test deploying per API defined fault sequence with API
+        PowerMockito.when(APIUtil.isPerAPISequence(faultSequenceName, tenantID, apiIdentifier,"fault")).thenReturn
+                (true);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying newly defined global sequence with API
+        PowerMockito.when(APIUtil.isPerAPISequence(faultSequenceName, tenantID, apiIdentifier,"fault")).thenReturn
+                (false);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder, tenantDomain).size(), 0);
+
+        //If fault sequence has not been defined for the API, omit deploying/updating and remove if already exists
+        api.setFaultSequence(null);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder, tenantDomain)
+                .size(), 0);
+    }
+
+    @Test
+    public void testPublishingNewRESTAPIWithCustomInSequenceToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setInSequence(inSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(null);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(inSequenceName, tenantID,"in", api.getId())).thenReturn
+                (AXIOMUtil.stringToOM(testSequenceDefinition));
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+    }
+
+    @Test
+    public void testPublishingNewRESTAPIWithCustomOutSequenceToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setOutSequence(outSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(null);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(outSequenceName, tenantID,"out", api.getId())).thenReturn
+                (AXIOMUtil.stringToOM(testSequenceDefinition));
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+    }
+
+    @Test
+    public void testPublishingExistingRESTAPIToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(apiData);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        Mockito.when(apiGatewayAdminClient.getDefaultApi(tenantDomain, apiIdentifier)).thenReturn(defaultAPIdata);
+
+        //Test deleting existing API from production environment, if matching producntion endpoint configuration is
+        // not found in API's endpoint config
+        api.setEndpointConfig(sandBoxEndpointConfig);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test updating 'INLINE' type REST API to gateway
+        api.setImplementation("INLINE");
+        api.setEndpointConfig(prodEndpointConfig);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test updating 'ENDPOINT' type REST API to gateway
+        api.setImplementation("ENDPOINT");
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test updating default version of the API
+        Mockito.when(apiGatewayAdminClient.getDefaultApi(tenantDomain, apiIdentifier)).thenReturn(defaultAPIdata);
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+
+        //Test deploying API, if secure vault is enabled
+        api.setEndpointSecured(true);
+        Mockito.when(config.getFirstProperty(APIConstants.API_SECUREVAULT_ENABLE)).thenReturn("true");
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+    }
+
+    @Test
+    public void testPublishingExistingRESTAPIWithCustomInSequenceToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setInSequence(inSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(apiData);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(inSequenceName, tenantID,"in", api.getId())).thenReturn
+                (AXIOMUtil.stringToOM(testSequenceDefinition));
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+    }
+
+    @Test
+    public void testPublishingExistingRESTAPIWithCustomOutSequenceToGateway() throws AxisFault, APIManagementException,
+            XMLStreamException, RegistryException {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setOutSequence(outSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(apiData);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(outSequenceName, tenantID,"out", api.getId())).thenReturn
+                (AXIOMUtil.stringToOM(testSequenceDefinition));
+        Assert.assertEquals(gatewayManager.publishToGateway(api, apiTemplateBuilder,tenantDomain).size(), 0);
+    }
+
+    @Test
+    public void testFailureWhilePublishingNewAPIToGateway() throws Exception {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setInSequence(inSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        OMElement inSequence = AXIOMUtil.stringToOM(testSequenceDefinition);
+        OMElement faultSequence = AXIOMUtil.stringToOM(testSequenceDefinition);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(null);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence(Mockito.anyString(), Mockito.anyString())).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(inSequenceName, tenantID,"in", api.getId())).thenReturn
+                (inSequence);
+
+        //Test failure to deploy API when custom in/out sequence deployment failed
+        Mockito.doThrow(new AxisFault("Error occurred while deploying sequence")).when(apiGatewayAdminClient)
+                .addSequence(inSequence, tenantDomain);
+        Map<String, String> failedEnvironmentsMap = gatewayManager.publishToGateway(api, apiTemplateBuilder,
+                tenantDomain);
+        Assert.assertEquals(failedEnvironmentsMap.size(), 1);
+        Assert.assertTrue(failedEnvironmentsMap.keySet().contains(prodEnvironmentName));
+
+        //Test failure to deploy API when setting secure vault property failed
+        Mockito.doThrow(new APIManagementException("Failed to set secure vault property for the tenant")).when
+                (apiGatewayAdminClient).setSecureVaultProperty(api, tenantDomain);
+        api.setEndpointSecured(true);
+        Mockito.when(config.getFirstProperty(APIConstants.API_SECUREVAULT_ENABLE)).thenReturn("true");
+        Map<String, String> failedEnvironmentsMap2 = gatewayManager.publishToGateway(api, apiTemplateBuilder,
+                tenantDomain);
+        Assert.assertEquals(failedEnvironmentsMap2.size(), 1);
+        Assert.assertTrue(failedEnvironmentsMap2.keySet().contains(prodEnvironmentName));
+
+        //Test failure to deploy API when fault sequence deployment failed
+        api.setFaultSequence(faultSequenceName);
+        PowerMockito.when(APIUtil.getCustomSequence(faultSequenceName, tenantID,"fault", api.getId())).thenReturn
+                (faultSequence);
+        Mockito.doThrow(new AxisFault("Error occurred while deploying sequence")).when(apiGatewayAdminClient)
+                .addSequence(faultSequence, tenantDomain);
+        Map<String, String> failedEnvironmentsMap3 = gatewayManager.publishToGateway(api, apiTemplateBuilder,
+                tenantDomain);
+        Assert.assertEquals(failedEnvironmentsMap3.size(), 1);
+        Assert.assertTrue(failedEnvironmentsMap3.keySet().contains(prodEnvironmentName));
+
+        //Test throwing AxisFault when Gateway client initialisation failed
+        Mockito.doThrow(new AxisFault("Error occurred while deploying sequence")).when(apiGatewayAdminClient)
+                .getApi(tenantDomain, apiIdentifier);
+        Map<String, String> failedEnvironmentsMap4 = gatewayManager.publishToGateway(api, apiTemplateBuilder,
+                tenantDomain);
+        Assert.assertEquals(failedEnvironmentsMap4.size(), 1);
+        Assert.assertTrue(failedEnvironmentsMap4.keySet().contains(prodEnvironmentName));
+    }
+
+    @Test
+    public void testFailureWhilePublishingAPIUpdateToGateway() throws Exception {
+        API api = new API(apiIdentifier);
+        api.setType("HTTP");
+        api.setAsPublishedDefaultVersion(true);
+        api.setImplementation("ENDPOINT");
+        api.setEndpointConfig(prodEndpointConfig);
+        api.setInSequence(inSequenceName);
+        api.setAsDefaultVersion(true);
+        APITemplateBuilder apiTemplateBuilder = new APITemplateBuilderImpl(api);
+        Set<String> environments = new HashSet<String>();
+        environments.add(prodEnvironmentName);
+        environments.add(null);
+        OMElement inSequence = AXIOMUtil.stringToOM(testSequenceDefinition);
+        api.setEnvironments(environments);
+        Mockito.when(apiGatewayAdminClient.getApi(tenantDomain, apiIdentifier)).thenReturn(apiData);
+        Mockito.when(apiGatewayAdminClient.isExistingSequence("admin--weatherAPI:vv1--In", tenantDomain)).thenReturn
+                (true);
+        PowerMockito.when(APIUtil.getCustomSequence(inSequenceName, tenantID,"in", api.getId())).thenReturn
+                (inSequence);
+        //Test API deployment failure when custom sequence update failed
+        Mockito.doThrow(new AxisFault("Error occurred while deploying sequence")).when(apiGatewayAdminClient)
+                .deleteSequence("admin--weatherAPI:vv1--In", tenantDomain);
+        Map<String, String> failedEnvironmentsMap = gatewayManager.publishToGateway(api, apiTemplateBuilder,
+                tenantDomain);
+        Assert.assertEquals(failedEnvironmentsMap.size(), 1);
+        Assert.assertTrue(failedEnvironmentsMap.keySet().contains(prodEnvironmentName));
     }
 }
