@@ -91,8 +91,13 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
     }
 
     private String getContextFromUrl(String url) {
-        int lastIndex = url.lastIndexOf('/');
-        return url.substring(0, lastIndex);
+        int lastIndex = 0;
+        if (url != null) {
+            lastIndex = url.lastIndexOf('/');
+            return url.substring(0, lastIndex);
+        } else {
+            return "";
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -103,7 +108,7 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof FullHttpRequest) {
             FullHttpRequest req = (FullHttpRequest) msg;
             uri = req.getUri();
-            if (req.getUri().contains("/t/"))  {
+            if (req.getUri().contains("/t/")) {
                 tenantDomain = MultitenantUtils.getTenantDomainFromUrl(req.getUri());
             } else {
                 tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
@@ -144,11 +149,11 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
             } else {
                 ctx.writeAndFlush(new TextWebSocketFrame(APISecurityConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE));
                 throw new APISecurityException(APISecurityConstants.API_AUTH_INVALID_CREDENTIALS,
-                                               APISecurityConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
+                        APISecurityConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
             }
         } else if (msg instanceof WebSocketFrame) {
             boolean isThrottledOut = doThrottle(ctx, (WebSocketFrame) msg);
-            String clientIp = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
+            String clientIp = getRemoteIP(ctx);
 
             if (isThrottledOut) {
                 ctx.fireChannelRead(msg);
@@ -264,7 +269,7 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         String resourceLevelThrottleKey = apiLevelThrottleKey;
         String subscriptionLevelThrottleKey = appId + ":" + apiContext + ":" + apiVersion;
         String messageId = UIDGenerator.generateURNString();
-        String remoteIP = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
+        String remoteIP = getRemoteIP(ctx);
         JSONObject jsonObMap = new JSONObject();
         if (remoteIP != null && remoteIP.length() > 0) {
             jsonObMap.put(APIThrottleConstants.IP, APIUtil.ipToLong(remoteIP));
@@ -297,6 +302,10 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         return true;
     }
 
+    protected String getRemoteIP(ChannelHandlerContext ctx) {
+        return ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
+    }
+
     /**
      * Publish reuqest event to analytics server
      *
@@ -309,7 +318,7 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         String useragent = headers.get(HttpHeaders.USER_AGENT);
 
         try {
-            Application app = ApiMgtDAO.getInstance().getApplicationById(Integer.parseInt(infoDTO.getApplicationId()));
+            Application app = getApplicationById(infoDTO);
             String appOwner = app.getSubscriber().getName();
 
             RequestPublisherDTO requestPublisherDTO = new RequestPublisherDTO();
@@ -339,5 +348,9 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
             // flow should not break if event publishing failed
             log.error("Cannot publish event. " + e.getMessage(), e);
         }
+    }
+
+    protected Application getApplicationById(APIKeyValidationInfoDTO infoDTO) throws APIManagementException {
+        return ApiMgtDAO.getInstance().getApplicationById(Integer.parseInt(infoDTO.getApplicationId()));
     }
 }
