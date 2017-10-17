@@ -1936,6 +1936,7 @@ public class ApiMgtDAO {
         return apiKeys;
     }
 
+    @Deprecated
     public String getTokenScope(String consumerKey) throws APIManagementException {
         String tokenScope = null;
 
