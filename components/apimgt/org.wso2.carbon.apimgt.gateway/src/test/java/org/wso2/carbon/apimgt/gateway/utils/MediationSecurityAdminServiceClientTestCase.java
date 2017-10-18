@@ -28,7 +28,7 @@ import static junit.framework.Assert.fail;
 /**
  * Test class for MediationSecurityAdminServiceClient
  */
-public class MediationSecurityAdminServiceClientTestcase {
+public class MediationSecurityAdminServiceClientTestCase {
 
     @Test
     public void testDoEncryption() {
