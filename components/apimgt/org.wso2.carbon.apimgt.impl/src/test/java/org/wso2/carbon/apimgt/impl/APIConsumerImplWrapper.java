@@ -21,10 +21,13 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dao.test.TestTenantManager;
 import org.wso2.carbon.apimgt.impl.workflow.APIStateChangeSimpleWorkflowExecutor;
+import org.wso2.carbon.apimgt.impl.workflow.SampleWorkFlowExecutor;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowException;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowExecutor;
+import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -40,6 +43,16 @@ public class APIConsumerImplWrapper extends APIConsumerImpl {
         super();
     }
 
+
+    public APIConsumerImplWrapper(ApiMgtDAO apiMgtDAO) throws APIManagementException {
+        this.apiMgtDAO = apiMgtDAO;
+    }
+
+    public APIConsumerImplWrapper(Registry registry, ApiMgtDAO apiMgtDAO) throws APIManagementException {
+        this.apiMgtDAO = apiMgtDAO;
+        this.registry = registry;
+
+    }
 
     /**
      * Returns API manager configurations.
@@ -59,7 +72,7 @@ public class APIConsumerImplWrapper extends APIConsumerImpl {
     }
 
     protected WorkflowExecutor getWorkflowExecutor(String workflowType) throws WorkflowException {
-        return new APIStateChangeSimpleWorkflowExecutor();
+        return new SampleWorkFlowExecutor();
     }
 
 

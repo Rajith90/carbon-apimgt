@@ -2500,9 +2500,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         String tenantDomain = MultitenantUtils.getTenantDomain(userId);
         int tenantId = MultitenantConstants.INVALID_TENANT_ID;
         try {
-            tenantId = getTenantId(tenantDomain);
+            tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                    .getTenantId(tenantDomain);
         } catch (UserStoreException e) {
-            handleException("Unable to retrieve the tenant information of the current user.", e);
+            String msg = "Unable to retrieve the tenant information of the current user.";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
         //checking for authorized scopes
         Set<Scope> scopeSet = new LinkedHashSet<Scope>();
@@ -2919,14 +2922,17 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                         (groupingExtractorClass).newInstance();
                 return groupingExtractor.getGroupingIdentifiers(response);
             } catch (ClassNotFoundException e) {
-                handleException(groupingExtractorClass + " is not found in run time", e);
-                return null;
+                String msg = groupingExtractorClass + " is not found in run time";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
             } catch (IllegalAccessException e) {
-                handleException("Error occurred while invocation of getGroupingIdentifier method", e);
-                return null;
+                String msg = "Error occurred while invocation of getGroupingIdentifier method";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
             } catch (InstantiationException e) {
-                handleException("Error occurred while instantiating " + groupingExtractorClass + " class", e);
-                return null;
+                String msg = "Error occurred while instantiating " + groupingExtractorClass + " class";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
             }
         }
         return null;
@@ -2969,9 +2975,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         boolean tenantFlowStarted = false;
         try {
             if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-                PrivilegedCarbonContext.startTenantFlow();
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
-                tenantFlowStarted = true;
+                tenantFlowStarted = startTenantFlowForTenantDomain(tenantDomain);
             }
             //Create OauthAppRequest object by passing json String.
             OAuthAppRequest oauthAppRequest = ApplicationUtils.createOauthAppRequest(applicationName, null, callbackUrl,
@@ -3137,11 +3141,17 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             }
 
         } catch (UserStoreException e) {
-            handleException("UserStoreException thrown when getting API tenant config from registry", e);
+            String msg = "UserStoreException thrown when getting API tenant config from registry";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (RegistryException e) {
-            handleException("RegistryException thrown when getting API tenant config from registry", e);
+            String msg = "RegistryException thrown when getting API tenant config from registry";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (ParseException e) {
-            handleException("ParseException thrown when passing API tenant config from registry", e);
+            String msg = "ParseException thrown when passing API tenant config from registry";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
 
         return getTenantConfigValue(tenantDomain, apiTenantConfig, APIConstants.API_TENANT_CONF_ENABLE_MONITZATION_KEY);
