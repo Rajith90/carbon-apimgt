@@ -39,9 +39,11 @@ import org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationService;
 import org.wso2.carbon.apimgt.impl.generated.thrift.APIManagementException;
 import org.wso2.carbon.apimgt.impl.generated.thrift.URITemplate;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.keymgt.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.keymgt.util.APIKeyMgtUtil;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.thrift.authentication.ThriftAuthenticatorService;
 import org.wso2.carbon.metrics.manager.MetricManager;
 import org.wso2.carbon.metrics.manager.MetricService;
@@ -57,7 +59,7 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ ThriftAuthenticatorService.class, ServiceReferenceHolder.class, ApiMgtDAO.class,
         PrivilegedCarbonContext.class, org.wso2.carbon.metrics.manager.internal.ServiceReferenceHolder.class,
-        Timer.class, MetricManager.class, APIKeyMgtUtil.class, KeyManagerHolder.class })
+        Timer.class, MetricManager.class, APIKeyMgtUtil.class, KeyManagerHolder.class, OAuthServerConfiguration.class })
 public class APIKeyValidationServiceImplTest {
     private ServiceReferenceHolder serviceReferenceHolder;
     private ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
@@ -67,6 +69,7 @@ public class APIKeyValidationServiceImplTest {
     private final String TENANT_DOMAIN = "carbon.super";
     private final int TENANT_ID = -1234;
     private final String CONTEXT = "context";
+    private final String USER_NAME = "admin";
     private final String VERSION = "1.0.0";
     private final String ACCESS_TOKEN = "1z2x3c4v5b6b7n8m9";
     private final String SESSION_ID = "a1b2c3d4e5f6g7";
@@ -110,7 +113,7 @@ public class APIKeyValidationServiceImplTest {
                             ALLOWED_DOMAINS, MATCHING_RESOURCE, HTTP_VERB);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Thrift Authenticator or APIKeyValidationService is not initialized.", e.getMessage());
         }
 
         try {
@@ -121,7 +124,7 @@ public class APIKeyValidationServiceImplTest {
                             ALLOWED_DOMAINS, MATCHING_RESOURCE, HTTP_VERB);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Invalid session id for thrift authenticator.", e.getMessage());
         }
 
         ThriftAuthenticatorService thriftAuthenticatorService = Mockito.mock(ThriftAuthenticatorService.class);
@@ -136,7 +139,8 @@ public class APIKeyValidationServiceImplTest {
                             ALLOWED_DOMAINS, MATCHING_RESOURCE, HTTP_VERB);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Error populating current carbon context from thrift auth session: null",
+                    e.getMessage());
         }
 
         System.setProperty(CARBON_HOME, "");
@@ -182,10 +186,21 @@ public class APIKeyValidationServiceImplTest {
         AccessTokenInfo tokenInfo = new AccessTokenInfo();
         PowerMockito.when(keyManager.getTokenMetaData(ACCESS_TOKEN)).thenReturn(tokenInfo);
 
+        String cacheKey = APIUtil.getAccessTokenCacheKey(ACCESS_TOKEN, CONTEXT, VERSION, MATCHING_RESOURCE, HTTP_VERB,
+                REQUIRED_AUTHENTICATION_LEVEL);
+        org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO infoDTO = new org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO();
+        infoDTO.setApiPublisher(USER_NAME);
+        PowerMockito.when(APIKeyMgtUtil.getFromKeyManagerCache(cacheKey)).thenReturn(infoDTO);
+
+        PowerMockito.mockStatic(OAuthServerConfiguration.class);
+        OAuthServerConfiguration oAuthServerConfiguration = Mockito.mock(OAuthServerConfiguration.class);
+        PowerMockito.when(OAuthServerConfiguration.getInstance()).thenReturn(oAuthServerConfiguration);
+        PowerMockito.when(OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds())
+                .thenReturn(System.currentTimeMillis());
         dto = apiKeyValidationServiceImpl
                 .validateKey(CONTEXT, VERSION, ACCESS_TOKEN, SESSION_ID, REQUIRED_AUTHENTICATION_LEVEL, ALLOWED_DOMAINS,
                         MATCHING_RESOURCE, HTTP_VERB);
-        Assert.assertNotNull("APIKeyValidationInfoDTO should not be null", dto);
+        Assert.assertEquals("API publisher should be equal", USER_NAME, dto.apiPublisher);
     }
 
     @Test
@@ -234,14 +249,14 @@ public class APIKeyValidationServiceImplTest {
             apiKeyValidationServiceImpl.getAllURITemplates(CONTEXT, VERSION, SESSION_ID);
             Assert.fail("APIManagementException should be expected");
         } catch (APIManagementException e) {
-            //Exception ignored
+            Assert.assertEquals("Error while fetching all URL Templates", e.getMessage());
         }
         APIKeyValidationServiceImpl.init(null);
         try {
             apiKeyValidationServiceImpl.getAllURITemplates(CONTEXT, VERSION, SESSION_ID);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Thrift Authenticator or APIKeyValidationService is not initialized.", e.getMessage());
         }
 
         ThriftAuthenticatorService thriftAuthenticatorService = Mockito.mock(ThriftAuthenticatorService.class);
@@ -251,7 +266,7 @@ public class APIKeyValidationServiceImplTest {
             apiKeyValidationServiceImpl.getAllURITemplates(CONTEXT, VERSION, SESSION_ID);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Invalid session id for thrift authenticator.", e.getMessage());
         }
     }
 
@@ -265,7 +280,7 @@ public class APIKeyValidationServiceImplTest {
             apiKeyValidationServiceImpl.validateKeyforHandshake(CONTEXT, VERSION, ACCESS_TOKEN, SESSION_ID);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Invalid session id for thrift authenticator.", e.getMessage());
         }
 
         APIKeyValidationServiceImpl.init(null);
@@ -273,7 +288,7 @@ public class APIKeyValidationServiceImplTest {
             apiKeyValidationServiceImpl.validateKeyforHandshake(CONTEXT, VERSION, ACCESS_TOKEN, SESSION_ID);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Thrift Authenticator or APIKeyValidationService is not initialized.", e.getMessage());
         }
 
         thriftAuthenticatorService = Mockito.mock(ThriftAuthenticatorService.class);
@@ -284,7 +299,8 @@ public class APIKeyValidationServiceImplTest {
             apiKeyValidationServiceImpl.validateKeyforHandshake(CONTEXT, VERSION, ACCESS_TOKEN, SESSION_ID);
             Assert.fail("APIKeyMgtException should be expected");
         } catch (org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyMgtException e) {
-            //Exception ignored
+            Assert.assertEquals("Error populating current carbon context from thrift auth session: null",
+                    e.getMessage());
         }
 
         System.setProperty(CARBON_HOME, "");
@@ -300,7 +316,7 @@ public class APIKeyValidationServiceImplTest {
         Mockito.when(thriftAuthenticatorService.getSessionInfo(SESSION_ID)).thenReturn(currentSession);
         APIKeyValidationServiceImpl.init(thriftAuthenticatorService);
 
-        PowerMockito.mockStatic(APIKeyMgtUtil.class);
+//        PowerMockito.mockStatic(APIKeyMgtUtil.class);
         PowerMockito.mockStatic(KeyManagerHolder.class);
 
         KeyManager keyManager = Mockito.mock(KeyManager.class);
@@ -310,6 +326,6 @@ public class APIKeyValidationServiceImplTest {
 
         APIKeyValidationInfoDTO apiKeyValidationInfoDTO = apiKeyValidationServiceImpl
                 .validateKeyforHandshake(CONTEXT, VERSION, ACCESS_TOKEN, SESSION_ID);
-        Assert.assertNotNull(apiKeyValidationInfoDTO);
+        Assert.assertEquals("Key should not be authorized", false, apiKeyValidationInfoDTO.authorized);
     }
 }
