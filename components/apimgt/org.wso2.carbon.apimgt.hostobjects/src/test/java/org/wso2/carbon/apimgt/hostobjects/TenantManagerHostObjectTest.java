@@ -47,6 +47,7 @@ public class TenantManagerHostObjectTest {
         Object args[] = {"test", "b"};
         try {
             tmhostObject.jsFunction_addTenantTheme(null, null, args, null);
+            Assert.fail("APIManagementException exception not thrown for the error scenario");
         } catch (APIManagementException ex) {
             Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
         }
@@ -56,6 +57,7 @@ public class TenantManagerHostObjectTest {
     public void testJsFunction_addTenantThemeWhenArgsAreNull() throws Exception {
         try {
             tmhostObject.jsFunction_addTenantTheme(null, null, null, null);
+            Assert.fail("APIManagementException exception not thrown for the error scenario");
         } catch (APIManagementException ex) {
             Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
         }
@@ -66,6 +68,7 @@ public class TenantManagerHostObjectTest {
         Object args[] = {"test"};
         try {
             tmhostObject.jsFunction_addTenantTheme(null, null, args, null);
+            Assert.fail("APIManagementException exception not thrown for the error scenario");
         } catch (APIManagementException ex) {
             Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
         }
