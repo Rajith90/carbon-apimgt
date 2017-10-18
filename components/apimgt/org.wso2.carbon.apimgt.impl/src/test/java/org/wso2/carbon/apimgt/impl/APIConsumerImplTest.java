@@ -502,13 +502,6 @@ public class APIConsumerImplTest {
         assertEquals(scopes, apiConsumer.getScopesBySubscribedAPIs(identifiers));
     }
 
-    @Test
-    public void testGetScopesByToken() throws APIManagementException {
-        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
-        apiConsumer.apiMgtDAO = apiMgtDAO;
-        when(apiMgtDAO.getScopesByToken("testToken")).thenReturn("valid");
-        assertEquals("valid", apiConsumer.getScopesByToken("testToken"));
-    }
 
     @Test
     public void testGetScopesByScopeKeys() throws APIManagementException {
