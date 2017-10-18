@@ -389,6 +389,7 @@ public class APIMgtDAOTest {
         int applicationId = apiMgtDAO.addApplication(application, subscriber.getName());
         application.setId(applicationId);
         assertTrue(applicationId > 0);
+        assertNotNull(apiMgtDAO.getApplicationByUUID(apiMgtDAO.getApplicationById(applicationId).getUUID()));
         assertNull(apiMgtDAO.getApplicationByName("testApplication2", null, null));
 
     }
@@ -611,7 +612,9 @@ public class APIMgtDAOTest {
         APIKeyValidationInfoDTO infoDTO = new APIKeyValidationInfoDTO();
         apiMgtDAO.createApplicationKeyTypeMappingForManualClients(APIConstants.API_KEY_TYPE_PRODUCTION, "APP-10",
                 "sub_user1", "clientId1");
-
+        assertTrue(apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId), APIConstants
+                .API_KEY_TYPE_PRODUCTION).equals("clientId1"));
+        assertTrue(apiMgtDAO.isMappingExistsforConsumerKey("clientId1"));
         boolean validation = apiMgtDAO.validateSubscriptionDetails("/wso2utils", "V1.0.0", "clientId1", infoDTO);
         APIKeyValidationInfoDTO infoDTO1 = new APIKeyValidationInfoDTO();
         apiMgtDAO.validateSubscriptionDetails(infoDTO1, "/wso2utils", "V1.0.0", "clientId1", false);
@@ -856,6 +859,7 @@ public class APIMgtDAOTest {
         Application application = new Application("testCreateApplicationRegistrationEntry", subscriber);
         application.setTier("testCreateApplicationRegistrationEntry");
         application.setId(apiMgtDAO.addApplication(application, "testCreateApplicationRegistrationEntry"));
+
         ApplicationRegistrationWorkflowDTO applicationRegistrationWorkflowDTO = new
                 ApplicationRegistrationWorkflowDTO();
         applicationRegistrationWorkflowDTO.setApplication(application);
@@ -863,13 +867,15 @@ public class APIMgtDAOTest {
         applicationRegistrationWorkflowDTO.setDomainList("*");
         applicationRegistrationWorkflowDTO.setWorkflowReference(UUID.randomUUID().toString());
         applicationRegistrationWorkflowDTO.setValidityTime(100L);
+        applicationRegistrationWorkflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+        applicationRegistrationWorkflowDTO.setStatus(WorkflowStatus.CREATED);
+        apiMgtDAO.addWorkflowEntry(applicationRegistrationWorkflowDTO);
         OAuthAppRequest oAuthAppRequest = new OAuthAppRequest();
         OAuthApplicationInfo oAuthApplicationInfo = new OAuthApplicationInfo();
         oAuthApplicationInfo.setJsonString("");
         oAuthApplicationInfo.addParameter("tokenScope", "deafault");
         oAuthAppRequest.setOAuthApplicationInfo(oAuthApplicationInfo);
         applicationRegistrationWorkflowDTO.setAppInfoDTO(oAuthAppRequest);
-        applicationRegistrationWorkflowDTO.setStatus(WorkflowStatus.APPROVED);
         APIIdentifier apiId = new APIIdentifier("testCreateApplicationRegistrationEntry",
                 "testCreateApplicationRegistrationEntry", "1.0.0");
         API api = new API(apiId);
@@ -885,6 +891,8 @@ public class APIMgtDAOTest {
         apiMgtDAO.createApplicationRegistrationEntry(applicationRegistrationWorkflowDTO, false);
         ApplicationRegistrationWorkflowDTO retrievedApplicationRegistrationWorkflowDTO = new
                 ApplicationRegistrationWorkflowDTO();
+        retrievedApplicationRegistrationWorkflowDTO.setExternalWorkflowReference(applicationRegistrationWorkflowDTO
+                .getExternalWorkflowReference());
         apiMgtDAO.populateAppRegistrationWorkflowDTO(retrievedApplicationRegistrationWorkflowDTO);
         apiMgtDAO.addSubscription(apiId, api.getContext(), application.getId(), APIConstants.SubscriptionStatus
                 .ON_HOLD, subscriber.getName());
@@ -896,7 +904,17 @@ public class APIMgtDAOTest {
         apiMgtDAO.removeSubscriptionById(subsId);
         apiMgtDAO.deleteAPI(apiId);
         apiMgtDAO.deleteAPI(apiId1);
-        apiMgtDAO.deleteApplicationKeyMappingByApplicationIdAndType(String.valueOf(application.getId()), "PRODUCTION");
+        assertNotNull(apiMgtDAO.getWorkflowReference(application.getName(), subscriber.getName()));
+        applicationRegistrationWorkflowDTO.setStatus(WorkflowStatus.APPROVED);
+        apiMgtDAO.updateWorkflowStatus(applicationRegistrationWorkflowDTO);
+        assertNotNull(apiMgtDAO.retrieveWorkflow(applicationRegistrationWorkflowDTO.getExternalWorkflowReference
+                ()));
+        assertNotNull(apiMgtDAO.retrieveWorkflowFromInternalReference(applicationRegistrationWorkflowDTO
+                .getWorkflowReference(), applicationRegistrationWorkflowDTO.getWorkflowType()));
+        apiMgtDAO.removeWorkflowEntry(applicationRegistrationWorkflowDTO.getExternalWorkflowReference(),
+                applicationRegistrationWorkflowDTO.getWorkflowType());
+        apiMgtDAO.deleteApplicationKeyMappingByApplicationIdAndType(String.valueOf(application.getId()),
+                "PRODUCTION");
         apiMgtDAO.deleteApplicationRegistration(String.valueOf(application.getId()), "PRODUCTION");
         apiMgtDAO.deleteApplication(application);
         apiMgtDAO.removeThrottlePolicy(PolicyConstants.POLICY_LEVEL_APP, "testCreateApplicationRegistrationEntry",
@@ -1009,6 +1027,7 @@ public class APIMgtDAOTest {
                 -1234);
         apiMgtDAO.updateDefaultAPIPublishedVersion(apiId, APIStatus.PUBLISHED, APIStatus.CREATED);
         apiMgtDAO.removeAllSubscriptions(apiId);
+        assertTrue(apiMgtDAO.getAPINamesMatchingContext(api.getContext()).size() > 0);
         apiMgtDAO.deleteAPI(apiId);
         apiMgtDAO.deleteApplication(application);
         apiMgtDAO.removeThrottlePolicy(PolicyConstants.POLICY_LEVEL_APP, "testCreateApplicationRegistrationEntry",
