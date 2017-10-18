@@ -8,14 +8,17 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.apimgt.api.APIManagementException;
 
 import java.io.FileInputStream;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({TenantManagerHostObject.class})
 public class TenantManagerHostObjectTest {
     private TenantManagerHostObject tmhostObject = new TenantManagerHostObject();
+
     @Test
     public void testGetStoreTenantThemesPath() throws Exception {
         Assert.assertEquals(TenantManagerHostObject.getStoreTenantThemesPath(), "repository/deployment/server/" +
@@ -36,7 +39,35 @@ public class TenantManagerHostObjectTest {
         Mockito.when(fileHostObject.getInputStream()).thenReturn(inputStream);
         PowerMockito.whenNew(ZipInputStream.class).withAnyArguments().thenReturn(zipInputStream);
 
-        Assert.assertTrue(tmhostObject.jsFunction_addTenantTheme(null, null, args, null ));
+        Assert.assertTrue(tmhostObject.jsFunction_addTenantTheme(null, null, args, null));
     }
 
+    @Test
+    public void testJsFunction_addTenantThemeForClassCasting() throws Exception {
+        Object args[] = {"test", "b"};
+        try {
+            tmhostObject.jsFunction_addTenantTheme(null, null, args, null);
+        } catch (APIManagementException ex) {
+            Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
+        }
+    }
+
+    @Test
+    public void testJsFunction_addTenantThemeWhenArgsAreNull() throws Exception {
+        try {
+            tmhostObject.jsFunction_addTenantTheme(null, null, null, null);
+        } catch (APIManagementException ex) {
+            Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
+        }
+    }
+
+    @Test
+    public void testJsFunction_addTenantThemeWhenArgsNotNull() throws Exception {
+        Object args[] = {"test"};
+        try {
+            tmhostObject.jsFunction_addTenantTheme(null, null, args, null);
+        } catch (APIManagementException ex) {
+            Assert.assertTrue(ex.getMessage().contains("Invalid input parameters for addTenantTheme"));
+        }
+    }
 }
