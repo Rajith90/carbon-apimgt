@@ -40,6 +40,7 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 
+import javax.validation.constraints.AssertTrue;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,14 +102,15 @@ public class GatewayUtilsTestCase {
         try {
             GatewayUtils.setRegistryProperty(propertyName, propertyValue, path, tenantDomain);
         } catch (APIManagementException e) {
-            e.printStackTrace();
+            fail("APIManagementException occurred. " + e.getStackTrace());
         }
 
         try {
             Mockito.when(userRegistry.get(path)).thenThrow(new RegistryException(""));
             GatewayUtils.setRegistryProperty(propertyName, propertyValue, path, tenantDomain);
+            fail("Expected Registry Exception is not thrown");
         } catch (APIManagementException e) {
-            e.printStackTrace();
+            Assert.assertTrue(e.getMessage().startsWith("Error while reading registry resource"));
         }
 
         //test update property when tenant domain is null
@@ -131,13 +133,13 @@ public class GatewayUtilsTestCase {
         try {
             GatewayUtils.deleteRegistryProperty(propertyName, path, "");
         } catch (APIManagementException e) {
-            fail("APIManagementException is thrown when accessing registry");
+            fail("APIManagementException is thrown when accessing registry " + e.getStackTrace());
         }
 
         try {
             GatewayUtils.deleteRegistryProperty(propertyName, path, tenantDomain);
         } catch (APIManagementException e) {
-            fail("APIManagementException is thrown when accessing registry");
+            fail("APIManagementException is thrown when accessing registry " + e.getStackTrace());
         }
 
         //test for APIManagementException
