@@ -1225,12 +1225,13 @@ public class APIMgtDAOTest extends TestCase {
             ps.setInt(6, -1234);
             ps.setString(7, username);
             ps.executeUpdate();
-            conn.commit();
+
             rs = ps.getGeneratedKeys();
 
             while (rs.next()) {
                 appId = Integer.parseInt(rs.getString(1));
             }
+            conn.commit();
         } finally {
             APIMgtDBUtil.closeAllConnections(ps, conn, rs);
         }
