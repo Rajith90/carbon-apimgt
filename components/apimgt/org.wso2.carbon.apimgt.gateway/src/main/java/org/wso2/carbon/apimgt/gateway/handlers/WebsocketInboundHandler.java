@@ -90,7 +90,8 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         return url.replaceFirst(".*/([^/?]+).*", "$1");
     }
 
-    private String getContextFromUrl(String url) {
+   //method removed because url is going to be always null
+/*    private String getContextFromUrl(String url) {
         int lastIndex = 0;
         if (url != null) {
             lastIndex = url.lastIndexOf('/');
@@ -98,7 +99,7 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         } else {
             return "";
         }
-    }
+    }*/
 
     @SuppressWarnings("unchecked")
     @Override
@@ -203,9 +204,9 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
                 }
                 String keyValidatorClientType = APISecurityUtils.getKeyValidatorClientType();
                 if (APIConstants.API_KEY_VALIDATOR_WS_CLIENT.equals(keyValidatorClientType)) {
-                    info = new WebsocketWSClient().getAPIKeyData(uri, version, apiKey);
+                    info = getApiKeyDataForWSClient(apiKey);
                 } else if (APIConstants.API_KEY_VALIDATOR_THRIFT_CLIENT.equals(keyValidatorClientType)) {
-                    info = new WebsocketThriftClient().getAPIKeyData(uri, version, apiKey);
+                    info = getApiKeyDataForThriftClient(apiKey);
                 } else {
                     return false;
                 }
@@ -235,6 +236,14 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
+    }
+
+    protected APIKeyValidationInfoDTO getApiKeyDataForThriftClient(String apiKey) throws APISecurityException {
+        return new WebsocketThriftClient().getAPIKeyData(uri, version, apiKey);
+    }
+
+    protected APIKeyValidationInfoDTO getApiKeyDataForWSClient(String apiKey) throws APISecurityException {
+        return new WebsocketWSClient().getAPIKeyData(uri, version, apiKey);
     }
 
     /**
@@ -330,7 +339,9 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
             requestPublisherDTO.setApplicationOwner(appOwner);
             requestPublisherDTO.setClientIp(clientIp);
             requestPublisherDTO.setConsumerKey(infoDTO.getConsumerKey());
-            requestPublisherDTO.setContext(getContextFromUrl(uri));
+            //context will always be empty as this method will call only for WebSocketFrame and url is null
+            requestPublisherDTO.setContext("");
+//            requestPublisherDTO.setContext(getContextFromUrl(uri));
             requestPublisherDTO.setContinuedOnThrottleOut(isThrottledOut);
             requestPublisherDTO.setHostName(DataPublisherUtil.getHostAddress());
             requestPublisherDTO.setMethod("-");
