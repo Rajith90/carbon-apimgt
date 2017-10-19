@@ -1163,7 +1163,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
       	      	APIUtil.loadTenantRegistry(tenantId);
                 setUsernameToThreadLocalCarbonContext(CarbonConstants.REGISTRY_ANONNYMOUS_USERNAME);
                 isTenantFlowStarted = true;
-                userRegistry = getGovernanceUserRegistry(tenantId);
+                userRegistry = ServiceReferenceHolder.getInstance().getRegistryService().
+                        getGovernanceUserRegistry(CarbonConstants.REGISTRY_ANONNYMOUS_USERNAME, tenantId);
             } else {
                 userRegistry = registry;
                 setUsernameToThreadLocalCarbonContext(this.username);
@@ -1302,7 +1303,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             //as a tenant, I'm browsing my own Store or I'm browsing a Store of another tenant..
             if ((this.isTenantModeStoreView && this.tenantDomain==null) || (this.isTenantModeStoreView && isTenantDomainNotMatching(requestedTenantDomain))) {//Tenant based store anonymous mode
                 int tenantId = getTenantId(this.requestedTenant);
-                userRegistry = getGovernanceUserRegistry(tenantId);
+                userRegistry = ServiceReferenceHolder.getInstance().getRegistryService().
+                        getGovernanceUserRegistry(CarbonConstants.REGISTRY_ANONNYMOUS_USERNAME, tenantId);
             } else {
                 userRegistry = registry;
             }

@@ -68,8 +68,13 @@ import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifactImpl;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
+import org.wso2.carbon.registry.common.TermData;
 import org.wso2.carbon.registry.core.Registry;
+import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
+import org.wso2.carbon.registry.core.jdbc.dataobjects.ResourceDO;
+import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
@@ -114,10 +119,11 @@ public class APIConsumerImplTest {
     private UserStoreManager userStoreManager;
     private KeyManager keyManager;
     private CacheInvalidator cacheInvalidator;
-    private static final String SAMPLE_TENANT_DOMAIN_1 = "abc.com";
     private static final String SAMPLE_API_NAME = "test";
     private static final String API_PROVIDER = "admin";
     private static final String SAMPLE_API_VERSION = "1.0.0";
+    private RegistryService registryService;
+    public static final String SAMPLE_TENANT_DOMAIN_1 = "abc.com";
 
     @Before
     public void init() throws UserStoreException {
@@ -129,6 +135,7 @@ public class APIConsumerImplTest {
         userStoreManager = Mockito.mock(UserStoreManager.class);
         keyManager = Mockito.mock(KeyManager.class);
         cacheInvalidator = Mockito.mock(CacheInvalidator.class);
+        registryService = Mockito.mock(RegistryService.class);
         PowerMockito.mockStatic(ApplicationUtils.class);
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         PowerMockito.mockStatic(MultitenantUtils.class);
@@ -141,6 +148,7 @@ public class APIConsumerImplTest {
         Mockito.when(realmService.getTenantUserRealm(Mockito.anyInt())).thenReturn(userRealm);
         Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
         Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
     }
 
     @Test
@@ -297,6 +305,61 @@ public class APIConsumerImplTest {
         assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10, new String[]{"testStatus"}, false));
     }
+
+    @Test
+    public void testGetRecentlyAddedAPIs() throws Exception {
+        Registry userRegistry = Mockito.mock(Registry.class);
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(GovernanceUtils.class);
+        PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
+        PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(true);
+        System.setProperty(CARBON_HOME, "");
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        UserRegistry userRegistry1 = Mockito.mock(UserRegistry.class);
+        Mockito.when(registryService.getGovernanceUserRegistry(Mockito.anyString(), Mockito.anyInt())).
+                thenReturn(userRegistry1);
+        Mockito.when(registryService.getGovernanceSystemRegistry(Mockito.anyInt())).thenReturn(userRegistry1);
+        GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(artifactManager);
+        GenericArtifact artifact = Mockito.mock(GenericArtifact.class);
+        GenericArtifact[] genericArtifacts = new GenericArtifact[]{artifact};
+        Mockito.when(artifactManager.findGenericArtifacts(Mockito.anyMap())).thenReturn(genericArtifacts);
+        APIIdentifier apiId1 = new APIIdentifier("admin", "API1", "1.0.0");
+        API api = new API(apiId1);
+        Mockito.when(APIUtil.getAPI(artifact)).thenReturn(api);
+        assertNotNull(apiConsumer.getRecentlyAddedAPIs(10, "testDomain"));
+    }
+
+    @Test
+    public void testGetTagsWithAttributes() throws Exception {
+        Registry userRegistry = Mockito.mock(Registry.class);
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
+        System.setProperty(CARBON_HOME, "");
+        PowerMockito.mockStatic(GovernanceUtils.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        UserRegistry userRegistry1 = Mockito.mock(UserRegistry.class);
+        Mockito.when(registryService.getGovernanceUserRegistry(Mockito.anyString(), Mockito.anyInt())).
+                thenReturn(userRegistry1);
+        Mockito.when(registryService.getGovernanceSystemRegistry(Mockito.anyInt())).thenReturn(userRegistry1);
+        List<TermData> list = new ArrayList<TermData>();
+        TermData termData = new TermData("testTerm", 10);
+        list.add(termData);
+        Mockito.when(GovernanceUtils.getTermDataList(Mockito.anyMap(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyBoolean())).thenReturn(list);
+        ResourceDO resourceDO = Mockito.mock(ResourceDO.class);
+        Resource resource = new ResourceImpl("dw", resourceDO);
+        resource.setContent("testContent");
+        Mockito.when(userRegistry1.resourceExists(Mockito.anyString())).thenReturn(true);
+        Mockito.when(userRegistry1.get(Mockito.anyString())).thenReturn(resource);
+        assertNotNull(apiConsumer.getTagsWithAttributes("testDomain"));
+    }
+
 
     @Test
     public void testGetUserRating() throws APIManagementException {
