@@ -40,6 +40,7 @@ import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
 import org.wso2.carbon.apimgt.api.model.BlockConditionsDTO;
+import org.wso2.carbon.apimgt.api.model.Comment;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
 import org.wso2.carbon.apimgt.api.model.LifeCycleEvent;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
@@ -1257,6 +1258,15 @@ public class APIMgtDAOTest {
         apiMgtDAO.deleteExternalAPIStoresDetails(apiId, apiStoreSet);
         apiMgtDAO.updateExternalAPIStoresDetails(apiId, Collections.<APIStore>emptySet());
         assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size() == 0);
+        apiMgtDAO.addRating(apiId,3,"admin");
+        assertEquals(apiMgtDAO.getUserRating(apiId,"admin"),3);
+        assertTrue(apiMgtDAO.getAverageRating(apiId) == 3f);
+        apiMgtDAO.removeAPIRating(apiId, "admin");
+        apiMgtDAO.addComment(apiId,"text","admin");
+        Comment[] comments = apiMgtDAO.getComments(apiId);
+        assertNotNull(comments);
+        assertEquals(comments[0].getText(),"text");
+        assertTrue(apiMgtDAO.getAllAvailableContexts().contains("/testAddAndGetApi"));
         apiMgtDAO.deleteAPI(apiId);
     }
 
