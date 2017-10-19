@@ -39,6 +39,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+
 public class TestUtils {
 
     protected static Application getUniqueApplication() {
@@ -134,5 +138,14 @@ public class TestUtils {
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
         return sh;
+    }
+    
+    public static void mockAPICacheClearence() {
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Cache<Object, Object> cache = Mockito.mock(Cache.class);
+        Mockito.when(cacheManager.getCache(APIConstants.RECENTLY_ADDED_API_CACHE_NAME)).thenReturn(cache);
+        Mockito.doNothing().when(cache).removeAll();
     }
 }

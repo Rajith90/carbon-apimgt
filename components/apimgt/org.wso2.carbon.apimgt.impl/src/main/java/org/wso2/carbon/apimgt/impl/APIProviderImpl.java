@@ -1527,11 +1527,20 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     private Map<String, String> publishToGateway(API api) throws APIManagementException {
         Map<String, String> failedEnvironment;
         String tenantDomain = null;
+        APITemplateBuilder builder = null;
         if (api.getId().getProviderName().contains("AT")) {
             String provider = api.getId().getProviderName().replace("-AT-", "@");
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
-        failedEnvironment = publishToGateway(api, tenantDomain);
+        
+        try {
+            builder = getAPITemplateBuilder(api);
+        } catch (Exception e) {
+            handleException("Error while publishing to Gateway ", e);
+        }
+        
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        failedEnvironment = gatewayManager.publishToGateway(api, builder, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " published to gateway";
@@ -1570,7 +1579,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
         
-        failedEnvironment = removeFromGateway(api, tenantDomain);
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        failedEnvironment = gatewayManager.removeFromGateway(api, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " deleted from gateway";
@@ -4934,22 +4944,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
         return apimRegistryService
                 .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION);
-    }
-    
-    protected Map<String, String> publishToGateway(API api, String tenantDomain) throws APIManagementException {
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        APITemplateBuilder builder = null;
-        try {
-            builder = getAPITemplateBuilder(api);
-        } catch (Exception e) {
-            handleException("Error while publishing to Gateway ", e);
-        }
-        return gatewayManager.publishToGateway(api, builder, tenantDomain);
-    }
-    
-    protected Map<String, String> removeFromGateway(API api, String tenantDomain) {
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        return gatewayManager.removeFromGateway(api, tenantDomain);
     }
     
     protected int getTenantId(String tenantDomain) throws UserStoreException {

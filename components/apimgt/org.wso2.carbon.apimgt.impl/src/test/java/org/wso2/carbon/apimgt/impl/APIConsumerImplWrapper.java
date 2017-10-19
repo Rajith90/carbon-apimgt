@@ -21,6 +21,9 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dao.test.TestTenantManager;
 import org.wso2.carbon.apimgt.impl.workflow.APIStateChangeSimpleWorkflowExecutor;
@@ -97,5 +100,15 @@ public class APIConsumerImplWrapper extends APIConsumerImpl {
     }
 
     protected void setUsernameToThreadLocalCarbonContext(String username) {
+    }
+
+    public API getAPI(APIIdentifier identifier) throws APIManagementException {
+        API api = new API(identifier);
+        if("published_api".equals(identifier.getApiName())) {
+            api.setStatus(APIStatus.PUBLISHED);
+        } else {
+            api.setStatus(APIStatus.CREATED);
+        }
+        return  api;
     }
 }
