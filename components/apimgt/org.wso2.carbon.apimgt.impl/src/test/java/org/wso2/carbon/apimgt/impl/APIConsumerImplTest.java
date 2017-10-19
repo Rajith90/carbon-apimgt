@@ -357,7 +357,7 @@ public class APIConsumerImplTest {
         resource.setContent("testContent");
         Mockito.when(userRegistry1.resourceExists(Mockito.anyString())).thenReturn(true);
         Mockito.when(userRegistry1.get(Mockito.anyString())).thenReturn(resource);
-        apiConsumer.getTagsWithAttributes("testDomain");
+        assertNotNull(apiConsumer.getTagsWithAttributes("testDomain"));
     }
 
 
