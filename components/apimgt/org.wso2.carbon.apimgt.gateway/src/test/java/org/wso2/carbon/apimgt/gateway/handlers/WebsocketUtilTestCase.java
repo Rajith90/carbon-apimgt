@@ -143,8 +143,14 @@ public class WebsocketUtilTestCase {
     public void testGetAccessTokenCacheKey() {
         Assert.assertEquals("235erwytgtkyb:/ishara", WebsocketUtil.getAccessTokenCacheKey(cachedToken,apiContext ));
     }
+
     @Test
-    public void testinitParams() {
+    public void testInitParams() {
+        Assert.assertEquals("235erwytgtkyb:/ishara", WebsocketUtil.getAccessTokenCacheKey(cachedToken,apiContext ));
+    }
+
+    @Test
+    public void testIsRemoveOAuthHeadersFromOutMessage() {
         Assert.assertEquals("235erwytgtkyb:/ishara", WebsocketUtil.getAccessTokenCacheKey(cachedToken,apiContext ));
     }
 }
