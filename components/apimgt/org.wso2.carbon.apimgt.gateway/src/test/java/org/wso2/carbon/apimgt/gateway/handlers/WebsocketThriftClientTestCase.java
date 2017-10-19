@@ -34,14 +34,9 @@ import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityException;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
-import org.wso2.carbon.apimgt.impl.clients.Util;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
-import org.wso2.carbon.apimgt.keymgt.stub.validator.APIKeyValidationServiceAPIKeyMgtException;
-import org.wso2.carbon.apimgt.keymgt.stub.validator.APIKeyValidationServiceAPIManagementException;
 import org.wso2.carbon.apimgt.keymgt.stub.validator.APIKeyValidationServiceStub;
 import org.wso2.carbon.utils.CarbonUtils;
-
-import java.rmi.RemoteException;
 
 import static junit.framework.Assert.fail;
 
@@ -53,7 +48,7 @@ import static junit.framework.Assert.fail;
 public class WebsocketThriftClientTestCase {
 
     @Before
-    public void setup(){
+    public void setup() {
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
         APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
@@ -89,31 +84,23 @@ public class WebsocketThriftClientTestCase {
 
     @Test
     public void testGetAPIKeyData() throws Exception {
-        try {
-            WebsocketWSClient websocketWSClient = new WebsocketWSClient();
-            ServiceClient serviceClient = Mockito.mock(ServiceClient.class);
-            PowerMockito.mockStatic(CarbonUtils.class);
-            org.wso2.carbon.apimgt.impl.dto.xsd.APIKeyValidationInfoDTO apiKeyValidationInfoDTO1 =
-                    Mockito.mock(org.wso2.carbon.apimgt.impl.dto.xsd.APIKeyValidationInfoDTO.class);
-            Mockito.when(apiKeyValidationInfoDTO1.getThrottlingDataList()).thenReturn(new String[]{""});
-            Mockito.when(apiKeyValidationInfoDTO1.getAuthorized()).thenReturn(true);
-            APIKeyValidationServiceStub apiKeyValidationServiceStub = Mockito.mock(APIKeyValidationServiceStub.class);
-            Mockito.when(apiKeyValidationServiceStub._getServiceClient()).thenReturn(serviceClient);
-            PowerMockito.doNothing().when(CarbonUtils.class, "setBasicAccessSecurityHeaders", "","",serviceClient);
+        WebsocketWSClient websocketWSClient = new WebsocketWSClient();
+        ServiceClient serviceClient = Mockito.mock(ServiceClient.class);
+        PowerMockito.mockStatic(CarbonUtils.class);
+        org.wso2.carbon.apimgt.impl.dto.xsd.APIKeyValidationInfoDTO apiKeyValidationInfoDTO1 =
+                Mockito.mock(org.wso2.carbon.apimgt.impl.dto.xsd.APIKeyValidationInfoDTO.class);
+        Mockito.when(apiKeyValidationInfoDTO1.getThrottlingDataList()).thenReturn(new String[]{""});
+        Mockito.when(apiKeyValidationInfoDTO1.getAuthorized()).thenReturn(true);
+        APIKeyValidationServiceStub apiKeyValidationServiceStub = Mockito.mock(APIKeyValidationServiceStub.class);
+        Mockito.when(apiKeyValidationServiceStub._getServiceClient()).thenReturn(serviceClient);
+        PowerMockito.doNothing().when(CarbonUtils.class, "setBasicAccessSecurityHeaders", "", "", serviceClient);
 
-            websocketWSClient.setKeyValidationServiceStub(apiKeyValidationServiceStub);
-            Mockito.when(apiKeyValidationServiceStub.validateKeyforHandshake("/ishara", "1.0",
-                    "PhoneVerify")).thenReturn(apiKeyValidationInfoDTO1);
-            try {
-                ConfigurationContext ctx = ConfigurationContextFactory
-                        .createConfigurationContextFromFileSystem(null, null);
-                APIKeyValidationInfoDTO apiKeyValidationInfoDTOActual = websocketWSClient.getAPIKeyData("/ishara", "1.0", "PhoneVerify");
-                Assert.assertTrue(apiKeyValidationInfoDTOActual.isAuthorized());
-            } catch (AxisFault axisFault) {
-                fail("AxisFault is thrown when creating ConfigurationContext " + axisFault.getMessage());
-            }
-        } catch (APISecurityException e) {
-            fail("APISecurityException is thrown " + e.getStackTrace());
-        }
+        websocketWSClient.setKeyValidationServiceStub(apiKeyValidationServiceStub);
+        Mockito.when(apiKeyValidationServiceStub.validateKeyforHandshake("/ishara", "1.0",
+                "PhoneVerify")).thenReturn(apiKeyValidationInfoDTO1);
+        ConfigurationContext ctx = ConfigurationContextFactory
+                .createConfigurationContextFromFileSystem(null, null);
+        APIKeyValidationInfoDTO apiKeyValidationInfoDTOActual = websocketWSClient.getAPIKeyData("/ishara", "1.0", "PhoneVerify");
+        Assert.assertTrue(apiKeyValidationInfoDTOActual.isAuthorized());
     }
 }
