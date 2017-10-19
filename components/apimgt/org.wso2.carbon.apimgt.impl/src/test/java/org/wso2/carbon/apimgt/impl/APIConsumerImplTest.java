@@ -309,6 +309,19 @@ public class APIConsumerImplTest {
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10));
         assertNotNull(apiConsumer.getAllPaginatedAPIs(MultitenantConstants
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10));
+
+        //artifact manager null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(null);
+        assertNotNull(apiConsumer.getAllPaginatedAPIs(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10));
+
+        //generic artifact null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(artifactManager);
+        Mockito.when(artifactManager.findGenericArtifacts(Mockito.anyMap())).thenReturn(null);
+        assertNotNull(apiConsumer.getAllPaginatedAPIs(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10));
     }
 
     @Test
@@ -343,6 +356,19 @@ public class APIConsumerImplTest {
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10, "testStatus", false));
         assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10, "testStatus", true));
+
+        //artifact manager null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(null);
+        assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10, "testStatus", true));
+
+        //generic artifact null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(artifactManager);
+        Mockito.when(artifactManager.findGenericArtifacts(Mockito.anyMap())).thenReturn(null);
+        assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10, "testStatus", true));
     }
 
     @Test
@@ -372,6 +398,20 @@ public class APIConsumerImplTest {
         Mockito.when(userRegistry.getTags(artifactPath)).thenReturn(tags);
         assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10, new String[]{"testStatus"}, false));
+        assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10, new String[]{"testStatus"}, true));
+
+        //artifact manager null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(null);
+        assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
+                .SUPER_TENANT_DOMAIN_NAME, 0, 10, new String[]{"testStatus"}, true));
+
+        //generic artifact null path
+        PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
+                thenReturn(artifactManager);
+        Mockito.when(GovernanceUtils.findGovernanceArtifacts(Mockito.anyString(),(UserRegistry)Mockito.anyObject(),
+                Mockito.anyString())).thenReturn(null);
         assertNotNull(apiConsumer.getAllPaginatedAPIsByStatus(MultitenantConstants
                 .SUPER_TENANT_DOMAIN_NAME, 0, 10, new String[]{"testStatus"}, true));
     }
