@@ -31,67 +31,64 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ServiceReferenceHolder.class)
-public class StandaloneAuthorizationManagerClientTestCase {
+@RunWith(PowerMockRunner.class) @PrepareForTest(ServiceReferenceHolder.class) public class StandaloneAuthorizationManagerClientTestCase {
 
     private ServiceReferenceHolder serviceReferenceHolder;
-    private UserRealm userRealm= Mockito.mock(UserRealm.class);
+    private UserRealm userRealm = Mockito.mock(UserRealm.class);
     private UserStoreManager userStoreManager = Mockito.mock(UserStoreManager.class);
     private AuthorizationManager authorizationManager = Mockito.mock(AuthorizationManager.class);
 
-    @Before
-    public void setup() throws Exception{
-        ServiceReferenceHolderMockCreator serviceReferenceHolderMockCreator = new ServiceReferenceHolderMockCreator(4444);
+    @Before public void setup() throws Exception {
+        ServiceReferenceHolderMockCreator serviceReferenceHolderMockCreator = new ServiceReferenceHolderMockCreator(
+                4444);
         serviceReferenceHolder = serviceReferenceHolderMockCreator.getMock();
         Mockito.when(serviceReferenceHolder.getUserRealm()).thenReturn(userRealm);
         Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
         Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
     }
 
-    @Test
-    public void testGetRoleNames() throws Exception {
+    @Test public void testGetRoleNames() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         standaloneAuthorizationManagerClient.getRoleNames();
         Mockito.verify(userStoreManager, Mockito.times(1)).getRoleNames();
     }
 
-    @Test(expected = APIManagementException.class)
-    public void testGetRoleNamesException() throws Exception {
+    @Test(expected = APIManagementException.class) public void testGetRoleNamesException() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         Mockito.when(userStoreManager.getRoleNames()).thenThrow(new UserStoreException());
         standaloneAuthorizationManagerClient.getRoleNames();
     }
 
-    @Test
-    public void testGetRolesOfUser() throws Exception {
+    @Test public void testGetRolesOfUser() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         standaloneAuthorizationManagerClient.getRolesOfUser("john");
         Mockito.verify(userStoreManager, Mockito.times(1)).getRoleListOfUser("john");
     }
 
-    @Test(expected = APIManagementException.class)
-    public void testGetRolesOfUserException() throws Exception {
+    @Test(expected = APIManagementException.class) public void testGetRolesOfUserException() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         Mockito.when(userStoreManager.getRoleListOfUser("john")).thenThrow(new UserStoreException());
         standaloneAuthorizationManagerClient.getRolesOfUser("john");
 
     }
 
-    @Test
-    public void testIsUserAuthorized() throws Exception {
+    @Test public void testIsUserAuthorized() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         standaloneAuthorizationManagerClient.isUserAuthorized("john", "create");
         Mockito.verify(authorizationManager, Mockito.times(1))
                 .isUserAuthorized("john", "create", CarbonConstants.UI_PERMISSION_ACTION);
     }
 
-    @Test(expected = APIManagementException.class)
-    public void testIsUserAuthorizedException() throws Exception {
+    @Test(expected = APIManagementException.class) public void testIsUserAuthorizedException() throws Exception {
         StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
         Mockito.when(authorizationManager.isUserAuthorized("john", "create", CarbonConstants.UI_PERMISSION_ACTION))
                 .thenThrow(new UserStoreException());
         standaloneAuthorizationManagerClient.isUserAuthorized("john", "create");
+    }
 
+    @Test(expected = IllegalStateException.class)
+    public void testStandaloneAuthorizationManagerClientException() throws Exception {
+        Mockito.when(userRealm.getAuthorizationManager()).thenThrow(new UserStoreException());
+        StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
     }
 }
