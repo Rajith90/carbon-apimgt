@@ -1910,7 +1910,9 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 }
             }
         } catch (APIManagementException e) {
-            handleException("Failed to get APIs of " + subscriber.getName() + " under application " + applicationName, e);
+            String msg = "Failed to get APIs of " + subscriber.getName() + " under application " + applicationName;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
         return subscribedAPIs;
     }
@@ -1925,9 +1927,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         try {
             return apiMgtDAO.getAPIByConsumerKey(accessToken);
         } catch (APIManagementException e) {
-            handleException("Error while obtaining API from API key", e);
+            String msg = "Error while obtaining API from API key";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
-        return null;
     }
 
     @Override
@@ -2041,9 +2044,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         try {
             if (providerTenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME
                     .equals(providerTenantDomain)) {
-                PrivilegedCarbonContext.startTenantFlow();
-                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(providerTenantDomain, true);
-                isTenantFlowStarted = true;
+                isTenantFlowStarted = startTenantFlowForTenantDomain(providerTenantDomain);
             }
 
             API api = getAPI(identifier);
@@ -2105,7 +2106,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         } catch (WorkflowException e) {
             String errorMsg = "Could not execute Workflow, " + WorkflowConstants.WF_TYPE_AM_SUBSCRIPTION_DELETION +
                               " for apiID " + identifier.getApiName();
-            handleException(errorMsg, e);
+            log.error(errorMsg, e);
+            throw new APIManagementException(errorMsg, e);
         } finally {
             if (isTenantFlowStarted) {
                 endTenantFlow();
