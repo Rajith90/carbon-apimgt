@@ -20,8 +20,12 @@ package org.wso2.carbon.apimgt.gateway.utils;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.wso2.carbon.sequences.stub.types.SequenceAdminServiceStub;
+
+import static junit.framework.Assert.fail;
 
 /**
  * Test class for SequenceAdminServiceClient
@@ -30,7 +34,7 @@ public class SequenceAdminServiceClientTestCase {
     OMElement omElement = Mockito.mock(OMElement.class);
 
     @Test
-    public void testAddSequence() {
+    public void testAddSequenceAxisFault() {
         SequenceAdminServiceClient sequenceAdminServiceClient = null;
         try {
             sequenceAdminServiceClient = new SequenceAdminServiceClient();
@@ -51,7 +55,7 @@ public class SequenceAdminServiceClientTestCase {
     }
 
     @Test
-    public void testDeleteSequence() {
+    public void testDeleteSequenceAxisFault() {
         SequenceAdminServiceClient sequenceAdminServiceClient = null;
         try {
             sequenceAdminServiceClient = new SequenceAdminServiceClient();
@@ -72,7 +76,7 @@ public class SequenceAdminServiceClientTestCase {
     }
 
     @Test
-    public void testGetSequence() {
+    public void testGetSequenceAxisFault() {
         SequenceAdminServiceClient sequenceAdminServiceClient = null;
         try {
             sequenceAdminServiceClient = new SequenceAdminServiceClient();
@@ -93,7 +97,7 @@ public class SequenceAdminServiceClientTestCase {
     }
 
     @Test
-    public void testIsExsistingSequence() {
+    public void testIsExsistingSequenceAxisFault() {
         SequenceAdminServiceClient sequenceAdminServiceClient = null;
         try {
             sequenceAdminServiceClient = new SequenceAdminServiceClient();
@@ -113,4 +117,106 @@ public class SequenceAdminServiceClientTestCase {
         }
     }
 
+
+    @Test
+    public void testAddSequence() {
+        SequenceAdminServiceClient sequenceAdminServiceClient = null;
+        try {
+            sequenceAdminServiceClient = new SequenceAdminServiceClient();
+            SequenceAdminServiceStub sequenceAdminServiceStub = Mockito.mock(SequenceAdminServiceStub.class);
+            Mockito.doNothing().when(sequenceAdminServiceStub).addSequence(omElement);
+            sequenceAdminServiceClient.setSequenceAdminStub(sequenceAdminServiceStub);
+        } catch (Exception e) {
+            fail("Exception while testing addSequence");
+        }
+        try {
+            sequenceAdminServiceClient.addSequence(omElement);
+        } catch (AxisFault e) {
+            fail("AxisFault while testing addSequence");
+        }
+
+        try {
+            sequenceAdminServiceClient.addSequenceForTenant(omElement, "abc.com");
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing addSequenceForTenant");
+        }
+    }
+
+    @Test
+    public void testDeleteSequence() {
+        SequenceAdminServiceClient sequenceAdminServiceClient = null;
+        try {
+            sequenceAdminServiceClient = new SequenceAdminServiceClient();
+            SequenceAdminServiceStub sequenceAdminServiceStub = Mockito.mock(SequenceAdminServiceStub.class);
+            Mockito.doNothing().when(sequenceAdminServiceStub).deleteSequence("xyz");
+            sequenceAdminServiceClient.setSequenceAdminStub(sequenceAdminServiceStub);
+        } catch (Exception e) {
+            fail("Exception while testing deleteSequence");
+        }
+        try {
+            sequenceAdminServiceClient.deleteSequence("xyz");
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing deleteSequence");
+        }
+
+        try {
+            sequenceAdminServiceClient.deleteSequenceForTenant("xyz", "abc.com");
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing deleteSequenceForTenant");
+        }
+    }
+
+    @Test
+    public void testGetSequence() {
+        SequenceAdminServiceClient sequenceAdminServiceClient = null;
+        try {
+            sequenceAdminServiceClient = new SequenceAdminServiceClient();
+            SequenceAdminServiceStub sequenceAdminServiceStub = Mockito.mock(SequenceAdminServiceStub.class);
+            OMElement omElement = Mockito.mock(OMElement.class);
+            Mockito.when(sequenceAdminServiceStub.getSequence("xyz")).thenReturn(omElement);
+            Mockito.when(sequenceAdminServiceStub.getSequenceForTenant("xyz", "abc.com"))
+                    .thenReturn(omElement);
+            sequenceAdminServiceClient.setSequenceAdminStub(sequenceAdminServiceStub);
+        } catch (Exception e) {
+            fail("Exception while testing getSequence");
+        }
+        try {
+            Assert.assertNotNull(sequenceAdminServiceClient.getSequence("xyz"));
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing getSequence");
+        }
+
+        try {
+            Assert.assertNotNull(sequenceAdminServiceClient.getSequenceForTenant("xyz",
+                    "abc.com"));
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing getSequenceForTenant");
+        }
+    }
+
+    @Test
+    public void testIsExsistingSequence() {
+        SequenceAdminServiceClient sequenceAdminServiceClient = null;
+        try {
+            sequenceAdminServiceClient = new SequenceAdminServiceClient();
+            SequenceAdminServiceStub sequenceAdminServiceStub = Mockito.mock(SequenceAdminServiceStub.class);
+            Mockito.when(sequenceAdminServiceStub.isExistingSequence("xyz")).thenReturn(true);
+            Mockito.when(sequenceAdminServiceStub.isExistingSequenceForTenant("xyz", "abc.com"))
+                    .thenReturn(true);
+            sequenceAdminServiceClient.setSequenceAdminStub(sequenceAdminServiceStub);
+        } catch (Exception axisFault) {
+            // test for axisFault
+        }
+        try {
+            Assert.assertTrue(sequenceAdminServiceClient.isExistingSequence("xyz"));
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing getSequence");
+        }
+
+        try {
+            Assert.assertTrue(sequenceAdminServiceClient.isExistingSequenceForTenant("xyz", "abc.com"));
+        } catch (AxisFault axisFault) {
+            fail("AxisFault while testing getSequenceForTenant");
+        }
+    }
 }
