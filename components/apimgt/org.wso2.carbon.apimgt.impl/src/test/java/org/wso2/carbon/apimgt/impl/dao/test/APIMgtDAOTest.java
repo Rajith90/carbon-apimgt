@@ -35,16 +35,20 @@ import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
+import org.wso2.carbon.apimgt.api.model.APIStore;
 import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
 import org.wso2.carbon.apimgt.api.model.BlockConditionsDTO;
+import org.wso2.carbon.apimgt.api.model.Comment;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
 import org.wso2.carbon.apimgt.api.model.LifeCycleEvent;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
 import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
+import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.BandwidthLimit;
@@ -71,14 +75,18 @@ import org.wso2.carbon.apimgt.impl.dto.APIInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationRegistrationWorkflowDTO;
+import org.wso2.carbon.apimgt.impl.dto.ApplicationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.TierPermissionDTO;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.utils.APIMgtDBUtil;
+import org.wso2.carbon.apimgt.impl.workflow.WorkflowConstants;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowStatus;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,8 +96,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import javax.naming.Context;
@@ -105,7 +116,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( {KeyManagerHolder.class})
+@PrepareForTest( {KeyManagerHolder.class, MultitenantUtils.class, IdentityUtil.class})
 public class APIMgtDAOTest {
 
     public static ApiMgtDAO apiMgtDAO;
@@ -171,22 +182,23 @@ public class APIMgtDAOTest {
         }
     }
 
-   /* public void testDataSource(){
-        Context ctx = null;
-        try {
-            ctx = new InitialContext();
-            DataSource dataSource = (DataSource) ctx.lookup("java:/comp/env/jdbc/WSO2AM_DB");
-            Assert.assertNotNull(dataSource);
-        } catch (NamingException e) {
-            e.printStackTrace();
-        }
-    }*/
-   @Test
+    /* public void testDataSource(){
+         Context ctx = null;
+         try {
+             ctx = new InitialContext();
+             DataSource dataSource = (DataSource) ctx.lookup("java:/comp/env/jdbc/WSO2AM_DB");
+             Assert.assertNotNull(dataSource);
+         } catch (NamingException e) {
+             e.printStackTrace();
+         }
+     }*/
+    @Test
     public void testGetSubscribersOfProvider() throws Exception {
         Set<Subscriber> subscribers = apiMgtDAO.getInstance().getSubscribersOfProvider("SUMEDHA");
         assertNotNull(subscribers);
         assertTrue(subscribers.size() > 0);
     }
+
     @Test
     public void testAccessKeyForAPI() throws Exception {
         APIInfoDTO apiInfoDTO = new APIInfoDTO();
@@ -197,12 +209,14 @@ public class APIMgtDAOTest {
         assertNotNull(accessKey);
         assertTrue(accessKey.length() > 0);
     }
+
     @Test
     public void testGetSubscribedAPIsOfUser() throws Exception {
         APIInfoDTO[] apis = apiMgtDAO.getSubscribedAPIsOfUser("SUMEDHA");
         assertNotNull(apis);
         assertTrue(apis.length > 1);
     }
+
     @Test
     public void testGetSubscribedUsersForAPI() throws Exception {
         APIInfoDTO apiInfoDTO = new APIInfoDTO();
@@ -213,6 +227,7 @@ public class APIMgtDAOTest {
         assertNotNull(apiKeyInfoDTO);
         assertTrue(apiKeyInfoDTO.length > 1);
     }
+
     @Test
     public void testGetSubscriber() throws Exception {
         Subscriber subscriber = apiMgtDAO.getInstance().getSubscriber("SUMEDHA");
@@ -231,12 +246,14 @@ public class APIMgtDAOTest {
         isSubscribed = apiMgtDAO.isSubscribed(apiIdentifier, "UDAYANGA");
         assertFalse(isSubscribed);
     }
+
     @Test
     public void testGetAllAPIUsageByProvider() throws Exception {
         UserApplicationAPIUsage[] userApplicationAPIUsages = apiMgtDAO.getAllAPIUsageByProvider("SUMEDHA");
         assertNotNull(userApplicationAPIUsages);
 
     }
+
     @Test
     public void testAddSubscription() throws Exception {
         APIIdentifier apiIdentifier = new APIIdentifier("SUMEDHA", "API1", "V1.0.0");
@@ -262,6 +279,7 @@ public class APIMgtDAOTest {
         assertEquals(lhs.getCallbackUrl(), rhs.getCallbackUrl());
 
     }
+
     @Test
     public void testAddGetSubscriber() throws Exception {
         Subscriber subscriber1 = new Subscriber("LA_F");
@@ -273,6 +291,7 @@ public class APIMgtDAOTest {
         Subscriber subscriber2 = apiMgtDAO.getSubscriber(subscriber1.getId());
         this.checkSubscribersEqual(subscriber1, subscriber2);
     }
+
     @Test
     public void testAddGetSubscriberWithGroupId() throws Exception {
         Subscriber subscriber1 = new Subscriber("LA_F_GROUPID");
@@ -284,6 +303,7 @@ public class APIMgtDAOTest {
         Subscriber subscriber2 = apiMgtDAO.getSubscriber(subscriber1.getId());
         this.checkSubscribersEqual(subscriber1, subscriber2);
     }
+
     @Test
     public void testAddGetSubscriberWithNullGroupId() throws Exception {
         Subscriber subscriber1 = new Subscriber("LA_F2_GROUPID");
@@ -295,6 +315,7 @@ public class APIMgtDAOTest {
         Subscriber subscriber2 = apiMgtDAO.getSubscriber(subscriber1.getId());
         this.checkSubscribersEqual(subscriber1, subscriber2);
     }
+
     @Test
     public void testUpdateGetSubscriber() throws Exception {
         Subscriber subscriber1 = new Subscriber("LA_F2");
@@ -310,6 +331,7 @@ public class APIMgtDAOTest {
         Subscriber subscriber2 = apiMgtDAO.getSubscriber(subscriber1.getId());
         this.checkSubscribersEqual(subscriber1, subscriber2);
     }
+
     @Test
     public void testLifeCycleEvents() throws Exception {
         APIIdentifier apiId = new APIIdentifier("hiranya", "WSO2Earth", "1.0.0");
@@ -332,6 +354,7 @@ public class APIMgtDAOTest {
         events = apiMgtDAO.getLifeCycleEvents(apiId);
         assertEquals(3, events.size());
     }
+
     @Test
     public void testAddGetApplicationByNameGroupIdNull() throws Exception {
         Subscriber subscriber = new Subscriber("LA_F_GROUP_ID_NULL");
@@ -342,11 +365,25 @@ public class APIMgtDAOTest {
         Application application = new Application("testApplication", subscriber);
         int applicationId = apiMgtDAO.addApplication(application, subscriber.getName());
         application.setId(applicationId);
+        ApplicationWorkflowDTO appWFDto = new ApplicationWorkflowDTO();
+        appWFDto.setApplication(application);
+        appWFDto.setExternalWorkflowReference(UUID.randomUUID().toString());
+        appWFDto.setWorkflowReference(String.valueOf(applicationId));
+        appWFDto.setWorkflowType(WorkflowConstants.WF_TYPE_AM_APPLICATION_CREATION);
+        appWFDto.setStatus(WorkflowStatus.CREATED);
+        appWFDto.setTenantDomain("carbon.super");
+        appWFDto.setTenantId(-1234);
+        appWFDto.setUserName(subscriber.getName());
+        appWFDto.setCreatedTime(System.currentTimeMillis());
+        apiMgtDAO.addWorkflowEntry(appWFDto);
+        assertEquals(apiMgtDAO.getExternalWorkflowReferenceByApplicationID(applicationId), appWFDto
+                .getExternalWorkflowReference());
         assertTrue(applicationId > 0);
         this.checkApplicationsEqual(application, apiMgtDAO.getApplicationByName("testApplication", subscriber.getName
                 (), null));
 
     }
+
     @Test
     public void testAddGetApplicationByNameWithGroupId() throws Exception {
         Subscriber subscriber = new Subscriber("LA_F_APP");
@@ -363,6 +400,7 @@ public class APIMgtDAOTest {
                 .getName(), "org1"));
 
     }
+
     @Test
     public void testAddGetApplicationByNameWithUserNameNull() throws Exception {
         Subscriber subscriber = new Subscriber("LA_F_APP2");
@@ -379,6 +417,7 @@ public class APIMgtDAOTest {
 
     }
 
+    @Test
     public void testAddGetApplicationByNameWithUserNameNullGroupIdNull() throws Exception {
         Subscriber subscriber = new Subscriber("LA_F_APP_UN_GROUP_ID_NULL");
         subscriber.setEmail("laf@wso2.com");
@@ -393,6 +432,7 @@ public class APIMgtDAOTest {
         assertNull(apiMgtDAO.getApplicationByName("testApplication2", null, null));
 
     }
+
     @Test
     public void testKeyForwardCompatibility() throws Exception {
         Set<APIIdentifier> apiSet = apiMgtDAO.getAPIByConsumerKey("SSDCHEJJ-AWUIS-232");
@@ -433,21 +473,25 @@ public class APIMgtDAOTest {
             assertEquals("V1.0.0", apiId.getVersion());
         }
     }
+
     @Test
     public void testInsertApplicationPolicy() throws APIManagementException {
         String policyName = "TestInsertAppPolicy";
         apiMgtDAO.addApplicationPolicy((ApplicationPolicy) getApplicationPolicy(policyName));
     }
+
     @Test
     public void testInsertSubscriptionPolicy() throws APIManagementException {
         String policyName = "TestInsertSubPolicy";
         apiMgtDAO.addSubscriptionPolicy((SubscriptionPolicy) getSubscriptionPolicy(policyName));
     }
+
     @Test
     public void testInsertAPIPolicy() throws APIManagementException {
         String policyName = "TestInsertAPIPolicy";
         apiMgtDAO.addAPIPolicy((APIPolicy) getPolicyAPILevelPerUser(policyName));
     }
+
     @Test
     public void testUpdateApplicationPolicy() throws APIManagementException {
         String policyName = "TestUpdateAppPolicy";
@@ -457,6 +501,7 @@ public class APIMgtDAOTest {
         policy.setDescription("Updated application description");
         apiMgtDAO.updateApplicationPolicy(policy);
     }
+
     @Test
     public void testUpdateSubscriptionPolicy() throws APIManagementException {
         String policyName = "TestUpdateSubPolicy";
@@ -466,12 +511,13 @@ public class APIMgtDAOTest {
         policy.setDescription("Updated subscription description");
         apiMgtDAO.updateSubscriptionPolicy(policy);
     }
+
     @Test
     public void testUpdateAPIPolicy() throws APIManagementException {
         String policyName = "TestUpdateApiPolicy";
         APIPolicy policy = (APIPolicy) getPolicyAPILevelPerUser(policyName);
         apiMgtDAO.addAPIPolicy(policy);
-        policy = apiMgtDAO.getAPIPolicy(policyName,-1234);
+        policy = apiMgtDAO.getAPIPolicy(policyName, -1234);
         policy.setDescription("New Description");
 
         ArrayList<Pipeline> pipelines = new ArrayList<Pipeline>();
@@ -523,11 +569,11 @@ public class APIMgtDAOTest {
 
         policy.setPipelines(pipelines);
         apiMgtDAO.updateAPIPolicy(policy);
-        APIPolicy apiPolicy = apiMgtDAO.getAPIPolicy(policyName,-1234);
+        APIPolicy apiPolicy = apiMgtDAO.getAPIPolicy(policyName, -1234);
         assertNotNull(apiPolicy);
         List<Pipeline> pipelineList = apiPolicy.getPipelines();
         assertNotNull(pipelineList);
-        assertEquals(pipelineList.size(),pipelines.size());
+        assertEquals(pipelineList.size(), pipelines.size());
     }
 
     @Test
@@ -889,6 +935,8 @@ public class APIMgtDAOTest {
         api1.setContextTemplate("/testCreateApplicationRegistrationEntry1/{version}");
         apiMgtDAO.addAPI(api1, -1234);
         apiMgtDAO.createApplicationRegistrationEntry(applicationRegistrationWorkflowDTO, false);
+        assertEquals(apiMgtDAO.getRegistrationApprovalState(application.getId(), "PRODUCTION"), WorkflowStatus
+                .CREATED.toString());
         ApplicationRegistrationWorkflowDTO retrievedApplicationRegistrationWorkflowDTO = new
                 ApplicationRegistrationWorkflowDTO();
         retrievedApplicationRegistrationWorkflowDTO.setExternalWorkflowReference(applicationRegistrationWorkflowDTO
@@ -968,6 +1016,7 @@ public class APIMgtDAOTest {
         apiId.setTier(subscriptionPolicy.getPolicyName());
         int subsId = apiMgtDAO.addSubscription(apiId, api.getContext(), application.getId(), APIConstants
                 .SubscriptionStatus.ON_HOLD, subscriber.getName());
+        assertTrue(apiMgtDAO.getApplicationsByTier(subscriptionPolicy.getPolicyName()).length > 0);
         String subStatus = apiMgtDAO.getSubscriptionStatusById(subsId);
         assertEquals(subStatus, APIConstants.SubscriptionStatus.ON_HOLD);
         SubscribedAPI subscribedAPI = apiMgtDAO.getSubscriptionById(subsId);
@@ -975,16 +1024,36 @@ public class APIMgtDAOTest {
         String clientIdSandbox = UUID.randomUUID().toString();
         apiMgtDAO.createApplicationKeyTypeMappingForManualClients(APIConstants.API_KEY_TYPE_PRODUCTION, application
                 .getName(), subscriber.getName(), clientIdProduction);
+        assertTrue(apiMgtDAO.getConsumerKeysWithMode(application.getId(), "MAPPED").length > 0);
+        apiMgtDAO.updateApplicationRegistration(APIConstants.AppRegistrationStatus.REGISTRATION_COMPLETED,
+                APIConstants.API_KEY_TYPE_PRODUCTION, application.getId());
+        OAuthApplicationInfo oAuthApplicationInfoToUpdate = new OAuthApplicationInfo();
+        oAuthApplicationInfoToUpdate.setClientId(UUID.randomUUID().toString());
+        application.addOAuthApp(APIConstants.API_KEY_TYPE_PRODUCTION, oAuthApplicationInfoToUpdate);
+        apiMgtDAO.updateApplicationKeyTypeMapping(application, APIConstants.API_KEY_TYPE_PRODUCTION);
         apiMgtDAO.createApplicationKeyTypeMappingForManualClients(APIConstants.API_KEY_TYPE_SANDBOX, application
                 .getName(), subscriber.getName(), clientIdSandbox);
+        assertTrue(apiMgtDAO.getConsumerKeysOfApplication(application.getId()).contains(clientIdSandbox));
+        assertTrue(apiMgtDAO.getConsumerKeysOfApplication(application.getId()).contains(oAuthApplicationInfoToUpdate
+                .getClientId()));
         int appIdProduction = insertConsumerApp(clientIdProduction, application.getName(), subscriber.getName());
         int appIdSandBox = insertConsumerApp(clientIdSandbox, application.getName(), subscriber.getName());
         String tokenProduction = UUID.randomUUID().toString();
         String tokenSandBox = UUID.randomUUID().toString();
         String tokenIdProduction = insertAccessTokenForApp(appIdProduction, subscriber.getName(), tokenProduction);
         String tokenIdSandbox = insertAccessTokenForApp(appIdSandBox, subscriber.getName(), tokenSandBox);
+        assertEquals(apiMgtDAO.getConsumerKeyForApplicationKeyType(application.getName(), subscriber.getName(),
+                APIConstants.API_KEY_TYPE_PRODUCTION, null), oAuthApplicationInfoToUpdate.getClientId());
+        Map<String, String> map = apiMgtDAO.getApplicationIdAndTokenTypeByConsumerKey(oAuthApplicationInfoToUpdate
+                .getClientId());
+        assertTrue(apiMgtDAO.getApplications(subscriber, null).length > 0);
+        assertTrue(map.size()==2);
         insertTokenScope(tokenIdProduction, "default");
         insertTokenScope(tokenIdSandbox, "default");
+        PowerMockito.mockStatic(IdentityUtil.class);
+        assertTrue(apiMgtDAO.getActiveTokensOfConsumerKey(clientIdProduction).contains(tokenProduction));
+        BDDMockito.given(IdentityUtil.extractDomainFromName(Mockito.anyString())).willReturn("primary");
+        assertTrue(apiMgtDAO.getActiveAccessTokensOfUser(subscriber.getName()).contains(tokenProduction));
         assertTrue(apiMgtDAO.getSubscriptionCount(subscriber, application.getName(), null) > 0);
         OAuthApplicationInfo oAuthApplicationInfo = new OAuthApplicationInfo();
         Mockito.when(keyManager.retrieveApplication(clientIdProduction)).thenReturn(oAuthApplicationInfo);
@@ -996,10 +1065,12 @@ public class APIMgtDAOTest {
         SubscribedAPI subscribedAPIFromUuid = apiMgtDAO.getSubscriptionByUUID(subscribedAPI.getUUID());
         assertEquals(subscribedAPIFromUuid.getSubCreatedStatus(), APIConstants.SubscriptionCreatedStatus.SUBSCRIBE);
         assertEquals(subscribedAPIFromUuid.getApiId(), apiId);
+        assertTrue(apiMgtDAO.getSubscribersOfAPI(apiId).size() > 0);
+        assertTrue(apiMgtDAO.getAPISubscriptionCountByAPI(apiId) > 0);
         assertEquals(subscribedAPIFromUuid.getApplication().getId(), application.getId());
         List<AccessTokenInfo> accessTokenInfoList = apiMgtDAO.getAccessTokenListForUser(subscriber.getName(),
                 application.getName());
-        assertTrue(accessTokenInfoList.size()==2);
+        assertTrue(accessTokenInfoList.size()> 0);
         apiMgtDAO.updateApplicationStatus(application.getId(), APIConstants.ApplicationStatus.APPLICATION_APPROVED);
         String status = apiMgtDAO.getApplicationStatus("testCreateApplicationRegistrationEntry",
                 "testCreateApplicationRegistrationEntry");
@@ -1028,6 +1099,16 @@ public class APIMgtDAOTest {
         apiMgtDAO.updateDefaultAPIPublishedVersion(apiId, APIStatus.PUBLISHED, APIStatus.CREATED);
         apiMgtDAO.removeAllSubscriptions(apiId);
         assertTrue(apiMgtDAO.getAPINamesMatchingContext(api.getContext()).size() > 0);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        BDDMockito.given(MultitenantUtils.getTenantDomain(subscriber.getName())).willReturn("carbon.super");
+        apiMgtDAO.addRating(apiId,3,subscriber.getName());
+        assertEquals(apiMgtDAO.getUserRating(apiId,subscriber.getName()),3);
+        assertTrue(apiMgtDAO.getAverageRating(apiId) == 3f);
+        apiMgtDAO.removeAPIRating(apiId, subscriber.getName());
+        apiMgtDAO.addComment(apiId,"text",subscriber.getName());
+        Comment[] comments = apiMgtDAO.getComments(apiId);
+        assertNotNull(comments);
+        assertEquals(comments[0].getText(),"text");
         apiMgtDAO.deleteAPI(apiId);
         apiMgtDAO.deleteApplication(application);
         apiMgtDAO.removeThrottlePolicy(PolicyConstants.POLICY_LEVEL_APP, "testCreateApplicationRegistrationEntry",
@@ -1063,6 +1144,10 @@ public class APIMgtDAOTest {
         SubscriptionPolicy[] subscriptionPolicies = apiMgtDAO.getSubscriptionPolicies(-1234);
         apiMgtDAO.updateThrottleTierPermissions(subscriptionPolicy.getPolicyName(), "allow", "internal/everyone",
                 -1234);
+        apiMgtDAO.updateTierPermissions(subscriptionPolicy.getPolicyName(), "allow", "internal/everyone", -1234);
+        assertTrue(apiMgtDAO.getTierPermission(subscriptionPolicy.getPolicyName(), -1234).getPermissionType().equals
+                ("allow"));
+        assertTrue(apiMgtDAO.getTierPermissions(-1234).size() > 0);
         Set<TierPermissionDTO> throttleTierPermissions = apiMgtDAO.getThrottleTierPermissions(-1234);
         for (TierPermissionDTO tierPermissionDTO : throttleTierPermissions) {
             if (subscriptionPolicy.getPolicyName().equals(tierPermissionDTO.getTierName())) {
@@ -1078,7 +1163,8 @@ public class APIMgtDAOTest {
         assertTrue(apiMgtDAO.getPolicyNames(PolicyConstants.POLICY_LEVEL_SUB, "admin").length > 0);
         assertTrue(apiMgtDAO.isPolicyDeployed(PolicyConstants.POLICY_LEVEL_SUB, -1234, subscriptionPolicy
                 .getPolicyName()));
-        assertTrue(apiMgtDAO.isPolicyExist(PolicyConstants.POLICY_LEVEL_SUB, -1234, subscriptionPolicy.getPolicyName()));
+        assertTrue(apiMgtDAO.isPolicyExist(PolicyConstants.POLICY_LEVEL_SUB, -1234, subscriptionPolicy.getPolicyName
+                ()));
         apiMgtDAO.removeThrottlePolicy(PolicyConstants.POLICY_LEVEL_SUB, "testAddAndGetSubscriptionPolicy", -1234);
     }
 
@@ -1179,16 +1265,73 @@ public class APIMgtDAOTest {
 
     @Test
     public void testAddUpdateDeleteAlert() throws Exception {
-        apiMgtDAO.addAlertTypesConfigInfo("admin","admin@abc.com,admin@cde.com","1,2,3","admin-dashboard");
-        apiMgtDAO.addAlertTypesConfigInfo("admin","admin@abc.com,admin@cde.com","1,2,3","publisher");
+        apiMgtDAO.addAlertTypesConfigInfo("admin", "admin@abc.com,admin@cde.com", "1,2,3", "admin-dashboard");
+        apiMgtDAO.addAlertTypesConfigInfo("admin", "admin@abc.com,admin@cde.com", "1,2,3", "publisher");
         List<String> retrievedEmailList = apiMgtDAO.retrieveSavedEmailList("admin", "admin-dashboard");
         assertTrue(retrievedEmailList.contains("admin@abc.com"));
         assertTrue(retrievedEmailList.contains("admin@cde.com"));
         assertTrue(apiMgtDAO.getAllAlertTypesByStakeHolder("admin-dashboard").size() > 0);
         assertTrue(apiMgtDAO.getAllAlertTypesByStakeHolder("publisher").size() > 0);
-        assertTrue(apiMgtDAO.getSavedAlertTypesIdsByUserNameAndStakeHolder("admin","admin-dashboard").contains(1));
-        apiMgtDAO.unSubscribeAlerts("admin","admin-dashboard");
-        apiMgtDAO.unSubscribeAlerts("admin","publisher");
+        assertTrue(apiMgtDAO.getSavedAlertTypesIdsByUserNameAndStakeHolder("admin", "admin-dashboard").contains(1));
+        apiMgtDAO.unSubscribeAlerts("admin", "admin-dashboard");
+        apiMgtDAO.unSubscribeAlerts("admin", "publisher");
+    }
+
+    @Test
+    public void testAddAndGetApi() throws Exception {
+        Subscriber subscriber = new Subscriber("testCreateApplicationRegistrationEntry");
+        subscriber.setTenantId(-1234);
+        subscriber.setEmail("abc@wso2.com");
+        subscriber.setSubscribedDate(new Date(System.currentTimeMillis()));
+        apiMgtDAO.addSubscriber(subscriber, null);
+        APIIdentifier apiId = new APIIdentifier("testAddAndGetApi", "testAddAndGetApi", "1.0.0");
+        API api = new API(apiId);
+        api.setContext("/testAddAndGetApi");
+        api.setContextTemplate("/testAddAndGetApi/{version}");
+        api.setUriTemplates(getUriTemplateSet());
+        api.setScopes(getScopes());
+        api.setStatus(APIStatus.PUBLISHED);
+        api.setAsDefaultVersion(true);
+        apiMgtDAO.addAPI(api, -1234);
+        assertTrue(apiMgtDAO.getAllAvailableContexts().contains("/testAddAndGetApi"));
+        apiMgtDAO.updateAPI(api, -1234);
+        Set<APIStore> apiStoreSet = new HashSet<APIStore>();
+        APIStore apiStore = new APIStore();
+        apiStore.setDisplayName("wso2");
+        apiStore.setEndpoint("http://localhost:9433/store");
+        apiStore.setName("wso2");
+        apiStore.setType("wso2");
+        apiStoreSet.add(apiStore);
+        assertTrue(apiMgtDAO.getResourceToScopeMapping(apiId).containsValue("read"));
+        apiMgtDAO.addAPIPolicy((APIPolicy) getPolicyAPILevelPerUser("testAddAndGetApi"));
+        assertTrue(apiMgtDAO.getAllURITemplatesAdvancedThrottle(api.getContext(),api.getId().getVersion()).size()>0);
+        assertTrue(apiMgtDAO.getAllURITemplatesOldThrottle(api.getContext(), api.getId().getVersion()).size() > 0);
+        assertTrue(!apiMgtDAO.getURITemplatesPerAPIAsString(apiId).isEmpty());
+        apiMgtDAO.addExternalAPIStoresDetails(apiId, apiStoreSet);
+        assertTrue(apiMgtDAO.isDuplicateContextTemplate(api.getContext()));
+        assertTrue(apiMgtDAO.isScopeKeyExist("read",-1234));
+        assertFalse(apiMgtDAO.isScopeKeyAssigned(apiId, "read", -1234));
+        assertEquals(apiMgtDAO.getLastPublishedAPIVersionFromAPIStore(apiId, "wso2"), apiId.getVersion());
+        assertTrue(apiMgtDAO.isApiNameExist(api.getId().getApiName(),"carbon.super"));
+        assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size() > 0);
+        apiMgtDAO.deleteExternalAPIStoresDetails(apiId, apiStoreSet);
+        Application application = new Application("testAddAndGetApi", subscriber);
+        int applicationId = apiMgtDAO.addApplication(application, subscriber.getName());
+        int subsId = apiMgtDAO.addSubscription(apiId, api.getContext(), applicationId, "UNBLOCKED", subscriber
+                .getName());
+        List<APIIdentifier> apiIdentifiers = new ArrayList<APIIdentifier>();
+        apiIdentifiers.add(apiId);
+        assertTrue(!apiMgtDAO.getScopesBySubscribedAPIs(apiIdentifiers).isEmpty());
+        String clientId = UUID.randomUUID().toString();
+        apiMgtDAO.createApplicationKeyTypeMappingForManualClients(APIConstants.API_KEY_TYPE_PRODUCTION, application
+                .getName(), subscriber.getName(), clientId);
+        assertTrue(!apiMgtDAO.getScopeRolesOfApplication(clientId).isEmpty());
+        apiMgtDAO.updateExternalAPIStoresDetails(apiId, Collections.<APIStore>emptySet());
+        assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size() == 0);
+        apiMgtDAO.removeSubscription(apiId,applicationId);
+        apiMgtDAO.deleteApplicationKeyMappingByConsumerKey(clientId);
+        apiMgtDAO.deleteAPI(apiId);
+        deleteSubscriber(subscriber.getId());
     }
 
     private void deleteSubscriber(int subscriberId) throws APIManagementException {
@@ -1271,10 +1414,10 @@ public class APIMgtDAOTest {
             String tokenId = UUID.randomUUID().toString();
             String query = "INSERT INTO IDN_OAUTH2_ACCESS_TOKEN (TOKEN_ID, ACCESS_TOKEN, REFRESH_TOKEN, " +
                     "CONSUMER_KEY_ID, AUTHZ_USER, TENANT_ID, USER_TYPE, GRANT_TYPE, VALIDITY_PERIOD, " +
-                    "REFRESH_TOKEN_VALIDITY_PERIOD, TOKEN_STATE,TIME_CREATED,REFRESH_TOKEN_TIME_CREATED) VALUES ('" +
-                    tokenId + "'," + " '" + token + "'," + " 'aa', ?,?, " +
-                    "'-1234','" + APIConstants.ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600'," +
-                    " '3600', 'ACTIVE','2017-10-17','2017-10-17')";
+                    "REFRESH_TOKEN_VALIDITY_PERIOD, TOKEN_STATE,TIME_CREATED,REFRESH_TOKEN_TIME_CREATED,USER_DOMAIN) " +
+                    "VALUES ('" + tokenId + "'," + " '" + token + "'," + " 'aa', ?,?, " + "'-1234','" + APIConstants
+                    .ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600','3600', 'ACTIVE'," +
+                    "'2017-10-17','2017-10-17','PRIMARY')";
             ps = conn.prepareStatement(query);
             ps.setInt(1, clientId);
             ps.setString(2, user);
@@ -1320,5 +1463,43 @@ public class APIMgtDAOTest {
         } finally {
             APIMgtDBUtil.closeAllConnections(ps, conn, rs);
         }
+    }
+
+    private Set<URITemplate> getUriTemplateSet() {
+        Set<URITemplate> uriTemplates = new HashSet<URITemplate>();
+        uriTemplates.add(getUriTemplate("/abc", "GET", "Any", "read"));
+        uriTemplates.add(getUriTemplate("/abc", "POST", "Any", null));
+        return uriTemplates;
+    }
+
+    private URITemplate getUriTemplate(String resourceString, String httpVerb, String authType, String scope) {
+        URITemplate uriTemplate = new URITemplate();
+        uriTemplate.setUriTemplate(resourceString);
+        uriTemplate.setHTTPVerb(httpVerb);
+        uriTemplate.setThrottlingTier("testAddAndGetApi");
+        uriTemplate.setAuthType(authType);
+        uriTemplate.setMediationScript("abcd defgh fff");
+        if (scope != null) {
+            Scope scope1 = new Scope();
+            scope1.setId(0);
+            scope1.setDescription("");
+            scope1.setKey(scope);
+            scope1.setName(scope);
+            scope1.setRoles("admin");
+            uriTemplate.setScope(scope1);
+        }
+        return uriTemplate;
+    }
+
+    private Set<Scope> getScopes() {
+        Scope scope1 = new Scope();
+        scope1.setId(1);
+        scope1.setDescription("");
+        scope1.setKey("read");
+        scope1.setName("read");
+        scope1.setRoles("admin");
+        Set<Scope> scopeSet = new HashSet<Scope>();
+        scopeSet.add(scope1);
+        return scopeSet;
     }
 }

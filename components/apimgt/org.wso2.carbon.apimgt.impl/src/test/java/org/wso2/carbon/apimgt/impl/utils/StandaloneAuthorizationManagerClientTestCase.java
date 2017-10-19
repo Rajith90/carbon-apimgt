@@ -94,4 +94,10 @@ public class StandaloneAuthorizationManagerClientTestCase {
         standaloneAuthorizationManagerClient.isUserAuthorized("john", "create");
 
     }
+
+    @Test(expected = IllegalStateException.class)
+    public void testStandaloneAuthorizationManagerClientException() throws Exception {
+        Mockito.when(userRealm.getAuthorizationManager()).thenThrow(new UserStoreException());
+        StandaloneAuthorizationManagerClient standaloneAuthorizationManagerClient = new StandaloneAuthorizationManagerClient();
+    }
 }

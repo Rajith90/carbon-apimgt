@@ -6078,6 +6078,7 @@ public class ApiMgtDAO {
             while (rs.next()) {
                 application = new Application(rs.getString("NAME"), getSubscriber(rs.getString("SUBSCRIBER_ID")));
                 application.setId(rs.getInt("APPLICATION_ID"));
+                applicationsList.add(application);
             }
             Collections.sort(applicationsList, new Comparator<Application>() {
                 public int compare(Application o1, Application o2) {

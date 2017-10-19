@@ -23,6 +23,8 @@ package org.wso2.carbon.apimgt.impl.utils;
 import static org.mockito.Mockito.times;
 
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.RemoteException;
 
 import org.apache.axiom.om.OMElement;
@@ -45,10 +47,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.gateway.dto.stub.APIData;
 import org.wso2.carbon.apimgt.gateway.stub.APIGatewayAdminStub;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.template.APITemplateBuilder;
 import org.wso2.carbon.authenticator.stub.AuthenticationAdminStub;
+import org.wso2.carbon.authenticator.stub.LoginAuthenticationExceptionException;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 @RunWith(PowerMockRunner.class)
@@ -57,6 +61,7 @@ public class APIGatewayAdminClientTest {
 
     private APIGatewayAdminStub apiGatewayAdminStub;
     private Environment environment;
+    private AuthenticationAdminStub authAdminStub;
     private final String USERNAME = "username";
     private final String PASSWORD = "password";
     private final String ENV_NAME = "test-environment";
@@ -76,7 +81,7 @@ public class APIGatewayAdminClientTest {
         OperationContext operationContext = Mockito.mock(OperationContext.class);
         serviceContext.setProperty(HTTPConstants.COOKIE_STRING, "");
         ServiceClient serviceClient = Mockito.mock(ServiceClient.class);
-        AuthenticationAdminStub authAdminStub = Mockito.mock(AuthenticationAdminStub.class);
+        authAdminStub = Mockito.mock(AuthenticationAdminStub.class);
         Mockito.doReturn(true).when(authAdminStub).login(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         Mockito.when(authAdminStub._getServiceClient()).thenReturn(serviceClient);
         Mockito.when(serviceClient.getLastOperationContext()).thenReturn(operationContext);
@@ -101,6 +106,47 @@ public class APIGatewayAdminClientTest {
     public void testAPIGatewayAdminClientException() throws Exception {
         PowerMockito.whenNew(APIGatewayAdminStub.class)
                 .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString()).thenThrow(AxisFault.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testAPIGatewayAdminClientServerAttributeNullException()
+            throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        environment.setServerURL(null);
+        environment.setUserName(null);
+        environment.setPassword(null);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testAPIGatewayAdminClientLoginException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(authAdminStub.login(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(LoginAuthenticationExceptionException.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testAPIGatewayAdminClientRemoteException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(authAdminStub.login(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(RemoteException.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testAPIGatewayAdminClientMalformedUrlException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        environment.setServerURL("malformed-url");
         APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
     }
 
@@ -610,4 +656,149 @@ public class APIGatewayAdminClientTest {
         String fileNames[] = {"file1","file2","file3"};
         client.undeployPolicy(fileNames);
     }
+
+    @Test
+    public void testGetApi() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(new APIData());
+        Mockito.when(apiGatewayAdminStub
+                .getApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(new APIData());
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        APIIdentifier identifier = new APIIdentifier("P1_API1_v1.0.0");
+        client.getApi("", identifier);
+        client.getApi(null, identifier);
+        client.getApi(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, identifier);
+        Mockito.verify(apiGatewayAdminStub, times(3))
+                .getApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        client.getApi("tenant", identifier);
+        Mockito.verify(apiGatewayAdminStub, times(1))
+                .getApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testGetApiException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(Exception.class);
+        Mockito.when(apiGatewayAdminStub
+                .getApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(Exception.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        APIIdentifier identifier = new APIIdentifier("P1_API1_v1.0.0");
+        client.getApi("", identifier);
+        client.getApi(null, identifier);
+        client.getApi(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, identifier);
+        client.getApi("tenant", identifier);
+    }
+
+    @Test
+    public void testGetDefaultApi() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getDefaultApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(new APIData());
+        Mockito.when(apiGatewayAdminStub
+                .getDefaultApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyString())).thenReturn(new APIData());
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        APIIdentifier identifier = new APIIdentifier("P1_API1_v1.0.0");
+        client.getDefaultApi("", identifier);
+        client.getDefaultApi(null, identifier);
+        client.getDefaultApi(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, identifier);
+        Mockito.verify(apiGatewayAdminStub, times(3))
+                .getDefaultApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        client.getDefaultApi("tenant", identifier);
+        Mockito.verify(apiGatewayAdminStub, times(1))
+                .getDefaultApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test(expected = AxisFault.class)
+    public void testGetDefaultApiException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getDefaultApi(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(Exception.class);
+        Mockito.when(apiGatewayAdminStub
+                .getDefaultApiForTenant(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyString())).thenThrow(Exception.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        APIIdentifier identifier = new APIIdentifier("P1_API1_v1.0.0");
+        client.getDefaultApi("", identifier);
+        client.getDefaultApi(null, identifier);
+        client.getDefaultApi(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME, identifier);
+        client.getDefaultApi("tenant", identifier);
+    }
+
+    @Test
+    public void testGetSequence() throws Exception {
+        OMElement omElement = Mockito.mock(OMElement.class);
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getSequence(Mockito.anyString())).thenReturn(omElement);
+        Mockito.when(apiGatewayAdminStub.getSequenceForTenant(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(omElement);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        client.getSequence("sample-sequence", "");
+        client.getSequence("sample-sequence", null);
+        client.getSequence("sample-sequence", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        client.getSequence("sample-sequence", "tenant");
+        Mockito.verify(apiGatewayAdminStub, times(3)).getSequence(Mockito.anyString());
+        Mockito.verify(apiGatewayAdminStub, times(1)).getSequenceForTenant(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test (expected = AxisFault.class)
+    public void testGetSequenceException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.getSequence(Mockito.anyString())).thenThrow(RemoteException.class);
+        Mockito.when(apiGatewayAdminStub.getSequenceForTenant(Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(RemoteException.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        client.getSequence("sample-sequence", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        client.getSequence("sample-sequence", "tenant");
+    }
+
+    @Test
+    public void testIsExistingSequence() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.doReturn(true).when(apiGatewayAdminStub).isExistingSequence(Mockito.anyString());
+        Mockito.doReturn(true).when(apiGatewayAdminStub)
+                .isExistingSequenceForTenant(Mockito.anyString(), Mockito.anyString());
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        client.isExistingSequence("sample-sequence", "");
+        client.isExistingSequence("sample-sequence", null);
+        client.isExistingSequence("sample-sequence", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        client.isExistingSequence("sample-sequence", "tenant");
+        Mockito.verify(apiGatewayAdminStub, times(3)).isExistingSequence(Mockito.anyString());
+        Mockito.verify(apiGatewayAdminStub, times(1))
+                .isExistingSequenceForTenant(Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test (expected = AxisFault.class)
+    public void testIsExistingSequenceException() throws Exception {
+        PowerMockito.whenNew(APIGatewayAdminStub.class)
+                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
+                .thenReturn(apiGatewayAdminStub);
+        Mockito.when(apiGatewayAdminStub.isExistingSequence(Mockito.anyString())).thenThrow(RemoteException.class);
+        Mockito.when(apiGatewayAdminStub.isExistingSequenceForTenant(Mockito.anyString(), Mockito.anyString()))
+                .thenThrow(RemoteException.class);
+        APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
+        client.isExistingSequence("sample-sequence", "");
+        client.isExistingSequence("sample-sequence", null);
+        client.isExistingSequence("sample-sequence", MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        client.isExistingSequence("sample-sequence", "tenant");
+    }
+
 }
