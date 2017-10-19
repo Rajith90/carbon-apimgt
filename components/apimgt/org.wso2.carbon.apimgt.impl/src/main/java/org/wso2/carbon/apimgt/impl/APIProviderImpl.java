@@ -1163,7 +1163,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 // Throwing an error from this level will mask the original exception
                 log.error("Error while rolling back the transaction for API: " + api.getId().getApiName(), re);
             }
-            handleException("Error while performing registry transaction operation", e);
+            String msg = "Error while performing registry transaction operation";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } finally {
             try {
                 if (!transactionCommitted) {
@@ -2077,7 +2079,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 handleException("Error while rolling back the transaction for API: " + api.getId(), re);
             }
             String msg = "Failed to create new version : " + newVersion + " of : " + api.getId().getApiName();
-            handleException(msg, e);
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } finally {
             try {
                 if (!transactionCommitted) {
@@ -2744,9 +2747,13 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             }
             */
         } catch (RegistryException e) {
-            handleException("Failed to remove the API from : " + path, e);
+            String msg = "Failed to remove the API from : " + path;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (WorkflowException e) {
-            handleException("Failed to execute workflow cleanup task ", e);
+            String msg = "Failed to execute workflow cleanup task ";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
     }
 
