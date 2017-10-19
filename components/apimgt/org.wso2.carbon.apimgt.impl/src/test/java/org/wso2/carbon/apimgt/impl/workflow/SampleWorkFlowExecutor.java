@@ -56,4 +56,11 @@ public class SampleWorkFlowExecutor extends WorkflowExecutor {
     public WorkflowResponse complete(WorkflowDTO workflowDTO) throws WorkflowException {
         return new GeneralWorkflowResponse();
     }
+
+    @Override
+    public void cleanUpPendingTask(String workflowExtRef) throws WorkflowException {
+        if("test_wf_ref".equals(workflowExtRef)) {
+            throw new WorkflowException("Wrong workflow external reference provided.");
+        }
+    }
 }
