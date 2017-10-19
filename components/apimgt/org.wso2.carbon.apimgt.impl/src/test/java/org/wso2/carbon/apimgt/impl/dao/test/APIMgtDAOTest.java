@@ -35,6 +35,7 @@ import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
+import org.wso2.carbon.apimgt.api.model.APIStore;
 import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
@@ -43,8 +44,10 @@ import org.wso2.carbon.apimgt.api.model.KeyManager;
 import org.wso2.carbon.apimgt.api.model.LifeCycleEvent;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
 import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
+import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.BandwidthLimit;
@@ -88,7 +91,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -379,6 +384,7 @@ public class APIMgtDAOTest {
 
     }
 
+    @Test
     public void testAddGetApplicationByNameWithUserNameNullGroupIdNull() throws Exception {
         Subscriber subscriber = new Subscriber("LA_F_APP_UN_GROUP_ID_NULL");
         subscriber.setEmail("laf@wso2.com");
@@ -968,6 +974,7 @@ public class APIMgtDAOTest {
         apiId.setTier(subscriptionPolicy.getPolicyName());
         int subsId = apiMgtDAO.addSubscription(apiId, api.getContext(), application.getId(), APIConstants
                 .SubscriptionStatus.ON_HOLD, subscriber.getName());
+        assertTrue(apiMgtDAO.getApplicationsByTier(subscriptionPolicy.getPolicyName()).length > 0);
         String subStatus = apiMgtDAO.getSubscriptionStatusById(subsId);
         assertEquals(subStatus, APIConstants.SubscriptionStatus.ON_HOLD);
         SubscribedAPI subscribedAPI = apiMgtDAO.getSubscriptionById(subsId);
@@ -1191,6 +1198,31 @@ public class APIMgtDAOTest {
         apiMgtDAO.unSubscribeAlerts("admin","publisher");
     }
 
+    @Test
+    public void testAddAndGetApi() throws Exception{
+        APIIdentifier apiId = new APIIdentifier("testAddAndGetApi",
+                "testAddAndGetApi", "1.0.0");
+        API api = new API(apiId);
+        api.setContext("/testAddAndGetApi");
+        api.setContextTemplate("/testAddAndGetApi/{version}");
+        api.setUriTemplates(getUriTemplateSet());
+        api.setScopes(getScopes());
+        apiMgtDAO.addAPI(api, -1234);
+        apiMgtDAO.updateAPI(api, -1234);
+        Set<APIStore> apiStoreSet = new HashSet<APIStore>();
+        APIStore apiStore = new APIStore();
+        apiStore.setDisplayName("wso2");
+        apiStore.setEndpoint("http://localhost:9433/store");
+        apiStore.setName("wso2");
+        apiStore.setType("wso2");
+        apiStoreSet.add(apiStore);
+        apiMgtDAO.addExternalAPIStoresDetails(apiId,apiStoreSet);
+        assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size()>0);
+        apiMgtDAO.deleteExternalAPIStoresDetails(apiId, apiStoreSet);
+        apiMgtDAO.updateExternalAPIStoresDetails(apiId, Collections.<APIStore>emptySet());
+        assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size()==0);
+        apiMgtDAO.deleteAPI(apiId);
+    }
     private void deleteSubscriber(int subscriberId) throws APIManagementException {
         Connection conn = null;
         ResultSet rs = null;
@@ -1320,5 +1352,40 @@ public class APIMgtDAOTest {
         } finally {
             APIMgtDBUtil.closeAllConnections(ps, conn, rs);
         }
+    }
+    private Set<URITemplate> getUriTemplateSet(){
+        Set<URITemplate> uriTemplates = new HashSet<URITemplate>();
+        uriTemplates.add(getUriTemplate("/abc","GET","Any","read"));
+        uriTemplates.add(getUriTemplate("/abc", "GET", "Any", null));
+        return uriTemplates;
+    }
+    private URITemplate getUriTemplate(String resourceString,String httpVerb,String authType,String scope){
+        URITemplate uriTemplate = new URITemplate();
+        uriTemplate.setUriTemplate(resourceString);
+        uriTemplate.setHTTPVerb(httpVerb);
+        uriTemplate.setThrottlingTier("Unlimited");
+        uriTemplate.setAuthType(authType);
+        uriTemplate.setMediationScript("abcd defgh fff");
+        if (scope!= null){
+            Scope scope1 = new Scope();
+            scope1.setId(0);
+            scope1.setDescription("");
+            scope1.setKey(scope);
+            scope1.setName(scope);
+            scope1.setRoles("admin");
+            uriTemplate.setScope(scope1);
+        }
+        return uriTemplate;
+    }
+    private Set<Scope> getScopes(){
+        Scope scope1 = new Scope();
+        scope1.setId(1);
+        scope1.setDescription("");
+        scope1.setKey("read");
+        scope1.setName("read");
+        scope1.setRoles("admin");
+        Set<Scope> scopeSet = new HashSet<Scope>();
+        scopeSet.add(scope1);
+        return scopeSet;
     }
 }
