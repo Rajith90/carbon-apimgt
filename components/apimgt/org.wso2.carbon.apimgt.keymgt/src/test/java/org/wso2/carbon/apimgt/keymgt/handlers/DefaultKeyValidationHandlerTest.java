@@ -223,11 +223,9 @@ public class DefaultKeyValidationHandlerTest {
 
         //exception
         Mockito.doThrow(APIManagementException.class).when(tokenGenerator).generateToken(tokenValidationContext);
-        try {
-            defaultKeyValidationHandler.generateConsumerToken(tokenValidationContext);
-        } catch (APIKeyMgtException e) {
-            Assert.assertTrue("Error occurred while generating JWT. ".equals(e.getMessage()));
-        }
+
+        Assert.assertFalse(defaultKeyValidationHandler.generateConsumerToken(tokenValidationContext));
+
     }
 }
 
