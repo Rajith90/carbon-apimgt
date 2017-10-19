@@ -90,7 +90,7 @@ public class WebsocketInboundHandler extends ChannelInboundHandlerAdapter {
         return url.replaceFirst(".*/([^/?]+).*", "$1");
     }
 
-
+   //method removed because url is going to be always null
 /*    private String getContextFromUrl(String url) {
         int lastIndex = 0;
         if (url != null) {
