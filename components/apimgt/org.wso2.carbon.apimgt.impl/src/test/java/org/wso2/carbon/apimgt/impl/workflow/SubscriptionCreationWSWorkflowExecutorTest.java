@@ -164,6 +164,18 @@ public class SubscriptionCreationWSWorkflowExecutorTest {
 		}
 
 	}	
+	
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowCleanupTaskException() throws Exception {
+		WorkflowDTO workflowDTO = new WorkflowDTO();
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+		subscriptionCreationWSWorkflowExecutor.cleanUpPendingTask(workflowDTO.getExternalWorkflowReference());
+
+	}	
 
 
 	@Test
@@ -196,7 +208,28 @@ public class SubscriptionCreationWSWorkflowExecutorTest {
 		}
 
 	}
+	
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowExecuteException() throws Exception {
+		SubscriptionWorkflowDTO workflowDTO = new SubscriptionWorkflowDTO();
+		workflowDTO.setApiContext("/test");
+		workflowDTO.setApiName("TestAPI");
+		workflowDTO.setApiVersion("1.0");
+		workflowDTO.setApiProvider("admin");
+		workflowDTO.setSubscriber("admin");
+		workflowDTO.setApplicationName("TestApp");
+		workflowDTO.setTierName("Gold");
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
 
+		PowerMockito.doNothing().when(apiMgtDAO).updateSubscriptionStatus(
+				Integer.parseInt(workflowDTO.getWorkflowReference()), APIConstants.SubscriptionStatus.REJECTED);
+
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+		subscriptionCreationWSWorkflowExecutor.execute(workflowDTO);
+
+	}
 	@Test
 	public void testWorkflowExecuteWithoutExecutorParam() throws Exception {
 		SubscriptionWorkflowDTO workflowDTO = new SubscriptionWorkflowDTO();
