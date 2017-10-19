@@ -83,6 +83,7 @@ import org.wso2.carbon.apimgt.impl.workflow.WorkflowStatus;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -111,7 +112,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( {KeyManagerHolder.class})
+@PrepareForTest( {KeyManagerHolder.class, MultitenantUtils.class})
 public class APIMgtDAOTest {
 
     public static ApiMgtDAO apiMgtDAO;
@@ -1067,6 +1068,16 @@ public class APIMgtDAOTest {
         apiMgtDAO.updateDefaultAPIPublishedVersion(apiId, APIStatus.PUBLISHED, APIStatus.CREATED);
         apiMgtDAO.removeAllSubscriptions(apiId);
         assertTrue(apiMgtDAO.getAPINamesMatchingContext(api.getContext()).size() > 0);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        BDDMockito.given(MultitenantUtils.getTenantDomain(subscriber.getName())).willReturn("carbon.super");
+        apiMgtDAO.addRating(apiId,3,subscriber.getName());
+        assertEquals(apiMgtDAO.getUserRating(apiId,subscriber.getName()),3);
+        assertTrue(apiMgtDAO.getAverageRating(apiId) == 3f);
+        apiMgtDAO.removeAPIRating(apiId, subscriber.getName());
+        apiMgtDAO.addComment(apiId,"text",subscriber.getName());
+        Comment[] comments = apiMgtDAO.getComments(apiId);
+        assertNotNull(comments);
+        assertEquals(comments[0].getText(),"text");
         apiMgtDAO.deleteAPI(apiId);
         apiMgtDAO.deleteApplication(application);
         apiMgtDAO.removeThrottlePolicy(PolicyConstants.POLICY_LEVEL_APP, "testCreateApplicationRegistrationEntry",
@@ -1237,14 +1248,19 @@ public class APIMgtDAOTest {
 
     @Test
     public void testAddAndGetApi() throws Exception {
-        APIIdentifier apiId = new APIIdentifier("testAddAndGetApi",
-                "testAddAndGetApi", "1.0.0");
+        Subscriber subscriber = new Subscriber("testCreateApplicationRegistrationEntry");
+        subscriber.setTenantId(-1234);
+        subscriber.setEmail("abc@wso2.com");
+        subscriber.setSubscribedDate(new Date(System.currentTimeMillis()));
+        apiMgtDAO.addSubscriber(subscriber, null);
+        APIIdentifier apiId = new APIIdentifier("testAddAndGetApi", "testAddAndGetApi", "1.0.0");
         API api = new API(apiId);
         api.setContext("/testAddAndGetApi");
         api.setContextTemplate("/testAddAndGetApi/{version}");
         api.setUriTemplates(getUriTemplateSet());
         api.setScopes(getScopes());
         apiMgtDAO.addAPI(api, -1234);
+        assertTrue(apiMgtDAO.getAllAvailableContexts().contains("/testAddAndGetApi"));
         apiMgtDAO.updateAPI(api, -1234);
         Set<APIStore> apiStoreSet = new HashSet<APIStore>();
         APIStore apiStore = new APIStore();
@@ -1258,15 +1274,6 @@ public class APIMgtDAOTest {
         apiMgtDAO.deleteExternalAPIStoresDetails(apiId, apiStoreSet);
         apiMgtDAO.updateExternalAPIStoresDetails(apiId, Collections.<APIStore>emptySet());
         assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size() == 0);
-        apiMgtDAO.addRating(apiId,3,"admin");
-        assertEquals(apiMgtDAO.getUserRating(apiId,"admin"),3);
-        assertTrue(apiMgtDAO.getAverageRating(apiId) == 3f);
-        apiMgtDAO.removeAPIRating(apiId, "admin");
-        apiMgtDAO.addComment(apiId,"text","admin");
-        Comment[] comments = apiMgtDAO.getComments(apiId);
-        assertNotNull(comments);
-        assertEquals(comments[0].getText(),"text");
-        assertTrue(apiMgtDAO.getAllAvailableContexts().contains("/testAddAndGetApi"));
         apiMgtDAO.deleteAPI(apiId);
     }
 
