@@ -83,6 +83,7 @@ import org.wso2.carbon.apimgt.impl.workflow.WorkflowStatus;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityConfigParser;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.File;
@@ -112,7 +113,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( {KeyManagerHolder.class, MultitenantUtils.class})
+@PrepareForTest( {KeyManagerHolder.class, MultitenantUtils.class, IdentityUtil.class})
 public class APIMgtDAOTest {
 
     public static ApiMgtDAO apiMgtDAO;
@@ -1023,6 +1024,10 @@ public class APIMgtDAOTest {
         String tokenIdSandbox = insertAccessTokenForApp(appIdSandBox, subscriber.getName(), tokenSandBox);
         insertTokenScope(tokenIdProduction, "default");
         insertTokenScope(tokenIdSandbox, "default");
+        PowerMockito.mockStatic(IdentityUtil.class);
+        assertTrue(apiMgtDAO.getActiveTokensOfConsumerKey(clientIdProduction).contains(tokenProduction));
+        BDDMockito.given(IdentityUtil.extractDomainFromName(Mockito.anyString())).willReturn("primary");
+        assertTrue(apiMgtDAO.getActiveAccessTokensOfUser(subscriber.getName()).contains(tokenProduction));
         assertTrue(apiMgtDAO.getSubscriptionCount(subscriber, application.getName(), null) > 0);
         OAuthApplicationInfo oAuthApplicationInfo = new OAuthApplicationInfo();
         Mockito.when(keyManager.retrieveApplication(clientIdProduction)).thenReturn(oAuthApplicationInfo);
@@ -1259,6 +1264,8 @@ public class APIMgtDAOTest {
         api.setContextTemplate("/testAddAndGetApi/{version}");
         api.setUriTemplates(getUriTemplateSet());
         api.setScopes(getScopes());
+        api.setStatus(APIStatus.PUBLISHED);
+        api.setAsDefaultVersion(true);
         apiMgtDAO.addAPI(api, -1234);
         assertTrue(apiMgtDAO.getAllAvailableContexts().contains("/testAddAndGetApi"));
         apiMgtDAO.updateAPI(api, -1234);
@@ -1269,7 +1276,13 @@ public class APIMgtDAOTest {
         apiStore.setName("wso2");
         apiStore.setType("wso2");
         apiStoreSet.add(apiStore);
+        assertTrue(apiMgtDAO.getAllURITemplatesAdvancedThrottle(api.getContext(),api.getId().getVersion()).size()>0);
         apiMgtDAO.addExternalAPIStoresDetails(apiId, apiStoreSet);
+        assertTrue(apiMgtDAO.isDuplicateContextTemplate(api.getContext()));
+        assertTrue(apiMgtDAO.isScopeKeyExist("read",-1234));
+        assertFalse(apiMgtDAO.isScopeKeyAssigned(apiId, "read", -1234));
+        assertEquals(apiMgtDAO.getLastPublishedAPIVersionFromAPIStore(apiId, "wso2"), apiId.getVersion());
+        assertTrue(apiMgtDAO.isApiNameExist(api.getId().getApiName(),"carbon.super"));
         assertTrue(apiMgtDAO.getExternalAPIStoresDetails(apiId).size() > 0);
         apiMgtDAO.deleteExternalAPIStoresDetails(apiId, apiStoreSet);
         apiMgtDAO.updateExternalAPIStoresDetails(apiId, Collections.<APIStore>emptySet());
@@ -1357,10 +1370,10 @@ public class APIMgtDAOTest {
             String tokenId = UUID.randomUUID().toString();
             String query = "INSERT INTO IDN_OAUTH2_ACCESS_TOKEN (TOKEN_ID, ACCESS_TOKEN, REFRESH_TOKEN, " +
                     "CONSUMER_KEY_ID, AUTHZ_USER, TENANT_ID, USER_TYPE, GRANT_TYPE, VALIDITY_PERIOD, " +
-                    "REFRESH_TOKEN_VALIDITY_PERIOD, TOKEN_STATE,TIME_CREATED,REFRESH_TOKEN_TIME_CREATED) VALUES ('" +
-                    tokenId + "'," + " '" + token + "'," + " 'aa', ?,?, " +
-                    "'-1234','" + APIConstants.ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600'," +
-                    " '3600', 'ACTIVE','2017-10-17','2017-10-17')";
+                    "REFRESH_TOKEN_VALIDITY_PERIOD, TOKEN_STATE,TIME_CREATED,REFRESH_TOKEN_TIME_CREATED,USER_DOMAIN) " +
+                    "VALUES ('" + tokenId + "'," + " '" + token + "'," + " 'aa', ?,?, " + "'-1234','" + APIConstants
+                    .ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600','3600', 'ACTIVE'," +
+                    "'2017-10-17','2017-10-17','PRIMARY')";
             ps = conn.prepareStatement(query);
             ps.setInt(1, clientId);
             ps.setString(2, user);
