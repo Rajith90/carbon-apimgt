@@ -22,10 +22,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.opensaml.saml2.core.Assertion;
+import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.xml.XMLObject;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.keymgt.APIKeyMgtException;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2TokenValidationRequestDTO;
 import org.wso2.carbon.user.core.UserStoreException;
@@ -33,10 +38,13 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({APIKeyMgtDataHolder.class,IdentityDatabaseUtil.class})
+@PrepareForTest({APIKeyMgtDataHolder.class, IdentityDatabaseUtil.class, PrivilegedCarbonContext.class})
 public class APIKeyMgtUtilTestCase {
 
     @Test
@@ -104,4 +112,37 @@ public class APIKeyMgtUtilTestCase {
         Assert.assertNotNull(APIKeyMgtUtil.getDBConnection());
     }
 
+    @Test public void testGetAttributeSeparator() throws Exception {
+        Assertion mockedAssertion = PowerMockito.mock(Assertion.class);
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext carbonContext;
+        carbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).thenReturn(-1234);
+        PowerMockito.doNothing().when(carbonContext).setTenantDomain("carbon.super", true);
+
+        AttributeStatement mockAttributeStatement = PowerMockito.mock(AttributeStatement.class);
+        List<AttributeStatement> attributeStatementList = Collections.singletonList(mockAttributeStatement);
+        PowerMockito.when(mockedAssertion.getAttributeStatements()).thenReturn(attributeStatementList);
+
+        Attribute mockAttribute = PowerMockito.mock(Attribute.class);
+        List<Attribute> attributesList = Collections.singletonList(mockAttribute);
+        PowerMockito.when(mockAttributeStatement.getAttributes()).thenReturn(attributesList);
+
+        XMLObject rawAttribute = PowerMockito.mock(XMLObject.class);
+        PowerMockito.when(rawAttribute.toString()).thenReturn("sampleRole");
+        List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
+        List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
+        PowerMockito.when(mockAttribute.getAttributeValues()).thenReturn(mockedAttributeValues, multiMockedAttributeValues);
+
+        PowerMockito.when(mockAttribute.getName()).thenReturn("http://wso2.org/claims/role");
+
+        String[] roles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] multiRoles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+
+        Assert.assertTrue(roles[0].equals("sampleRole"));
+        Assert.assertTrue(multiRoles.length == 2);
+    }
 }
