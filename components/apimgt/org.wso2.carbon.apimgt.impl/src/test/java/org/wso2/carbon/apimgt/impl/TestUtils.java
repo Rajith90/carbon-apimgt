@@ -132,6 +132,7 @@ public class TestUtils {
 
         Map<String, Environment> apiGatewayEnvironments = new HashMap<String, Environment>();
         Environment env1 = new Environment();
+        env1.setApiGatewayEndpoint("https://abc.com, http://abc.com");
         apiGatewayEnvironments.put("PROD", env1);
         // Mocking some commonly used configs
         PowerMockito.when(amConfig.getApiGatewayEnvironments()).thenReturn(apiGatewayEnvironments);
