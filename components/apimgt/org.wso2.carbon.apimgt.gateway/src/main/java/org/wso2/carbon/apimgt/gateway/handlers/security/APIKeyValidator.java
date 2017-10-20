@@ -183,7 +183,7 @@ public class APIKeyValidator {
         if (defaultVersionInvoked) {
             //Prefix the version so that it looks like _default_1.0 (_default_<version>)).
             //This is so that the Key Validator knows that this request is coming through a default api version
-            prefixedVersion = APIConstants.DEFAULT_VERSION_PREFIX.concat(prefixedVersion);
+            prefixedVersion = APIConstants.DEFAULT_VERSION_PREFIX + prefixedVersion;
         }
 
         String cacheKey = APIUtil.getAccessTokenCacheKey(apiKey, context, prefixedVersion, matchingResource,
@@ -421,12 +421,12 @@ public class APIKeyValidator {
             //Cache hit
             if (verb != null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Found resource in Cache for key: ".concat(resourceCacheKey));
+                    log.debug("Found resource in Cache for key: " + resourceCacheKey);
                 }
                 return verb;
             }
             if (log.isDebugEnabled()) {
-                log.debug("Resource not found in cache for key: ".concat(resourceCacheKey));
+                log.debug("Resource not found in cache for key: " + resourceCacheKey);
             }
         }
         String resourceString = (String) synCtx.getProperty(APIConstants.API_ELECTED_RESOURCE);
@@ -441,7 +441,7 @@ public class APIKeyValidator {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Setting REST_SUB_REQUEST_PATH in msg context: ".concat(requestPath));
+            log.debug("Setting REST_SUB_REQUEST_PATH in msg context: " + requestPath);
         }
         synCtx.setProperty(RESTConstants.REST_SUB_REQUEST_PATH, requestPath);
 
@@ -488,7 +488,7 @@ public class APIKeyValidator {
             resourceCacheKey = APIUtil.getResourceInfoDTOCacheKey(apiContext, apiVersion, resourceString, httpMethod);
 
             if (log.isDebugEnabled()) {
-                log.debug("Selected Resource: ".concat(resourceString));
+                log.debug("Selected Resource: " + resourceString);
             }
             //Set the elected resource
             synCtx.setProperty(APIConstants.API_ELECTED_RESOURCE, resourceString);
@@ -516,7 +516,7 @@ public class APIKeyValidator {
         //Cache miss
         if (apiInfoDTO == null) {
             if (log.isDebugEnabled()) {
-                log.debug("Could not find API object in cache for key: ".concat(apiCacheKey));
+                log.debug("Could not find API object in cache for key: " + apiCacheKey);
             }
             apiInfoDTO = doGetAPIInfo(apiContext, apiVersion);
             getResourceCache().put(apiCacheKey, apiInfoDTO);
@@ -527,7 +527,7 @@ public class APIKeyValidator {
                     for (VerbInfoDTO verbDTO : resourceInfoDTO.getHttpVerbs()) {
                         if (verbDTO.getHttpVerb().equals(httpMethod)) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Putting resource object in cache with key: ".concat(resourceCacheKey));
+                                log.debug("Putting resource object in cache with key: " + resourceCacheKey);
                             }
                             verbDTO.setRequestKey(resourceCacheKey);
                             //Store verb in cache

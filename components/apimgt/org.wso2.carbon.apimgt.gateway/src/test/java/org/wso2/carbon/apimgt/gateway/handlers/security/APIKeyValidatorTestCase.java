@@ -27,15 +27,28 @@ import org.apache.synapse.rest.API;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.rest.Resource;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.VerbInfoDTO;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.caching.impl.Util;
+import org.wso2.carbon.context.CarbonContext;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 
 import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
 import java.util.ArrayList;
 
 import static junit.framework.Assert.assertNotNull;
@@ -46,7 +59,46 @@ import static org.junit.Assert.assertNull;
 /**
  * Test class for APIKeyValidator
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({PrivilegedCarbonContext.class, APISecurityUtils.class, ServiceReferenceHolder.class,
+        ServerConfiguration.class, APIUtil.class, Util.class, CarbonContext.class, Caching.class})
 public class APIKeyValidatorTestCase {
+    private APIManagerConfiguration apiManagerConfiguration;
+    private ServerConfiguration serverConfiguration;
+    private long defaultCacheTimeout = 54000;
+    private PrivilegedCarbonContext privilegedCarbonContext;
+
+    @Before
+    public void setup() {
+        System.setProperty("carbon.home", "jhkjn");
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.mockStatic(ServerConfiguration.class);
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.mockStatic(CarbonContext.class);
+        PowerMockito.mockStatic(Util.class);
+        PowerMockito.mockStatic(Caching.class);
+        PowerMockito.when(Util.getTenantDomain()).thenReturn("carbon.super");
+        serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServerConfiguration.getInstance()).thenReturn(serverConfiguration);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        PowerMockito.mockStatic(APISecurityUtils.class);
+        privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        Cache cache = Mockito.mock(Cache.class);
+        PowerMockito.when(APIUtil.getCache(APIConstants.API_MANAGER_CACHE_MANAGER, APIConstants.GATEWAY_TOKEN_CACHE_NAME,
+                defaultCacheTimeout, defaultCacheTimeout)).thenReturn(cache);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.GATEWAY_TOKEN_CACHE_ENABLED)).thenReturn("true");
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.DEFAULT_CACHE_TIMEOUT)).thenReturn("900");
+
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Mockito.when(cacheManager.getCache(Mockito.anyString())).thenReturn(cache);
+
+    }
 
     /*
     *  This method will test for findMatchingVerb()
@@ -243,10 +295,6 @@ public class APIKeyValidatorTestCase {
                 return apiKeyValidationInfoDTO;
             }
 
-            @Override
-            protected String getTenantDomain() {
-                return "carbon.super";
-            }
         };
     }
 
@@ -266,13 +314,13 @@ public class APIKeyValidatorTestCase {
         APIKeyValidator apiKeyValidator = createAPIKeyValidator(false);
         APIKeyValidationInfoDTO apiKeyValidationInfoDTO = new APIKeyValidationInfoDTO();
         apiKeyValidationInfoDTO.setApiName(apiKey);
-//        Assert.assertEquals(apiKeyValidationInfoDTO.getApiName(), apiKeyValidator.getKeyValidationInfo(context, apiKey, apiVersion, authenticationScheme,
-//                clientDomain, matchingResource, httpVerb, defaultVersionInvoked).getApiName());
+
+        Assert.assertEquals(apiKeyValidationInfoDTO.getApiName(), apiKeyValidator.getKeyValidationInfo(context, apiKey, apiVersion, authenticationScheme,
+                clientDomain, matchingResource, httpVerb, defaultVersionInvoked).getApiName());
 
         // Test for token cache is found in token cache
         AxisConfiguration axisConfig = Mockito.mock(AxisConfiguration.class);
         APIKeyValidator newApiKeyValidator = new APIKeyValidator(axisConfig) {
-            @Override
             protected String getTenantDomain() {
                 return "zyx";
             }
@@ -315,16 +363,6 @@ public class APIKeyValidatorTestCase {
                 Mockito.when(apiKeyValidationInfoDTO.getApiName()).thenReturn(apiKey);
                 return apiKeyValidationInfoDTO;
             }
-
-            @Override
-            protected void startTenantFlow() {
-                return;
-            }
-
-            @Override
-            protected void endTenantFlow() {
-                return;
-            }
         };
         Assert.assertEquals(apiKeyValidationInfoDTO.getApiName(), newApiKeyValidator.getKeyValidationInfo(context, apiKey, apiVersion, authenticationScheme,
                 clientDomain, matchingResource, httpVerb, defaultVersionInvoked).getApiName());
@@ -336,6 +374,26 @@ public class APIKeyValidatorTestCase {
         // test for exception path
         APIKeyValidator apiKeyValidator = createAPIKeyValidator(true);
         Assert.assertFalse(apiKeyValidator.isAPIResourceValidationEnabled());
+
+    }
+
+    @Test
+    public void testGetApiManagerConfiguration() {
+        AxisConfiguration axisConfig = Mockito.mock(AxisConfiguration.class);
+        Mockito.when(privilegedCarbonContext.getTenantDomain()).thenReturn("carbon.super");
+        APIKeyValidator apiKeyValidator = new APIKeyValidator(axisConfig) {
+        };
+
+        Assert.assertNotNull(apiKeyValidator.getApiManagerConfiguration());
+
+    }
+
+    @Test
+    public void testGetKeyValidatorClientType() {
+        AxisConfiguration axisConfig = Mockito.mock(AxisConfiguration.class);
+        APIKeyValidator apiKeyValidator = new APIKeyValidator(axisConfig) {
+        };
+        apiKeyValidator.getKeyValidatorClientType();
 
     }
 }
