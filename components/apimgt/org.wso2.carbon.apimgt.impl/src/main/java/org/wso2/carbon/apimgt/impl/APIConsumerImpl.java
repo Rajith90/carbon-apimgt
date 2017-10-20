@@ -1619,14 +1619,17 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             return new HashSet<API>(apiCollection.values());
 
         } catch (RegistryException e) {
-            handleException("Failed to get Published APIs for provider : " + providerId, e);
-            return null;
+            String msg = "Failed to get Published APIs for provider : " + providerId;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (org.wso2.carbon.user.core.UserStoreException e) {
-            handleException("Failed to get Published APIs for provider : " + providerId, e);
-            return null;
+            String msg = "Failed to get Published APIs for provider : " + providerId;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (UserStoreException e) {
-            handleException("Failed to get Published APIs for provider : " + providerId, e);
-            return null;
+            String msg = "Failed to get Published APIs for provider : " + providerId;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
     }
 
