@@ -19,19 +19,15 @@
 package org.wso2.carbon.apimgt.impl;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.axis2.AxisFault;
 import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.FaultGatewaysException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
-import org.wso2.carbon.apimgt.api.model.policy.GlobalPolicy;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.notification.NotificationDTO;
@@ -39,6 +35,7 @@ import org.wso2.carbon.apimgt.impl.notification.exception.NotificationException;
 import org.wso2.carbon.apimgt.impl.template.ThrottlePolicyTemplateBuilder;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
+import org.wso2.carbon.user.api.UserStoreException;
 
 public class APIProviderImplWrapper extends APIProviderImpl {
     
@@ -74,29 +71,6 @@ public class APIProviderImplWrapper extends APIProviderImpl {
     @Override
     public void makeAPIKeysForwardCompatible(API api) throws APIManagementException {
         //do nothing
-    }
-    
-    public void changeAPIStatus(API api, APIStatus status, String userId, boolean updateGatewayConfig)
-            throws APIManagementException, FaultGatewaysException {
-        if (failedGateways != null && failedGateways.size() >0) {
-            throw new FaultGatewaysException(failedGateways);
-        }
-    }
-    
-    @Override
-    protected Map<String, String> publishToGateway(API api, String tenantDomain) {
-        if (failedGateways.containsKey("PUBLISHED")) {
-            return failedGateways.get("PUBLISHED");
-        } 
-        return new HashMap<String, String>();
-    }
-    
-    @Override
-    protected Map<String, String> removeFromGateway(API api, String tenantDomain) {
-        if (failedGateways.containsKey("UNPUBLISHED")) {
-            return failedGateways.get("UNPUBLISHED");
-        }
-        return new HashMap<String, String>();
     }
     
     @Override
@@ -135,7 +109,7 @@ public class APIProviderImplWrapper extends APIProviderImpl {
         return policyBuilder;
     }
     
-    /*protected String getTenantConfigContent() throws RegistryException, UserStoreException {
+    protected String getTenantConfigContent() throws RegistryException, UserStoreException {
         return "{\"EnableMonetization\":false,\"IsUnlimitedTierPaid\":false,\"ExtensionHandlerPosition\":\"bottom\","
                 + "\"RESTAPIScopes\":{\"Scope\":[{\"Name\":\"apim:api_publish\",\"Roles\":\"admin,Internal/publisher\"},"
                 + "{\"Name\":\"apim:api_create\",\"Roles\":\"admin,Internal/creator\"},{\"Name\":\"apim:api_view\","
@@ -156,6 +130,6 @@ public class APIProviderImplWrapper extends APIProviderImpl {
                 + "\"DefaultRoles\":{\"PublisherRole\":{\"CreateOnTenantLoad\":true,\"RoleName\":"
                 + "\"Internal/publisher\"},\"CreatorRole\":{\"CreateOnTenantLoad\":true,\"RoleName\":"
                 + "\"Internal/creator\"},\"SubscriberRole\":{\"CreateOnTenantLoad\":true}}}";
-    }*/
+    }
 
 }

@@ -133,7 +133,7 @@ public abstract class AbstractAPIManager implements APIManager {
                 ServiceReferenceHolder.setUserRealm((ServiceReferenceHolder.getInstance().getRealmService().getBootstrapRealm()));
             } else {
                 String tenantDomainName = MultitenantUtils.getTenantDomain(username);
-                String tenantUserName = MultitenantUtils.getTenantAwareUsername(username);
+                String tenantUserName = getTenantAwareUsername(username);
                 int tenantId = getTenantManager().getTenantId(tenantDomainName);
                 this.tenantId = tenantId;
                 this.tenantDomain = tenantDomainName;
@@ -165,9 +165,13 @@ public abstract class AbstractAPIManager implements APIManager {
             ServiceReferenceHolder.setUserRealm(getRegistryService().getConfigSystemRegistry().getUserRealm());
             registerCustomQueries(configRegistry, username);
         } catch (RegistryException e) {
-            handleException("Error while obtaining registry objects", e);
+            String msg = "Error while obtaining registry objects";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (org.wso2.carbon.user.api.UserStoreException e) {
-            handleException("Error while getting user registry for user:" + username, e);
+            String msg = "Error while getting user registry for user:" + username;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
 
     }
@@ -194,7 +198,9 @@ public abstract class AbstractAPIManager implements APIManager {
                 authorizationManager.authorizeRole(APIConstants.ANONYMOUS_ROLE, path, ActionConstants.GET);
 
             } catch (UserStoreException e) {
-                handleException("Error while setting the permissions", e);
+                String msg = "Error while setting the permissions";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
             }
         } else if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
             int tenantId;
@@ -204,7 +210,9 @@ public abstract class AbstractAPIManager implements APIManager {
                         getTenantUserRealm(tenantId).getAuthorizationManager();
                 authManager.authorizeRole(APIConstants.ANONYMOUS_ROLE, path, ActionConstants.GET);
             } catch (org.wso2.carbon.user.api.UserStoreException e) {
-                handleException("Error while setting the permissions", e);
+                String msg = "Error while setting the permissions";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
             }
 
         }
@@ -308,12 +316,13 @@ public abstract class AbstractAPIManager implements APIManager {
                 isTenantFlowStarted = true;
                 startTenantFlow(tenantDomain);
             }
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
             GenericArtifact[] artifacts = artifactManager.getAllGenericArtifacts();
             for (GenericArtifact artifact : artifacts) {
                 API api = null;
                 try {
-                    api = getApi(artifact);
+                    api = APIUtil.getAPI(artifact);
                 } catch (APIManagementException e) {
                     //log and continue since we want to load the rest of the APIs.
                     log.error("Error while loading API " + artifact.getAttribute(APIConstants.API_OVERVIEW_NAME), e);
@@ -348,17 +357,17 @@ public abstract class AbstractAPIManager implements APIManager {
             int apiTenantId = getTenantManager()
                     .getTenantId(apiTenantDomain);
             if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(apiTenantDomain)) {
-                loadTenantRegistry(apiTenantId);
+                APIUtil.loadTenantRegistry(apiTenantId);
             }
 
             if (this.tenantDomain == null || !this.tenantDomain.equals(apiTenantDomain)) { //cross tenant scenario
                 registry = getRegistryService().getGovernanceUserRegistry(
-                        MultitenantUtils.getTenantAwareUsername(
-                                APIUtil.replaceEmailDomainBack(identifier.getProviderName())), apiTenantId);
+                        getTenantAwareUsername(APIUtil.replaceEmailDomainBack(identifier.getProviderName())), apiTenantId);
             } else {
                 registry = this.registry;
             }
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
             Resource apiResource = registry.get(apiPath);
             String artifactId = apiResource.getUUID();
             if (artifactId == null) {
@@ -366,7 +375,7 @@ public abstract class AbstractAPIManager implements APIManager {
             }
             GenericArtifact apiArtifact = artifactManager.getGenericArtifact(artifactId);
 
-            API api = getApiForPublishing(registry, apiArtifact);
+            API api = APIUtil.getAPIForPublishing(apiArtifact, registry);
 
             //check for API visibility
             if (APIConstants.API_GLOBAL_VISIBILITY.equals(api.getVisibility())) { //global api
@@ -388,6 +397,10 @@ public abstract class AbstractAPIManager implements APIManager {
             log.error(msg, e);
             throw new APIManagementException(msg, e);
         }
+    }
+
+    protected String getTenantAwareUsername(String username) {
+        return MultitenantUtils.getTenantAwareUsername(username);
     }
 
     protected String getTenantDomain(APIIdentifier identifier) {
@@ -429,15 +442,16 @@ public abstract class AbstractAPIManager implements APIManager {
                 }
             }
 
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
 
             GenericArtifact apiArtifact = artifactManager.getGenericArtifact(uuid);
             if (apiArtifact != null) {
                 return getApiForPublishing(registry, apiArtifact);
             } else {
-                handleResourceNotFoundException(
-                        "Failed to get API. API artifact corresponding to artifactId " + uuid + " does not exist");
-                return null;
+                String msg = "Failed to get API. API artifact corresponding to artifactId " + uuid + " does not exist";
+                log.error(msg);
+                throw new APIMgtResourceNotFoundException(msg);
             }
         } catch (RegistryException e) {
             String msg = "Failed to get API";
@@ -478,14 +492,16 @@ public abstract class AbstractAPIManager implements APIManager {
                     registry = this.registry;
                 }
             }
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
 
             GenericArtifact apiArtifact = artifactManager.getGenericArtifact(uuid);
             if (apiArtifact != null) {
                 return getApiInformation(registry, apiArtifact);
             } else {
-                handleResourceNotFoundException(
-                        "Failed to get API. API artifact corresponding to artifactId " + uuid + " does not exist");
+                String msg = "Failed to get API. API artifact corresponding to artifactId " + uuid + " does not exist";
+                log.error(msg);
+                throw new APIMgtResourceNotFoundException(msg);
             }
         } catch (RegistryException e) {
             String msg = "Failed to get API with uuid " + uuid;
@@ -496,7 +512,6 @@ public abstract class AbstractAPIManager implements APIManager {
             log.error(msg, e);
             throw new APIManagementException(msg, e);
         }
-        return null;
     }
 
     protected API getApiInformation(Registry registry, GovernanceArtifact apiArtifact) throws APIManagementException {
@@ -564,7 +579,7 @@ public abstract class AbstractAPIManager implements APIManager {
         if (manager != null) {
             return manager;
         }
-        manager = getAPIGenericArtifactManager(registry);
+        manager = getAPIGenericArtifactManagerFromUtil(registry, APIConstants.API_KEY);
         genericArtifactCache.put(tenantDomain, manager);
         return manager;
     }
@@ -578,13 +593,13 @@ public abstract class AbstractAPIManager implements APIManager {
                 int id = getTenantManager()
                         .getTenantId(tenantDomain);
                 // explicitly load the tenant's registry
-                loadTenantRegistry(id);
+                APIUtil.loadTenantRegistry(id);
                 passRegistry = getRegistryService()
                         .getGovernanceSystemRegistry(id);
             } else {
                 if (this.tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(this.tenantDomain)) {
                     // explicitly load the tenant's registry
-                    loadTenantRegistry(MultitenantConstants.SUPER_TENANT_ID);
+                    APIUtil.loadTenantRegistry(MultitenantConstants.SUPER_TENANT_ID);
                     passRegistry = getRegistryService().getGovernanceUserRegistry(
                             identifier.getProviderName(), MultitenantConstants.SUPER_TENANT_ID);
                 } else {
@@ -605,7 +620,8 @@ public abstract class AbstractAPIManager implements APIManager {
 
     public API getAPI(String apiPath) throws APIManagementException {
         try {
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
             Resource apiResource = registry.get(apiPath);
             String artifactId = apiResource.getUUID();
             if (artifactId == null) {
@@ -1076,7 +1092,8 @@ public abstract class AbstractAPIManager implements APIManager {
                 String docPath = association.getDestinationPath();
 
                 Resource docResource = registry.get(docPath);
-                GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry);
+                GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry,
+                        APIConstants.DOCUMENTATION_KEY);
                 GenericArtifact docArtifact = artifactManager.getGenericArtifact(docResource.getUUID());
                 Documentation doc = APIUtil.getDocumentation(docArtifact);
                 Date contentLastModifiedDate;
@@ -1130,7 +1147,8 @@ public abstract class AbstractAPIManager implements APIManager {
                     throw new APIManagementException(msg, e);
                 }
                 if (docResource != null) {
-                    GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registryType);
+                    GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registryType,
+                            APIConstants.DOCUMENTATION_KEY);
                     GenericArtifact docArtifact = artifactManager.getGenericArtifact(
                             docResource.getUUID());
                     Documentation doc = APIUtil.getDocumentation(docArtifact, apiId.getProviderName());
@@ -1164,18 +1182,19 @@ public abstract class AbstractAPIManager implements APIManager {
         return documentationList;
     }
 
-    protected GenericArtifactManager getAPIGenericArtifactManager(Registry registryType) throws APIManagementException {
+    protected GenericArtifactManager getAPIGenericArtifactManager(Registry registryType, String keyType) throws
+            APIManagementException {
         try {
-            return new GenericArtifactManager(registryType, APIConstants.DOCUMENTATION_KEY);
+            return new GenericArtifactManager(registryType, keyType);
         } catch (RegistryException e) {
             handleException("Error while retrieving generic artifact manager object",e);
         }
         return null;
     }
 
-    protected GenericArtifactManager getAPIGenericArtifactManagerFromUtil(Registry registry)
+    protected GenericArtifactManager getAPIGenericArtifactManagerFromUtil(Registry registry, String keyType)
             throws APIManagementException {
-         return APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
+         return APIUtil.getArtifactManager(registry, keyType);
     }
 
     private boolean isTenantDomainNotMatching(String tenantDomain) {
@@ -1189,7 +1208,8 @@ public abstract class AbstractAPIManager implements APIManager {
                                           String docName) throws APIManagementException {
         Documentation documentation = null;
         String docPath = APIUtil.getAPIDocPath(apiId) + docName;
-        GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry);
+        GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                APIConstants.DOCUMENTATION_KEY);
         try {
             Resource docResource = registry.get(docPath);
             GenericArtifact artifact = artifactManager.getGenericArtifact(docResource.getUUID());
@@ -1225,7 +1245,8 @@ public abstract class AbstractAPIManager implements APIManager {
             } else {
                 registryType = registry;
             }
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registryType);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registryType, APIConstants
+                    .DOCUMENTATION_KEY);
             GenericArtifact artifact = artifactManager.getGenericArtifact(docId);
             if (null != artifact) {
                 documentation = APIUtil.getDocumentation(artifact);
@@ -1458,7 +1479,8 @@ public abstract class AbstractAPIManager implements APIManager {
                 Resource resource;
                 try {
                     resource = registry.get(apiPath);
-                    GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry);
+                    GenericArtifactManager artifactManager = getAPIGenericArtifactManager(registry,
+                            APIConstants.API_KEY);
                     GenericArtifact artifact = artifactManager.getGenericArtifact(
                             resource.getUUID());
                     API api = APIUtil.getAPI(artifact, registry);
@@ -1570,7 +1592,8 @@ public abstract class AbstractAPIManager implements APIManager {
             APIManagementException {
         String apiPath = APIUtil.getAPIPath(identifier);
         try {
-            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry);
+            GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registry,
+                    APIConstants.API_KEY);
             Resource apiResource = registry.get(apiPath);
             String artifactId = apiResource.getUUID();
             if (artifactId == null) {

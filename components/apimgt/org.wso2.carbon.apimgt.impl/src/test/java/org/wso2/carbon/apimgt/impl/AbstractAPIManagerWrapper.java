@@ -80,12 +80,13 @@ public class AbstractAPIManagerWrapper extends AbstractAPIManager {
     }
 
     @Override
-    protected GenericArtifactManager getAPIGenericArtifactManager(Registry registry) throws APIManagementException {
+    protected GenericArtifactManager getAPIGenericArtifactManager(Registry registry, String keyType) throws
+            APIManagementException {
         return genericArtifactManager;
     }
 
     @Override
-    protected GenericArtifactManager getAPIGenericArtifactManagerFromUtil(Registry registry) throws
+    protected GenericArtifactManager getAPIGenericArtifactManagerFromUtil(Registry registry, String keyType) throws
             APIManagementException {
         return genericArtifactManager;
     }
@@ -149,6 +150,10 @@ public class AbstractAPIManagerWrapper extends AbstractAPIManager {
 
     protected void endTenantFlow() {
         // Do Nothing
+    }
+
+    protected String getTenantAwareUsername(String username){
+        return "admin";
     }
 
 }

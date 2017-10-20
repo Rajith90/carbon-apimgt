@@ -1163,7 +1163,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 // Throwing an error from this level will mask the original exception
                 log.error("Error while rolling back the transaction for API: " + api.getId().getApiName(), re);
             }
-            handleException("Error while performing registry transaction operation", e);
+            String msg = "Error while performing registry transaction operation";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } finally {
             try {
                 if (!transactionCommitted) {
@@ -1527,11 +1529,20 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     private Map<String, String> publishToGateway(API api) throws APIManagementException {
         Map<String, String> failedEnvironment;
         String tenantDomain = null;
+        APITemplateBuilder builder = null;
         if (api.getId().getProviderName().contains("AT")) {
             String provider = api.getId().getProviderName().replace("-AT-", "@");
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
-        failedEnvironment = publishToGateway(api, tenantDomain);
+        
+        try {
+            builder = getAPITemplateBuilder(api);
+        } catch (Exception e) {
+            handleException("Error while publishing to Gateway ", e);
+        }
+        
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        failedEnvironment = gatewayManager.publishToGateway(api, builder, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " published to gateway";
@@ -1570,7 +1581,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             tenantDomain = MultitenantUtils.getTenantDomain( provider);
         }
         
-        failedEnvironment = removeFromGateway(api, tenantDomain);
+        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
+        failedEnvironment = gatewayManager.removeFromGateway(api, tenantDomain);
         if (log.isDebugEnabled()) {
             String logMessage = "API Name: " + api.getId().getApiName() + ", API Version " + api.getId().getVersion()
                     + " deleted from gateway";
@@ -2067,7 +2079,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 handleException("Error while rolling back the transaction for API: " + api.getId(), re);
             }
             String msg = "Failed to create new version : " + newVersion + " of : " + api.getId().getApiName();
-            handleException(msg, e);
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } finally {
             try {
                 if (!transactionCommitted) {
@@ -2734,9 +2747,13 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             }
             */
         } catch (RegistryException e) {
-            handleException("Failed to remove the API from : " + path, e);
+            String msg = "Failed to remove the API from : " + path;
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (WorkflowException e) {
-            handleException("Failed to execute workflow cleanup task ", e);
+            String msg = "Failed to execute workflow cleanup task ";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         }
     }
 
@@ -4934,22 +4951,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
         return apimRegistryService
                 .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION);
-    }
-    
-    protected Map<String, String> publishToGateway(API api, String tenantDomain) throws APIManagementException {
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        APITemplateBuilder builder = null;
-        try {
-            builder = getAPITemplateBuilder(api);
-        } catch (Exception e) {
-            handleException("Error while publishing to Gateway ", e);
-        }
-        return gatewayManager.publishToGateway(api, builder, tenantDomain);
-    }
-    
-    protected Map<String, String> removeFromGateway(API api, String tenantDomain) {
-        APIGatewayManager gatewayManager = APIGatewayManager.getInstance();
-        return gatewayManager.removeFromGateway(api, tenantDomain);
     }
     
     protected int getTenantId(String tenantDomain) throws UserStoreException {
