@@ -189,7 +189,6 @@ public class APIKeyMgtUtilTestCase {
         PowerMockito.when(registryService.getGovernanceSystemRegistry()).thenReturn(mockedUserRegistry);
         PowerMockito.when(APIUtil.getArtifactManager(mockedUserRegistry, APIConstants.API_KEY))
                 .thenReturn(Mockito.mock(GenericArtifactManager.class));
-
         try {
             APIKeyMgtUtil.getAPI(mockedIdentifier);
             Assert.fail("APIManagementException not thrown when artifactId is null");
@@ -214,7 +213,6 @@ public class APIKeyMgtUtilTestCase {
 
         API nullApi = APIKeyMgtUtil.getAPI(mockedIdentifier);
         Assert.assertNull(nullApi);
-
     }
 
     @Test
@@ -243,7 +241,6 @@ public class APIKeyMgtUtilTestCase {
 
         API returnedApi = APIKeyMgtUtil.getAPI(mockedIdentifier);
         Assert.assertTrue(returnedApi instanceof API);
-
     }
 
     @Test
