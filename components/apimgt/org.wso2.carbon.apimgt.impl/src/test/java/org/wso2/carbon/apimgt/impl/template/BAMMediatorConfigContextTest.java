@@ -27,8 +27,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
-import org.wso2.carbon.apimgt.impl.utils.APIUtil
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({APIUtil.class})
 public class BAMMediatorConfigContextTest {
 
     @Test
