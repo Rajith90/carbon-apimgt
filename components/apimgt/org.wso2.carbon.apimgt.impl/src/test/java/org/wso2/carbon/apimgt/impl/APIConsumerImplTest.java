@@ -474,7 +474,9 @@ public class APIConsumerImplTest {
         APIIdentifier apiId1 = new APIIdentifier("admin", "API1", "1.0.0");
         API api = new API(apiId1);
         Mockito.when(APIUtil.getAPI(artifact)).thenReturn(api);
+        //set isAllowDisplayMultipleVersions true
         assertNotNull(apiConsumer.getRecentlyAddedAPIs(10, "testDomain"));
+        //set isAllowDisplayMultipleVersions false
         assertNotNull(apiConsumer.getRecentlyAddedAPIs(10, "testDomain"));
     }
 
@@ -695,6 +697,25 @@ public class APIConsumerImplTest {
         apiConsumer.apiMgtDAO = apiMgtDAO;
         assertEquals((Integer) 10, apiConsumer.getSubscriptionCount(subscriber, "testApplication",
                 "testId"));
+    }
+
+    @Test
+    public void testGetSubscribedIdentifiers() throws APIManagementException {
+        APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
+        apiConsumer.apiMgtDAO = apiMgtDAO;
+        Set<SubscribedAPI> originalSubscribedAPIs = new HashSet<SubscribedAPI>();
+        SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
+        originalSubscribedAPIs.add(subscribedAPI);
+        Subscriber subscriber = new Subscriber("Subscriber");
+        PowerMockito.mockStatic(APIUtil.class);
+        APIIdentifier apiId1 = new APIIdentifier("admin", "API1", "1.0.0");
+        Tier tier = Mockito.mock(Tier.class);
+
+        when(apiMgtDAO.getSubscribedAPIs(subscriber, "testID")).thenReturn(originalSubscribedAPIs);
+        when(subscribedAPI.getTier()).thenReturn(tier);
+        when(tier.getName()).thenReturn("tier");
+        when(subscribedAPI.getApiId()).thenReturn(apiId1);
+        assertNotNull(apiConsumer.getSubscribedIdentifiers(subscriber, apiId1,"testID"));
     }
 
     @Test
