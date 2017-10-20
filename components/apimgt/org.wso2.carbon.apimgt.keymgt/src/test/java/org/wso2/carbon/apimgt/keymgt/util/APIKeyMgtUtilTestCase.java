@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({APIKeyMgtDataHolder.class,IdentityDatabaseUtil.class, PrivilegedCarbonContext.class})
+@PrepareForTest({APIKeyMgtDataHolder.class, IdentityDatabaseUtil.class, PrivilegedCarbonContext.class})
 public class APIKeyMgtUtilTestCase {
 
     @Test
