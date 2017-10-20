@@ -100,6 +100,9 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
 import javax.xml.namespace.QName;
 
 import static junit.framework.TestCase.assertFalse;
@@ -114,7 +117,7 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 @PrepareForTest({WorkflowExecutorFactory.class, APIUtil.class, GovernanceUtils.class, ApplicationUtils.class,
         KeyManagerHolder.class, WorkflowExecutorFactory.class, AbstractApplicationRegistrationWorkflowExecutor.class,
         PrivilegedCarbonContext.class, ServiceReferenceHolder.class, MultitenantUtils.class, CacheInvalidator.class,
-        RegistryUtils.class })
+        RegistryUtils.class, Caching.class })
 @SuppressStaticInitializationFor("org.wso2.carbon.apimgt.impl.utils.ApplicationUtils")
 public class APIConsumerImplTest {
 
@@ -152,6 +155,7 @@ public class APIConsumerImplTest {
         registry = Mockito.mock(Registry.class);
         userRegistry = Mockito.mock(UserRegistry.class);
         authorizationManager = Mockito.mock(AuthorizationManager.class);
+        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.mockStatic(ApplicationUtils.class);
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         PowerMockito.mockStatic(MultitenantUtils.class);
@@ -218,29 +222,6 @@ public class APIConsumerImplTest {
 
     }
 
-    /**
-     * This test case is to test the URIs generated for tag thumbnails when Tag wise listing is enabled in store page.
-     */
-    @Test
-    public void testTagThumbnailURLGeneration() {
-        // Check the URL for super tenant
-        String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        String thumbnailPath = "/apimgt/applicationdata/tags/wso2-group/thumbnail.png";
-        String finalURL = APIUtil.getRegistryResourcePathForUI(APIConstants.
-                        RegistryResourceTypesForUI.TAG_THUMBNAIL, tenantDomain,
-                thumbnailPath);
-        log.info("##### Generated Tag Thumbnail URL > " + finalURL);
-        assertEquals("/registry/resource/_system/governance" + thumbnailPath, finalURL);
-
-        // Check the URL for other tenants
-        tenantDomain = "apimanager3155.com";
-        finalURL = APIUtil.getRegistryResourcePathForUI(APIConstants.
-                        RegistryResourceTypesForUI.TAG_THUMBNAIL, tenantDomain,
-                thumbnailPath);
-        log.info("##### Generated Tag Thumbnail URL > " + finalURL);
-        assertEquals("/t/" + tenantDomain + "/registry/resource/_system/governance" + thumbnailPath, finalURL);
-    }
-
     @Test
     public void testGetSubscriber() throws APIManagementException {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
@@ -260,7 +241,6 @@ public class APIConsumerImplTest {
     @Test
     public void testGetAPIsWithTag() throws Exception {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         PowerMockito.mockStatic(GovernanceUtils.class);
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
@@ -281,7 +261,6 @@ public class APIConsumerImplTest {
     @Test
     public void testGetAllPaginatedPublishedAPIs() throws Exception {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(false, true);
         System.setProperty(CARBON_HOME, "");
@@ -321,7 +300,6 @@ public class APIConsumerImplTest {
     public void testGetAllPaginatedAPIs() throws Exception {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.mockStatic(GovernanceUtils.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(false, true);
@@ -362,11 +340,18 @@ public class APIConsumerImplTest {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
         System.setProperty(CARBON_HOME, "");
+
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito.
+                mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiManagerConfigurationService);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(Mockito.anyString())).thenReturn("10", "20");
+
         PowerMockito.mockStatic(GovernanceUtils.class);
         PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
         PowerMockito.mockStatic(PrivilegedCarbonContext.class);
         PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.mockStatic(GovernanceUtils.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
@@ -408,8 +393,14 @@ public class APIConsumerImplTest {
     public void testGetAllPaginatedAPIsByStatusSet() throws Exception {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.mockStatic(GovernanceUtils.class);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito.
+                mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiManagerConfigurationService);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(Mockito.anyString())).thenReturn("10", "20");
+
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(false, true);
@@ -453,7 +444,30 @@ public class APIConsumerImplTest {
     public void testGetRecentlyAddedAPIs() throws Exception {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
-        PowerMockito.mockStatic(APIUtil.class);
+        UserRegistry userRegistry1 = Mockito.mock(UserRegistry.class);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito.
+                mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiManagerConfigurationService);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(Mockito.anyString())).thenReturn("true", "false");
+
+        API api = Mockito.mock(API.class);
+        Set<API> recentlyAddedAPI = new HashSet<API>();
+        recentlyAddedAPI.add(api);
+        PowerMockito.mockStatic(Caching.class);
+
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        Cache<Object, Object> cache = Mockito.mock(Cache.class);
+        Mockito.when(Caching.getCacheManager(Mockito.anyString())).thenReturn(cacheManager);
+        Mockito.when(cacheManager.getCache(Mockito.anyString())).thenReturn(cache);
+        Mockito.when(cache.get(Mockito.anyObject())).thenReturn(recentlyAddedAPI);
+        Resource resource = new ResourceImpl();
+        resource.setProperty("overview_status", "overview_status");
+        String path = "testPath";
+        Mockito.when(APIUtil.getAPIPath((APIIdentifier) Mockito.anyObject())).thenReturn(path);
+        Mockito.when(userRegistry1.get(Mockito.anyString())).thenReturn(resource);
+
         PowerMockito.mockStatic(GovernanceUtils.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(true, false);
@@ -461,7 +475,7 @@ public class APIConsumerImplTest {
         PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
         PowerMockito.mockStatic(PrivilegedCarbonContext.class);
         PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
-        UserRegistry userRegistry1 = Mockito.mock(UserRegistry.class);
+
         Mockito.when(registryService.getGovernanceUserRegistry(Mockito.anyString(), Mockito.anyInt())).
                 thenReturn(userRegistry1);
         Mockito.when(registryService.getGovernanceSystemRegistry(Mockito.anyInt())).thenReturn(userRegistry1);
@@ -471,9 +485,10 @@ public class APIConsumerImplTest {
         GenericArtifact artifact = Mockito.mock(GenericArtifact.class);
         GenericArtifact[] genericArtifacts = new GenericArtifact[]{artifact};
         Mockito.when(artifactManager.findGenericArtifacts(Mockito.anyMap())).thenReturn(genericArtifacts);
+
         APIIdentifier apiId1 = new APIIdentifier("admin", "API1", "1.0.0");
-        API api = new API(apiId1);
-        Mockito.when(APIUtil.getAPI(artifact)).thenReturn(api);
+        API api1 = new API(apiId1);
+        Mockito.when(APIUtil.getAPI(artifact)).thenReturn(api1);
         //set isAllowDisplayMultipleVersions true
         assertNotNull(apiConsumer.getRecentlyAddedAPIs(10, "testDomain"));
         //set isAllowDisplayMultipleVersions false
@@ -510,7 +525,6 @@ public class APIConsumerImplTest {
     public void testGetTopRatedAPIs() throws APIManagementException, RegistryException {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
-        PowerMockito.mockStatic(APIUtil.class);
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
         PowerMockito.when(APIUtil.getArtifactManager((UserRegistry)(Mockito.anyObject()), Mockito.anyString())).
                 thenReturn(artifactManager);
@@ -542,7 +556,6 @@ public class APIConsumerImplTest {
     public void testGetPublishedAPIsByProvider() throws APIManagementException, RegistryException {
         Registry userRegistry = Mockito.mock(Registry.class);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(userRegistry, apiMgtDAO);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(true, false);
         PowerMockito.when(APIUtil.isAllowDisplayAPIsWithMultipleStatus()).thenReturn(true, false);
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
@@ -618,6 +631,7 @@ public class APIConsumerImplTest {
 
         Mockito.reset(apiMgtDAO);
         when(apiMgtDAO.retrieveWorkflow(Mockito.anyString())).thenThrow(APIManagementException.class);
+        when(APIUtil.isStringArray(args)).thenReturn(true);
         row = apiConsumer.resumeWorkflow(args);
         assertEquals("Error while resuming the workflow. null",
                 row.get("message"));
@@ -643,7 +657,6 @@ public class APIConsumerImplTest {
     @Test
     public void testGetPaginatedAPIsWithTag() throws Exception {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.doNothing().when(APIUtil.class, "loadTenantRegistry", Mockito.anyInt());
 
         PowerMockito.mockStatic(GovernanceUtils.class);
@@ -707,7 +720,6 @@ public class APIConsumerImplTest {
         SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
         originalSubscribedAPIs.add(subscribedAPI);
         Subscriber subscriber = new Subscriber("Subscriber");
-        PowerMockito.mockStatic(APIUtil.class);
         APIIdentifier apiId1 = new APIIdentifier("admin", "API1", "1.0.0");
         Tier tier = Mockito.mock(Tier.class);
 
@@ -745,8 +757,6 @@ public class APIConsumerImplTest {
         SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
         originalSubscribedAPIs.add(subscribedAPI);
         Subscriber subscriber = new Subscriber("Subscriber");
-        PowerMockito.mockStatic(APIUtil.class);
-
         Tier tier = Mockito.mock(Tier.class);
 
         when(apiMgtDAO.getSubscribedAPIs(subscriber, "testID")).thenReturn(originalSubscribedAPIs);
@@ -758,7 +768,6 @@ public class APIConsumerImplTest {
     @Test
     public void testGetAllPublishedAPIs() throws APIManagementException, GovernanceException {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
-        PowerMockito.mockStatic(APIUtil.class);
         APINameComparator apiNameComparator = Mockito.mock(APINameComparator.class);
         SortedSet<API> apiSortedSet = new TreeSet<API>(apiNameComparator);
         GenericArtifactManager artifactManager = Mockito.mock(GenericArtifactManager.class);
@@ -784,7 +793,6 @@ public class APIConsumerImplTest {
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
         apiConsumer.apiMgtDAO = apiMgtDAO;
         Application application = Mockito.mock(Application.class);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isApplicationExist("userID", "app", "1")).
                 thenReturn(false);
         Mockito.when(apiMgtDAO.addApplication(application, "userID")).thenReturn(1);
@@ -830,7 +838,6 @@ public class APIConsumerImplTest {
         SubscribedAPI subscribedAPI = Mockito.mock(SubscribedAPI.class);
         originalSubscribedAPIs.add(subscribedAPI);
         Subscriber subscriber = new Subscriber("Subscriber");
-        PowerMockito.mockStatic(APIUtil.class);
         Tier tier = Mockito.mock(Tier.class);
         when(apiMgtDAO.getSubscribedAPIs(subscriber, "testApplication","testID")).
                 thenReturn(originalSubscribedAPIs);
@@ -984,7 +991,6 @@ public class APIConsumerImplTest {
     @Test
     public void testGetGroupIds()
             throws APIManagementException, IllegalAccessException, InstantiationException, ClassNotFoundException {
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.getGroupingExtractorImplementation())
                 .thenReturn(null, "org.wso2.carbon.apimgt.impl.SampleLoginPostExecutor");
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper();
@@ -1025,7 +1031,6 @@ public class APIConsumerImplTest {
         Mockito.when(userStoreManager.getRoleListOfUser(Mockito.anyString())).thenThrow(UserStoreException.class).
                 thenReturn(new String[] { "role1", "role2" });
         Assert.assertFalse(apiConsumer.isTierDeneid("tier1"));
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isAdvanceThrottlingEnabled()).thenReturn(true, false);
         TierPermissionDTO tierPermissionDTO = new TierPermissionDTO();
         tierPermissionDTO.setRoles(new String[] { "role1" });
@@ -1051,7 +1056,6 @@ public class APIConsumerImplTest {
         Mockito.when(userStoreManager.getRoleListOfUser(Mockito.anyString())).thenThrow(UserStoreException.class).
                 thenReturn(new String[] { "role1", "role2" });
         Assert.assertEquals(apiConsumer.getDeniedTiers().size(), 0);
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isAdvanceThrottlingEnabled()).thenReturn(true, false);
         TierPermissionDTO tierPermissionDTO = new TierPermissionDTO();
         TierPermissionDTO tierPermissionDTO1 = new TierPermissionDTO();
@@ -1349,7 +1353,6 @@ public class APIConsumerImplTest {
         String providerId = "1";
         API api = new API(new APIIdentifier(API_PROVIDER, SAMPLE_API_NAME, SAMPLE_API_VERSION));
         API api1 = new API(new APIIdentifier(API_PROVIDER, "pizza_api", "2.0.0"));
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(true, false);
         PowerMockito.when(APIUtil.isAllowDisplayAPIsWithMultipleStatus()).thenReturn(true, false);
         PowerMockito.when(APIUtil.getArtifactManager(userRegistry, APIConstants.API_KEY))
@@ -1402,7 +1405,6 @@ public class APIConsumerImplTest {
         String providerId = "2";
         API api = new API(new APIIdentifier(API_PROVIDER, SAMPLE_API_NAME, SAMPLE_API_VERSION));
         API api1 = new API(new APIIdentifier(API_PROVIDER, SAMPLE_API_NAME, "2.0.0"));
-        PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.isAllowDisplayMultipleVersions()).thenReturn(true, false);
         PowerMockito.when(APIUtil.isAllowDisplayAPIsWithMultipleStatus()).thenReturn(true, false);
         PowerMockito.when(APIUtil.getArtifactManager(userRegistry, APIConstants.API_KEY))
