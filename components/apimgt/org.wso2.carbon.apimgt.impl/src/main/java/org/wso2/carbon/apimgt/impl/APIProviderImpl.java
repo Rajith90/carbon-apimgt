@@ -1233,11 +1233,14 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                             .getContext());
                 }
             } else {
-                handleException("Couldn't find an API with the name-" + name + "version-" + version);
+                String msg = "Couldn't find an API with the name-" + name + "version-" + version;
+                log.error(msg);
+                throw new APIManagementException(msg);
             }
         } catch (FaultGatewaysException e) {
-            handleException("Error while publishing to/un-publishing from  API gateway", e);
-            return false;
+            String msg = "Error while publishing to/un-publishing from  API gateway";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } finally {
             if (isTenantFlowStarted) {
                 PrivilegedCarbonContext.endTenantFlow();
@@ -1454,7 +1457,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 }
                 isSuccess = true;
             } else {
-                handleException("Couldn't find an API with the name-" + name + "version-" + version);
+                String msg = "Couldn't find an API with the name-" + name + "version-" + version;
+                log.error(msg);
+                throw new APIManagementException(msg);
             }
 
         } finally {
@@ -2260,7 +2265,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         } catch (RegistryException e) {
             String msg = "Failed to add the documentation content of : "
                          + documentationName + " of API :" + identifier.getApiName();
-            handleException(msg, e);
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
         } catch (UserStoreException e) {
             String msg = "Failed to add the documentation content of : "
                          + documentationName + " of API :" + identifier.getApiName();
@@ -2817,9 +2823,11 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 			} else {
                 foundApiList = searchAPIs(searchTerm, searchType);
 			}
-		} catch (APIManagementException e) {
-			handleException("Failed to search APIs with type", e);
-		}
+        } catch (APIManagementException e) {
+            String msg = "Failed to search APIs with type";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
+        }
 		Collections.sort(foundApiList, new APINameComparator());
 		return foundApiList;
 	}
@@ -2903,9 +2911,11 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 				}
 
 			}
-		} catch (RegistryException e) {
-			handleException("Failed to search APIs with type", e);
-		} finally {
+        } catch (RegistryException e) {
+            String msg = "Failed to search APIs with type";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
+        } finally {
 			if (isTenantFlowStarted) {
 				PrivilegedCarbonContext.endTenantFlow();
 			}
