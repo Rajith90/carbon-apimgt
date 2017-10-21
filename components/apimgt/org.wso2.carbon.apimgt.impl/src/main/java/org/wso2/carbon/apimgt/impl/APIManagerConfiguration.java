@@ -829,7 +829,7 @@ public class APIManagerConfiguration {
                     OMElement applicationPolicyLimits = defaultTierLimits
                             .getFirstChildWithName(new QName(APIConstants.AdvancedThrottleConstants
                                     .APPLICATION_THROTTLE_LIMITS));
-                    if (subscriptionPolicyLimits != null) {
+                    if (applicationPolicyLimits != null) {
                         OMElement largeTierElement = applicationPolicyLimits.getFirstChildWithName(new
                                 QName(APIConstants.DEFAULT_APP_POLICY_FIFTY_REQ_PER_MIN));
                         if (largeTierElement != null) {
