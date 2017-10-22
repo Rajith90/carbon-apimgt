@@ -172,10 +172,8 @@ public class APIKeyMgtUtilTestCase {
         PowerMockito.when(mockAttribute.getName()).thenReturn("http://wso2.org/claims/role");
 
         String[] roles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
-        String[] multiRoles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
 
         Assert.assertTrue(roles[0].equals("sampleRole"));
-        Assert.assertTrue(multiRoles.length == 2);
     }
 
     @Test
