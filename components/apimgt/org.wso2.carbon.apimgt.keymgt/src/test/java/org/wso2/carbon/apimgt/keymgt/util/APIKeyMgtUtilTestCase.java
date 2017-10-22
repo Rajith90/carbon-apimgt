@@ -39,8 +39,10 @@ import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.keymgt.APIKeyMgtException;
+import org.wso2.carbon.apimgt.keymgt.handlers.ResourceConstants;
 import org.wso2.carbon.apimgt.keymgt.internal.ServiceReferenceHolder;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.security.AuthenticatorsConfiguration;
 import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
@@ -59,7 +61,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(PowerMockRunner.class) @PrepareForTest({ Caching.class, APIKeyMgtDataHolder.class, IdentityDatabaseUtil.class,
-        PrivilegedCarbonContext.class, APIUtil.class, ServiceReferenceHolder.class })
+        PrivilegedCarbonContext.class, APIUtil.class, ServiceReferenceHolder.class, AuthenticatorsConfiguration.class })
 public class APIKeyMgtUtilTestCase {
     @Before
     public void init() {
@@ -166,6 +168,54 @@ public class APIKeyMgtUtilTestCase {
         List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
         List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
         PowerMockito.when(mockAttribute.getAttributeValues()).thenReturn(mockedAttributeValues, multiMockedAttributeValues);
+
+        PowerMockito.when(mockAttribute.getName()).thenReturn("http://wso2.org/claims/role");
+
+        String[] roles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] multiRoles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+
+        Assert.assertTrue(roles[0].equals("sampleRole"));
+        Assert.assertTrue(multiRoles.length == 2);
+    }
+
+    @Test
+    public void testGetRolesFromAssertion() throws Exception {
+        Assertion mockedAssertion = PowerMockito.mock(Assertion.class);
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext carbonContext;
+        carbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).thenReturn(-1234);
+        PowerMockito.doNothing().when(carbonContext).setTenantDomain("carbon.super", true);
+
+        AttributeStatement mockAttributeStatement = PowerMockito.mock(AttributeStatement.class);
+        List<AttributeStatement> attributeStatementList = Collections.singletonList(mockAttributeStatement);
+        PowerMockito.when(mockedAssertion.getAttributeStatements()).thenReturn(attributeStatementList);
+
+        Attribute mockAttribute = PowerMockito.mock(Attribute.class);
+        List<Attribute> attributesList = Collections.singletonList(mockAttribute);
+        PowerMockito.when(mockAttributeStatement.getAttributes()).thenReturn(attributesList);
+
+        XMLObject rawAttribute = PowerMockito.mock(XMLObject.class);
+        PowerMockito.when(rawAttribute.toString()).thenReturn("sampleRole");
+        List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
+        List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
+        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito.mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
+        PowerMockito.when(mockAttribute.getAttributeValues())
+                .thenReturn(mockedAttributeValues, multiMockedAttributeValues);
+
+        PowerMockito.mockStatic(AuthenticatorsConfiguration.class);
+        AuthenticatorsConfiguration mockedAuthenticatorsConfiguration = PowerMockito
+                .mock(AuthenticatorsConfiguration.class);
+        PowerMockito.when(AuthenticatorsConfiguration.getInstance()).thenReturn(mockedAuthenticatorsConfiguration);
+        Map<String, String> mockedConfigParameters = new HashMap<String, String>();
+        mockedConfigParameters.put(ResourceConstants.ATTRIBUTE_VALUE_SEPARATOR, "MockedAuthParam");
+        PowerMockito.when(mockedAuthenticatorConfig.getParameters()).thenReturn(mockedConfigParameters);
+        PowerMockito.when(mockedAuthenticatorsConfiguration
+                .getAuthenticatorConfig(ResourceConstants.SAML2_SSO_AUTHENTICATOR_NAME))
+                .thenReturn(mockedAuthenticatorConfig);
 
         PowerMockito.when(mockAttribute.getName()).thenReturn("http://wso2.org/claims/role");
 
