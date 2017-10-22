@@ -20,28 +20,58 @@ package org.wso2.carbon.apimgt.gateway.handlers.security;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
+import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Test class for APISecurityUtils
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(ServiceReferenceHolder.class)
 public class APISecurityUtilsTestCase {
 
-    @Test
-    public void testAPISecurityUtils() {
+    @Test(expected = IllegalStateException.class)
+    public void testSetAuthenticationContext() {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfiguration apiMgtConfig = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfiguration()).thenReturn(apiMgtConfig);
+        Mockito.when(apiMgtConfig.getFirstProperty(APIConstants.API_KEY_VALIDATOR_CLIENT_TYPE)).thenReturn("WSClient");
         MessageContext messageContext = Mockito.mock(Axis2MessageContext.class);
         AuthenticationContext authenticationContext = Mockito.mock(AuthenticationContext.class);
+        Mockito.when(authenticationContext.getKeyType()).thenReturn("keyType");
 
-        APISecurityUtilsWrapper apiSecurityUtilsWrapper = new APISecurityUtilsWrapper() {
+        APISecurityUtils.setAuthenticationContext(messageContext, authenticationContext, "abc");
+        //test when caller token is not null
+        Mockito.when(authenticationContext.getCallerToken()).thenReturn("callertoken");
+        Mockito.when(messageContext.getProperty(APIConstants.API_KEY_TYPE)).thenReturn("keyType");
+//        Axis2MessageContext axis2MessageContext = Mockito.mock(Axis2MessageContext.class);
+        org.apache.axis2.context.MessageContext axis2MsgCntxt = Mockito.mock(org.apache.axis2.context.MessageContext.class);
+        Mockito.when(((Axis2MessageContext) messageContext).getAxis2MessageContext()).thenReturn(axis2MsgCntxt);
+        Map transportHeaders = new HashMap();
+        Mockito.when(axis2MsgCntxt.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS))
+                .thenReturn(transportHeaders);
 
-        };
-        apiSecurityUtilsWrapper.setAuthenticationContext(messageContext, authenticationContext, "abc");
-//        apiSecurityUtilsWrapper.getKeyValidatorClientType();
-    }
+        APISecurityUtils.setAuthenticationContext(messageContext, authenticationContext, "abc");
 
-    private class APISecurityUtilsWrapper extends APISecurityUtils {
+        Assert.assertEquals("keyType", messageContext.getProperty(APIConstants.API_KEY_TYPE));
 
+        //test for IllegalStateException
+        String API_AUTH_CONTEXT = "__API_AUTH_CONTEXT";
+        Mockito.when(messageContext.getProperty(API_AUTH_CONTEXT)).thenReturn("abc");
+        APISecurityUtils.setAuthenticationContext(messageContext, authenticationContext, "abc");
     }
 
 }

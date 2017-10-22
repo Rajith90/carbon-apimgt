@@ -19,17 +19,20 @@
 
 package org.wso2.carbon.apimgt.impl;
 
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
+import org.wso2.carbon.user.api.AuthorizationManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -84,10 +87,15 @@ public class TestUtils {
         PowerMockito.doNothing().when(ServiceReferenceHolder.class); 
         ServiceReferenceHolder.setUserRealm(userRealm);
         
+        org.wso2.carbon.user.api.UserRealm userR = Mockito.mock(org.wso2.carbon.user.api.UserRealm.class);
+        PowerMockito.when(realmService.getTenantUserRealm(-1234)).thenReturn(userR);
+        AuthorizationManager authManager = Mockito.mock(AuthorizationManager.class);
+        PowerMockito.when(userR.getAuthorizationManager()).thenReturn(authManager);
+        
         PowerMockito.when(realmService.getBootstrapRealm()).thenReturn(bootstrapRealm);
         ServiceReferenceHolder.setUserRealm(bootstrapRealm);
         
-        PowerMockito.when(tm.getTenantId("carbon.super")).thenReturn(tenantId);
+        PowerMockito.when(tm.getTenantId(Matchers.anyString())).thenReturn(tenantId);
         
         return sh;
     }
@@ -109,6 +117,8 @@ public class TestUtils {
         PowerMockito.when(amConfig.getApiGatewayEnvironments()).thenReturn(apiGatewayEnvironments);
         PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_GATEWAY_TYPE)).
                             thenReturn(APIConstants.API_GATEWAY_TYPE_SYNAPSE);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_API_DOC_VISIBILITY_LEVELS)).
+            thenReturn("true", "false");
     }
     
     public static void mockAPIMConfiguration() throws RegistryException,
@@ -122,11 +132,14 @@ public class TestUtils {
 
         Map<String, Environment> apiGatewayEnvironments = new HashMap<String, Environment>();
         Environment env1 = new Environment();
+        env1.setApiGatewayEndpoint("https://abc.com, http://abc.com");
         apiGatewayEnvironments.put("PROD", env1);
         // Mocking some commonly used configs
         PowerMockito.when(amConfig.getApiGatewayEnvironments()).thenReturn(apiGatewayEnvironments);
         PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_GATEWAY_TYPE)).thenReturn(
                 APIConstants.API_GATEWAY_TYPE_SYNAPSE);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_API_DOC_VISIBILITY_LEVELS)).
+                thenReturn("true", "false");
         
         ThrottleProperties throttleProperties = new ThrottleProperties();
         PowerMockito.when(amConfig.getThrottleProperties()).thenReturn(throttleProperties);
@@ -147,5 +160,12 @@ public class TestUtils {
         Cache<Object, Object> cache = Mockito.mock(Cache.class);
         Mockito.when(cacheManager.getCache(APIConstants.RECENTLY_ADDED_API_CACHE_NAME)).thenReturn(cache);
         Mockito.doNothing().when(cache).removeAll();
+    }
+
+    public static ApiMgtDAO getApiMgtDAO(){
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        return apiMgtDAO;
     }
 }

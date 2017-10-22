@@ -78,7 +78,7 @@ public class APIKeyValidatorClientTest {
         SSLContext.setDefault(sslcontext);
     }
 
-    @Test
+//    @Test
     public void getAPIKeyData() throws Exception {
         wireMockRule = new WireMockRule(wireMockConfiguration);
         wireMockRule.stubFor(WireMock.post(urlEqualTo("/services/APIKeyValidationService")).withBasicAuth("admin",
@@ -225,7 +225,7 @@ public class APIKeyValidatorClientTest {
         MessageContext.setCurrentMessageContext(null);
     }
 
-    @Test
+//    @Test
     public void testGetUriTemplates() throws Exception {
         wireMockRule = new WireMockRule(wireMockConfiguration);
         wireMockRule.stubFor(WireMock.post(urlEqualTo("/services/APIKeyValidationService")).withBasicAuth("admin",
