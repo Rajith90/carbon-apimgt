@@ -81,7 +81,8 @@ public class APIKeyValidationServiceTest {
     private final String REFRESH_GRANT_TYPE = "refresh_token";
     private final String IMPLICIT_GRANT_TYPE = "implicit";
     private final String ACCESS_TOKEN = "ca19a540f544777860e44e75f605d927";
-    private final String API_KEY_MANGER_VALIDATION_HANDLER_CLASS_NAME = "org.wso2.carbon.apimgt.keymgt.handlers.DefaultKeyValidationHandler";
+    private final String API_KEY_MANGER_VALIDATION_HANDLER_CLASS_NAME =
+            "org.wso2.carbon.apimgt.keymgt.handlers.DefaultKeyValidationHandler";
     private final String REQUIRED_AUTHENTICATION_LEVEL = "level";
     private PrivilegedCarbonContext privilegedCarbonContext;
     private ServiceReferenceHolder serviceReferenceHolder;
@@ -144,7 +145,8 @@ public class APIKeyValidationServiceTest {
 
         String cacheKey = APIUtil.getAccessTokenCacheKey(ACCESS_TOKEN, API_CONTEXT, API_VERSION, "/*", "GET",
                 REQUIRED_AUTHENTICATION_LEVEL);
-        org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO infoDTO = new org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO();
+        org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO infoDTO =
+                new org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO();
         infoDTO.setApiPublisher(USER_NAME);
         infoDTO.setEndUserName(USER_NAME);
         PowerMockito.when(APIKeyMgtUtil.getFromKeyManagerCache(cacheKey)).thenReturn(infoDTO);
