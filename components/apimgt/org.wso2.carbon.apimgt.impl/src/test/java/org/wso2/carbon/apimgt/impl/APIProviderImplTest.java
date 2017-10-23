@@ -2832,8 +2832,6 @@ public class APIProviderImplTest {
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
         
-        
-        
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -2877,8 +2875,6 @@ public class APIProviderImplTest {
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
         
-        
-        
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -2920,8 +2916,6 @@ public class APIProviderImplTest {
         Assert.assertEquals(2, sequenceList.size());
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
-        
-        
         
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
