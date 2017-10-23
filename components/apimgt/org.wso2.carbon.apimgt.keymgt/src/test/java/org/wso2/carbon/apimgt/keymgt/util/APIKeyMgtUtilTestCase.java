@@ -303,13 +303,14 @@ public class APIKeyMgtUtilTestCase {
         Mockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
         String cacheExpTime = "9000";
         String sampleCacheKey = UUID.randomUUID().toString();
-        PowerMockito.when(amConfig.getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY)).thenReturn(cacheExpTime);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY)).thenReturn(cacheExpTime,null);
         Cache mockedCache = PowerMockito.mock(Cache.class);
         PowerMockito.mockStatic(Caching.class);
         CacheManager mockedCacheManager = PowerMockito.mock(CacheManager.class);
         Mockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(mockedCacheManager);
         CacheBuilder mockedCacheBuilder = PowerMockito.mock(CacheBuilder.class);
         Mockito.when(mockedCacheManager.createCacheBuilder(APIConstants.KEY_CACHE_NAME)).thenReturn(mockedCacheBuilder);
+        Mockito.when(mockedCacheManager.getCache(APIConstants.KEY_CACHE_NAME)).thenReturn(mockedCache);
         Mockito.when(mockedCacheBuilder.build()).thenReturn(mockedCache);
         Mockito.when(mockedCacheBuilder.setStoreByValue(Mockito.anyBoolean())).thenReturn(mockedCacheBuilder);
         PowerMockito.when(mockedCache.get(sampleCacheKey)).thenReturn(Mockito.mock(APIKeyValidationInfoDTO.class));
@@ -321,41 +322,7 @@ public class APIKeyMgtUtilTestCase {
                 .thenReturn(mockedCacheBuilder);
 
         APIKeyValidationInfoDTO cacheInfo = APIKeyMgtUtil.getFromKeyManagerCache(sampleCacheKey);
+        APIKeyValidationInfoDTO cacheInfoWithoutKeyCacheInistialized = APIKeyMgtUtil.getFromKeyManagerCache(sampleCacheKey);
         Assert.assertNotNull(cacheInfo);
-    }
-
-    @Test
-    public void testWriteToKeyManagerCache() {
-        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
-        APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
-        APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
-        PowerMockito.mockStatic(ServiceReferenceHolder.class);
-        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
-
-        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(amConfigService);
-        Mockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
-        String cacheExpTime = "9000";
-        String sampleCacheKey = UUID.randomUUID().toString();
-        PowerMockito.when(amConfig.getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY)).thenReturn(cacheExpTime);
-        Cache mockedCache = PowerMockito.mock(Cache.class);
-        PowerMockito.mockStatic(Caching.class);
-        CacheManager mockedCacheManager = PowerMockito.mock(CacheManager.class);
-        Mockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(mockedCacheManager);
-        CacheBuilder mockedCacheBuilder = PowerMockito.mock(CacheBuilder.class);
-        Mockito.when(mockedCacheManager.createCacheBuilder(APIConstants.KEY_CACHE_NAME)).thenReturn(mockedCacheBuilder);
-        Mockito.when(mockedCacheBuilder.build()).thenReturn(mockedCache);
-        Mockito.when(mockedCacheBuilder.setStoreByValue(Mockito.anyBoolean())).thenReturn(mockedCacheBuilder);
-        PowerMockito.when(mockedCache.get(sampleCacheKey)).thenReturn(Mockito.mock(APIKeyValidationInfoDTO.class));
-        Mockito.when(mockedCacheBuilder.setExpiry(CacheConfiguration.ExpiryType.MODIFIED,
-                new CacheConfiguration.Duration(TimeUnit.SECONDS, Long.parseLong(cacheExpTime))))
-                .thenReturn(mockedCacheBuilder);
-        Mockito.when(mockedCacheBuilder.setExpiry(CacheConfiguration.ExpiryType.ACCESSED,
-                new CacheConfiguration.Duration(TimeUnit.SECONDS, Long.parseLong(cacheExpTime))))
-                .thenReturn(mockedCacheBuilder);
-
-        APIKeyValidationInfoDTO sampleAPIKeyValidationInfoDTO = new APIKeyValidationInfoDTO();
-        APIKeyMgtUtil.writeToKeyManagerCache(sampleCacheKey,sampleAPIKeyValidationInfoDTO);
-
-        Mockito.verify(mockedCache,Mockito.atLeastOnce()).put(Mockito.anyObject(),Mockito.anyObject());
     }
 }
