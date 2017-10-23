@@ -38,19 +38,9 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
 import org.wso2.carbon.apimgt.api.PolicyDeploymentFailureException;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
-import org.wso2.carbon.apimgt.api.model.API;
-import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStateChangeResponse;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
-import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
-import org.wso2.carbon.apimgt.api.model.Documentation;
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.api.model.Documentation.DocumentSourceType;
 import org.wso2.carbon.apimgt.api.model.Documentation.DocumentVisibility;
-import org.wso2.carbon.apimgt.api.model.DocumentationType;
-import org.wso2.carbon.apimgt.api.model.DuplicateAPIException;
-import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
-import org.wso2.carbon.apimgt.api.model.Subscriber;
-import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.Condition;
@@ -92,6 +82,7 @@ import org.wso2.carbon.registry.core.CollectionImpl;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.jdbc.realm.RegistryAuthorizationManager;
 import org.wso2.carbon.registry.core.pagination.PaginationContext;
@@ -103,6 +94,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,12 +113,14 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import static org.junit.Assert.*;
+
 @RunWith(PowerMockRunner.class)
 @SuppressStaticInitializationFor("org.wso2.carbon.context.PrivilegedCarbonContext")
 @PrepareForTest({ServiceReferenceHolder.class, ApiMgtDAO.class, APIUtil.class, APIGatewayManager.class, 
     GovernanceUtils.class, PrivilegedCarbonContext.class, WorkflowExecutorFactory.class, RegistryUtils.class,
     ThrottlePolicyDeploymentManager.class, LifecycleBeanPopulator.class, Caching.class, PaginationContext.class,
-    APIProviderImpl.class})
+    APIProviderImpl.class, MultitenantUtils.class})
 public class APIProviderImplTest {
     
     private static String EP_CONFIG_WSDL = "{\"production_endpoints\":{\"url\":\"http://ws.cdyne.com/phoneverify/phoneverify.asmx?wsdl\""
@@ -183,7 +177,146 @@ public class APIProviderImplTest {
         TestUtils.mockAPIMConfiguration();
         mockDocumentationCreation();
     }
-    
+
+    @Test
+    public void testGetAllProviders() throws APIManagementException, GovernanceException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        UserRegistry userReg = Mockito.mock(UserRegistry.class);
+
+        API api1 = new API(new APIIdentifier("admin", "API1", "1.0.1"));
+        api1.setContext("api1context");
+        api1.setStatus(APIStatus.PUBLISHED);
+        api1.setDescription("API 1 Desciption");
+        GenericArtifact genericArtifact1 = Mockito.mock(GenericArtifact.class);
+        GenericArtifact genericArtifact2 = Mockito.mock(GenericArtifact.class);
+
+        Mockito.when(genericArtifact1.getAttribute(APIConstants.API_OVERVIEW_NAME)).thenReturn("API1");
+        Mockito.when(genericArtifact1.getAttribute(APIConstants.API_OVERVIEW_VERSION)).thenReturn("1.0.1");
+        Mockito.when(genericArtifact1.getAttribute(APIConstants.API_OVERVIEW_CONTEXT)).thenReturn("api1context");
+        Mockito.when(genericArtifact1.getAttribute(APIConstants.API_OVERVIEW_DESCRIPTION)).thenReturn(
+                "API 1 Desciption");
+        Mockito.when(APIUtil.getAPI(genericArtifact1, apiProvider.registry)).thenReturn(api1);
+        Mockito.when(APIUtil.getAPI(genericArtifact1)).thenReturn(api1);
+        GenericArtifact[] genericArtifacts = {genericArtifact1, genericArtifact2};
+        Mockito.when(artifactManager.getAllGenericArtifacts()).thenReturn(genericArtifacts);
+        PowerMockito.when(APIUtil.getArtifactManager(userReg, APIConstants.API_KEY)).thenReturn(artifactManager);
+        Mockito.when(artifactManager.getAllGenericArtifacts()).thenReturn(genericArtifacts);
+        Assert.assertNotNull(apiProvider.getAllProviders());
+
+        //generic artifact null
+        Mockito.when(artifactManager.getAllGenericArtifacts()).thenReturn(genericArtifacts);
+        PowerMockito.when(APIUtil.getArtifactManager(userReg, APIConstants.API_KEY)).thenReturn(artifactManager);
+        Mockito.when(artifactManager.getAllGenericArtifacts()).thenReturn(null);
+        Assert.assertNotNull(apiProvider.getAllProviders());
+    }
+
+    @Test
+    public void testGetSubscribersOfProvider() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Set<Subscriber> subscriberSet = new HashSet<Subscriber>();
+        Mockito.when(apimgtDAO.getSubscribersOfProvider("testID")).thenReturn(subscriberSet);
+        Assert.assertNotNull(apiProvider.getSubscribersOfProvider("testID"));
+        Mockito.when(apimgtDAO.getSubscribersOfProvider("testID")).thenThrow(APIManagementException.class);
+        try {
+            apiProvider.getSubscribersOfProvider("testID");
+            assertTrue(false);
+        } catch(APIManagementException e) {
+            Assert.assertEquals("Failed to get Subscribers for : testID", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetProvider() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Mockito.when(APIUtil.getMountedPath((RegistryContext) Mockito.anyObject(),
+                Mockito.anyString())).thenReturn("testPath");
+        UserRegistry userReg = Mockito.mock(UserRegistry.class);
+        Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(apiProvider.registry.get("testPath/providers/testProvider")).thenReturn(resource);
+        Mockito.when(resource.getUUID()).thenReturn("testID");
+        PowerMockito.when(APIUtil.getArtifactManager(userReg, APIConstants.API_KEY)).thenReturn(artifactManager);
+        GenericArtifact providerArtifact = Mockito.mock(GenericArtifact.class);
+        Mockito.when(artifactManager.getGenericArtifact("testID")).thenReturn(providerArtifact);
+        Provider provider = Mockito.mock(Provider.class);
+        Mockito.when(APIUtil.getProvider(providerArtifact)).thenReturn(provider);
+        Assert.assertNotNull(apiProvider.getProvider("testProvider"));
+    }
+
+    @Test
+    public void testGetAllAPIUsageByProvider() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        UserApplicationAPIUsage[] userApplicationAPIUsages = new UserApplicationAPIUsage[]{};
+        Mockito.when(apimgtDAO.getAllAPIUsageByProvider("testProvider")).
+                thenReturn((userApplicationAPIUsages));
+        assertNotNull(apiProvider.getAllAPIUsageByProvider(("testProvider")));
+    }
+
+    @Test
+    public void testGetSubscribersOfAPI() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Set<Subscriber> subscriberSet = new HashSet<Subscriber>();
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        Mockito.when(apimgtDAO.getSubscribersOfAPI(apiId)).thenReturn(subscriberSet);
+        Assert.assertNotNull(apiProvider.getSubscribersOfAPI(apiId));
+        Mockito.when(apimgtDAO.getSubscribersOfAPI(apiId)).thenThrow(APIManagementException.class);
+        try {
+            apiProvider.getSubscribersOfAPI(apiId);
+            assertTrue(false);
+        } catch(APIManagementException e) {
+            Assert.assertEquals("Failed to get subscribers for API : API1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetAPISubscriptionCountByAPI() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Long count = Long.parseLong("10");
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        Mockito.when(apimgtDAO.getAPISubscriptionCountByAPI(apiId)).thenReturn(count);
+        assertEquals(count, (Long) apiProvider.getAPISubscriptionCountByAPI(apiId));
+        Mockito.when(apimgtDAO.getAPISubscriptionCountByAPI(apiId)).thenThrow(APIManagementException.class);
+        try {
+            apiProvider.getAPISubscriptionCountByAPI(apiId);
+            assertTrue(false);
+        } catch(APIManagementException e) {
+            Assert.assertEquals("Failed to get APISubscriptionCount for: API1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCheckIfAPIExists() throws APIManagementException, UserStoreException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        Mockito.when(APIUtil.getAPIPath(apiId)).thenReturn("testPath");
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).thenReturn("abc.org");
+        //Mock Config system registry
+        ServiceReferenceHolder sh = TestUtils.getServiceReferenceHolder();
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        PowerMockito.when(sh.getRegistryService()).thenReturn(registryService);
+        UserRegistry systemReg = Mockito.mock(UserRegistry.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tm = Mockito.mock(TenantManager.class);
+
+        PowerMockito.when(sh.getRealmService()).thenReturn(realmService);
+        PowerMockito.when(realmService.getTenantManager()).thenReturn(tm);
+        PowerMockito.when(tm.getTenantId(Matchers.anyString())).thenReturn(-1234);
+        PowerMockito.when(sh.getRegistryService()).thenReturn(registryService);
+        PowerMockito.when(registryService.getGovernanceSystemRegistry(-1234)).thenReturn(systemReg);
+        Mockito.when(systemReg.resourceExists("testPath")).thenReturn(true);
+        Assert.assertEquals(true, apiProvider.checkIfAPIExists(apiId));
+
+        PowerMockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).thenReturn("carbon.super");
+        apiProvider.tenantDomain = "carbon.super1";
+        PowerMockito.when(registryService.getGovernanceUserRegistry("admin", -1234)).thenReturn(systemReg);
+        Assert.assertEquals(true, apiProvider.checkIfAPIExists(apiId));
+
+        apiProvider.tenantDomain = null;
+        apiProvider.registry = systemReg;
+        Assert.assertEquals(true, apiProvider.checkIfAPIExists(apiId));
+
+    }
+
     @Test
     public void testAddAPI() throws APIManagementException, GovernanceException {
         APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
