@@ -26,13 +26,16 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.impl.APIManagerAnalyticsConfiguration;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageDataPublisher;
 import org.wso2.carbon.apimgt.usage.publisher.DataPublisherUtil;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.sql.SQLException;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( {APIManagerAnalyticsConfiguration.class, DataPublisherUtil.class})
+@PrepareForTest( {APIManagerAnalyticsConfiguration.class, DataPublisherUtil.class, APIUtil.class})
 public class AlertTypesPublisher1Test {
     @Test
     public void saveAndPublishAlertTypesEvent() throws Exception {
@@ -112,4 +115,87 @@ public class AlertTypesPublisher1Test {
         alertTypesPublisher.unSubscribe(userName, "subscriber");
         alertTypesPublisher.unSubscribe(userName, "admin-dashboard");
     }
+    @Test
+    public void testInitializeDataPublisherWhenAnalyticsDisable() throws Exception {
+        APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration = Mockito.mock
+                (APIManagerAnalyticsConfiguration.class);
+        PowerMockito.mockStatic(APIManagerAnalyticsConfiguration.class);
+        PowerMockito.mockStatic(DataPublisherUtil.class);
+        BDDMockito.given(APIManagerAnalyticsConfiguration.getInstance()).willReturn(apiManagerAnalyticsConfiguration);
+        BDDMockito.given(DataPublisherUtil.getApiManagerAnalyticsConfiguration()).willReturn
+                (apiManagerAnalyticsConfiguration);
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        AlertTypesPublisher alertTypesPublisher = new AlertTypesPublisherWrapper(apiMgtDAO);
+        alertTypesPublisher.enabled = false;
+        alertTypesPublisher.skipEventReceiverConnection = false;
+        alertTypesPublisher.initializeDataPublisher();
+    }
+
+    @Test
+    public void testInitializeDataPublisher() throws Exception {
+        System.setProperty("carbon.home", AlertTypesPublisher1Test.class.getResource("/").getFile());
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants
+                    .SUPER_TENANT_DOMAIN_NAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername("admin");
+            APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration = Mockito.mock
+                    (APIManagerAnalyticsConfiguration.class);
+            Mockito.when(apiManagerAnalyticsConfiguration.getPublisherClass()).thenReturn("org.wso2.carbon.apimgt" +
+                    ".usage.publisher.APIMgtUsageDataBridgeDataPublisher");
+            PowerMockito.mockStatic(APIManagerAnalyticsConfiguration.class);
+            PowerMockito.mockStatic(DataPublisherUtil.class);
+            BDDMockito.given(APIManagerAnalyticsConfiguration.getInstance()).willReturn
+                    (apiManagerAnalyticsConfiguration);
+            BDDMockito.given(DataPublisherUtil.getApiManagerAnalyticsConfiguration()).willReturn
+                    (apiManagerAnalyticsConfiguration);
+            ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+            AlertTypesPublisher alertTypesPublisher = new AlertTypesPublisherWrapper(apiMgtDAO);
+            alertTypesPublisher.enabled = true;
+            alertTypesPublisher.skipEventReceiverConnection = false;
+            alertTypesPublisher.initializeDataPublisher();
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    @Test
+    public void testInitializeDataPublisherWhileClassNotGetLoad() throws IllegalAccessException,
+            InstantiationException, ClassNotFoundException {
+        PowerMockito.mockStatic(APIUtil.class);
+        System.setProperty("carbon.home", AlertTypesPublisher1Test.class.getResource("/").getFile());
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(MultitenantConstants
+                    .SUPER_TENANT_DOMAIN_NAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername("admin");
+            APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration = Mockito.mock
+                    (APIManagerAnalyticsConfiguration.class);
+            Mockito.when(apiManagerAnalyticsConfiguration.getPublisherClass()).thenReturn("org.wso2.carbon.apimgt" +
+                    ".usage.publisher.APIMgtUsageDataBridgeDataPublisher");
+            PowerMockito.when(APIUtil.getClassForName("org.wso2.carbon.apimgt.usage.publisher" +
+                    ".APIMgtUsageDataBridgeDataPublisher")).thenThrow(ClassNotFoundException.class).thenThrow
+                    (InstantiationException.class).thenThrow(IllegalAccessException.class);
+            PowerMockito.mockStatic(APIManagerAnalyticsConfiguration.class);
+            PowerMockito.mockStatic(DataPublisherUtil.class);
+            BDDMockito.given(APIManagerAnalyticsConfiguration.getInstance()).willReturn
+                    (apiManagerAnalyticsConfiguration);
+            BDDMockito.given(DataPublisherUtil.getApiManagerAnalyticsConfiguration()).willReturn
+                    (apiManagerAnalyticsConfiguration);
+
+            ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+            AlertTypesPublisher alertTypesPublisher = new AlertTypesPublisherWrapper(apiMgtDAO);
+            alertTypesPublisher.enabled = true;
+            alertTypesPublisher.skipEventReceiverConnection = false;
+            alertTypesPublisher.initializeDataPublisher();
+            alertTypesPublisher.initializeDataPublisher();
+            alertTypesPublisher.initializeDataPublisher();
+
+        } finally{
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
 }

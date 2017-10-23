@@ -1918,7 +1918,7 @@ public class ApiMgtDAO {
         return tokenDataMap;
     }
 
-    public Map<Integer, APIKey> getAccessTokensByDate(String date, boolean latest, String[] querySql,
+    private Map<Integer, APIKey> getAccessTokensByDate(String date, boolean latest, String[] querySql,
                                                       String loggedInUser) throws APIManagementException {
         Connection connection = null;
         PreparedStatement ps = null;
@@ -3265,29 +3265,6 @@ public class ApiMgtDAO {
         }
     }
 
-    private boolean isDuplicateConsumer(String consumerKey) throws APIManagementException {
-        Connection connection = null;
-        PreparedStatement prepStmt = null;
-        ResultSet rSet = null;
-        String sqlQuery = SQLConstants.GET_ALL_OAUTH_CONSUMER_APPS_SQL;
-
-        boolean isDuplicateConsumer = false;
-        try {
-            connection = APIMgtDBUtil.getConnection();
-            prepStmt = connection.prepareStatement(sqlQuery);
-            prepStmt.setString(1, consumerKey);
-
-            rSet = prepStmt.executeQuery();
-            if (rSet.next()) {
-                isDuplicateConsumer = true;
-            }
-        } catch (SQLException e) {
-            handleException("Error when reading the application information from" + " the persistence store.", e);
-        } finally {
-            APIMgtDBUtil.closeAllConnections(prepStmt, connection, rSet);
-        }
-        return isDuplicateConsumer;
-    }
 
     public int addApplication(Application application, String userId) throws APIManagementException {
         Connection conn = null;
