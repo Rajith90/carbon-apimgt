@@ -3298,9 +3298,11 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                     }
                 }
             }
-		} catch (Exception e) {
-			handleException("Issue is in getting custom InSequences from the Registry", e);
-		} finally {
+        } catch (Exception e) {
+            String msg = "Issue is in getting custom InSequences from the Registry";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
+        } finally {
 			if (isTenantFlowStarted) {
 				PrivilegedCarbonContext.endTenantFlow();
 			}
@@ -3362,9 +3364,11 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 }
             }
 
-		} catch (Exception e) {
-			handleException("Issue is in getting custom OutSequences from the Registry", e);
-		} finally {
+        } catch (Exception e) {
+            String msg = "Issue is in getting custom OutSequences from the Registry";
+            log.error(msg, e);
+            throw new APIManagementException(msg, e);
+        } finally {
 			if (isTenantFlowStarted) {
 				PrivilegedCarbonContext.endTenantFlow();
 			}
