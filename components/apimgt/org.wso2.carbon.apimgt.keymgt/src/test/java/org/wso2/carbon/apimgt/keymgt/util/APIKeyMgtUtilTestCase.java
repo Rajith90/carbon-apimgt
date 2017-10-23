@@ -235,8 +235,8 @@ public class APIKeyMgtUtilTestCase {
         String[] rolesXSAnyImpl = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
 
         Assert.assertTrue(roles[0].equals("sampleRole"));
-        Assert.assertTrue(rolesXSS[0].equals("SampleAttribute"));
-        Assert.assertTrue(rolesXSAnyImpl[0].equals("SampleAttribute"));
+        Assert.assertTrue(rolesXSS[1].equals("SampleAttribute"));
+        Assert.assertTrue(rolesXSAnyImpl[1].equals("SampleAttribute"));
         Assert.assertTrue(multiRoles.length == 2);
     }
 
