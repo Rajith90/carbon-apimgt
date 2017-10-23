@@ -26,7 +26,9 @@ import org.mockito.Mockito;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.ws.wssecurity.impl.AttributedStringImpl;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -199,10 +201,20 @@ public class APIKeyMgtUtilTestCase {
         XMLObject rawAttribute = PowerMockito.mock(XMLObject.class);
         PowerMockito.when(rawAttribute.toString()).thenReturn("sampleRole");
         List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
+        AttributedStringImpl mockedAttributedStringImpl = new AttributedStringImpl("nameSpaceURI", "elementLocalName",
+                "namespacePrefix");
+        String sampleAttrValue = "MockedAuthParamSampleAttribute";
+        mockedAttributedStringImpl.setValue(sampleAttrValue);
+        List<XMLObject> mockedXSSAttributeValues = Collections.singletonList((XMLObject) mockedAttributedStringImpl);
+        XSAnyImpl mockedXSAnyImpl = Mockito.mock(XSAnyImpl.class);
+        PowerMockito.when(mockedXSAnyImpl.getTextContent()).thenReturn(sampleAttrValue);
+        List<XMLObject> mockedXSAnyImplAttributeValues = Collections.singletonList((XMLObject) mockedXSAnyImpl);
         List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
-        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito.mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
+        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito
+                .mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
         PowerMockito.when(mockAttribute.getAttributeValues())
-                .thenReturn(mockedAttributeValues, multiMockedAttributeValues);
+                .thenReturn(mockedAttributeValues, multiMockedAttributeValues, mockedXSSAttributeValues,
+                        mockedXSAnyImplAttributeValues);
 
         PowerMockito.mockStatic(AuthenticatorsConfiguration.class);
         AuthenticatorsConfiguration mockedAuthenticatorsConfiguration = PowerMockito
@@ -219,8 +231,12 @@ public class APIKeyMgtUtilTestCase {
 
         String[] roles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
         String[] multiRoles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] rolesXSS = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] rolesXSAnyImpl = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
 
         Assert.assertTrue(roles[0].equals("sampleRole"));
+        Assert.assertTrue(rolesXSS[0].equals("SampleAttribute"));
+        Assert.assertTrue(rolesXSAnyImpl[0].equals("SampleAttribute"));
         Assert.assertTrue(multiRoles.length == 2);
     }
 
