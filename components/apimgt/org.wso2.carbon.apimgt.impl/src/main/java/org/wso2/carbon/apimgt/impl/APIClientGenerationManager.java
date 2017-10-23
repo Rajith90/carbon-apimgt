@@ -127,7 +127,8 @@ public class APIClientGenerationManager {
             }
             Registry requiredRegistry = null;
             try {
-                requiredRegistry = getGovernanceUserRegistry(apiProvider, tenantId);
+                requiredRegistry = ServiceReferenceHolder.getInstance().getRegistryService().
+                        getGovernanceUserRegistry(apiProvider, tenantId);
             } catch (RegistryException e) {
                 handleSDKGenException("Error occurred when retrieving the tenant registry for tenant : " +
                         requestedTenant + " tenant ID : " + tenantId, e);
@@ -223,7 +224,8 @@ public class APIClientGenerationManager {
      * @return supported languages for SDK generation
      */
     public String getSupportedSDKLanguages() {
-        APIManagerConfiguration config = getAPIManagerConfiguration();
+        APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                .getAPIManagerConfiguration();
         String supportedLanguages = config.getFirstProperty(APIConstants.CLIENT_CODEGEN_SUPPORTED_LANGUAGES);
         return supportedLanguages;
 
@@ -239,7 +241,8 @@ public class APIClientGenerationManager {
      */
     private void generateClient(String apiName, String specLocation, String sdkLanguage, String temporaryOutputPath) {
 
-        APIManagerConfiguration config = getAPIManagerConfiguration();
+        APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                .getAPIManagerConfiguration();
         CodegenConfigurator codegenConfigurator = new CodegenConfigurator();
         codegenConfigurator.setGroupId(config.getFirstProperty(APIConstants.CLIENT_CODEGEN_GROUPID));
         codegenConfigurator.setArtifactId(config.getFirstProperty(APIConstants.CLIENT_CODEGEN_ARTIFACTID) + apiName);

@@ -41,7 +41,6 @@ public class SequenceAdminServiceClient {
 	 * Deploy the sequence to the gateway
 	 *
 	 * @param sequence  - The sequence element , which to be deployed in synapse
-	 * @param tenantDomain
 	 * @throws AxisFault
 	 */
 	public void addSequence(OMElement sequence) throws AxisFault {
