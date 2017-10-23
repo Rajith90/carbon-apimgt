@@ -400,7 +400,7 @@ public class APIGatewayAdmin extends org.wso2.carbon.core.AbstractAdmin {
         File file = new File(APIConstants.POLICY_FILE_FOLDER);      //WSO2Carbon_Home/repository/deployment/server/throttle-config
         //if directory doesn't exist, make onee
         if (!file.exists()) {
-            file.mkdir();
+            file.mkdirs();
         }
         File writeFile = new File(APIConstants.POLICY_FILE_LOCATION + fileName + APIConstants.XML_EXTENSION);  //file folder+/
         FileOutputStream fos = null;
