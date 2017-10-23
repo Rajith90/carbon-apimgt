@@ -75,18 +75,25 @@ public class APIKeyMgtProviderServiceTest {
     public void testActivateAccessTokens() throws Exception {
         APIKeyMgtProviderService apiKeyMgtProviderService = new APIKeyMgtProviderService();
         apiKeyMgtProviderService.activateAccessTokens(new String[] { USER_NAME }, new APIInfoDTO());
+        Mockito.verify(apiMgtDAO, Mockito.atLeastOnce())
+                .changeAccessTokenStatus(Mockito.anyString(), Mockito.any(APIInfoDTO.class), Mockito.anyString());
     }
 
     @Test
     public void testBlockAccessTokens() throws Exception {
         APIKeyMgtProviderService apiKeyMgtProviderService = new APIKeyMgtProviderService();
         apiKeyMgtProviderService.blockAccessTokens(new String[] { USER_NAME }, new APIInfoDTO());
+        Mockito.verify(apiMgtDAO, Mockito.atLeastOnce())
+                .changeAccessTokenStatus(Mockito.anyString(), Mockito.any(APIInfoDTO.class), Mockito.anyString());
     }
 
     @Test
     public void testRevokeAccessTokens() throws Exception {
         APIKeyMgtProviderService apiKeyMgtProviderService = new APIKeyMgtProviderService();
         apiKeyMgtProviderService.revokeAccessTokens(new String[] { USER_NAME }, new APIInfoDTO());
+        Mockito.verify(apiMgtDAO, Mockito.atLeastOnce())
+                .changeAccessTokenStatus(Mockito.anyString(), Mockito.any(APIInfoDTO.class), Mockito.anyString());
+
     }
 
     @Test
