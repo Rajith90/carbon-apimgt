@@ -588,8 +588,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             List<API> multiVersionedAPIs = new ArrayList<API>();
             Comparator<API> versionComparator = new APIVersionComparator();
             Boolean displayMultipleVersions = APIUtil.isAllowDisplayMultipleVersions();
-            String paginationLimit = getAPIManagerConfiguration().
-                    getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
+            String paginationLimit = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                    .getAPIManagerConfiguration().getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
 
             // If the Config exists use it to set the pagination limit
             final int maxPaginationLimit;
@@ -774,8 +774,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             List<API> multiVersionedAPIs = new ArrayList<API>();
             Comparator<API> versionComparator = new APIVersionComparator();
             Boolean displayMultipleVersions = APIUtil.isAllowDisplayMultipleVersions();
-            String paginationLimit = getAPIManagerConfiguration()
-                                                           .getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
+            String paginationLimit = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                    .getAPIManagerConfiguration().getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
 
             // If the Config exists use it to set the pagination limit
             final int maxPaginationLimit;
@@ -1143,7 +1143,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         SortedSet<API> recentlyAddedAPIs = new TreeSet<API>(new APINameComparator());
         SortedSet<API> recentlyAddedAPIsWithMultipleVersions = new TreeSet<API>(new APIVersionComparator());
         Registry userRegistry;
-        APIManagerConfiguration config = getAPIManagerConfiguration();
+        APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
+                .getAPIManagerConfiguration();
         boolean isRecentlyAddedAPICacheEnabled =
               Boolean.parseBoolean(config.getFirstProperty(APIConstants.API_STORE_RECENTLY_ADDED_API_CACHE_ENABLE));
 

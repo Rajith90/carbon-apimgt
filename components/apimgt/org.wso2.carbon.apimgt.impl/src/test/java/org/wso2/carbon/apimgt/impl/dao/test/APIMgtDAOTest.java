@@ -98,12 +98,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -937,6 +942,8 @@ public class APIMgtDAOTest {
         api1.setContextTemplate("/testCreateApplicationRegistrationEntry1/{version}");
         apiMgtDAO.addAPI(api1, -1234);
         apiMgtDAO.createApplicationRegistrationEntry(applicationRegistrationWorkflowDTO, false);
+        assertEquals(apiMgtDAO.getApplicationIdForAppRegistration(applicationRegistrationWorkflowDTO
+                .getWorkflowReference()), application.getId());
         assertEquals(apiMgtDAO.getRegistrationWFReference(application.getId(), "PRODUCTION"),
                 applicationRegistrationWorkflowDTO.getWorkflowReference());
         assertEquals(apiMgtDAO.getRegistrationApprovalState(application.getId(), "PRODUCTION"), WorkflowStatus
@@ -1056,6 +1063,9 @@ public class APIMgtDAOTest {
         assertTrue(map.size()==2);
         insertTokenScope(tokenIdProduction, "default");
         insertTokenScope(tokenIdSandbox, "default");
+//        String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(System
+//                .currentTimeMillis()));
+//        assertEquals(apiMgtDAO.getAccessTokensByDate(dateString, true, subscriber.getName()).size(), 2);
         assertEquals(apiMgtDAO.getAccessTokenData(tokenProduction).getConsumerKey(),clientIdProduction);
         assertTrue(apiMgtDAO.getApplicationsWithPagination(subscriber, null, 0, 2, application.getName(),
                 "APPLICATION_ID", "ASC").length >0);
@@ -1281,6 +1291,7 @@ public class APIMgtDAOTest {
     public void testAddUpdateDeleteAlert() throws Exception {
         apiMgtDAO.addAlertTypesConfigInfo("admin", "admin@abc.com,admin@cde.com", "1,2,3", "admin-dashboard");
         apiMgtDAO.addAlertTypesConfigInfo("admin", "admin@abc.com,admin@cde.com", "1,2,3", "publisher");
+        apiMgtDAO.addAlertTypesConfigInfo("admin", "admin@abc.com,admin@cde.com", "1,2,3", "admin-dashboard");
         List<String> retrievedEmailList = apiMgtDAO.retrieveSavedEmailList("admin", "admin-dashboard");
         assertTrue(retrievedEmailList.contains("admin@abc.com"));
         assertTrue(retrievedEmailList.contains("admin@cde.com"));
@@ -1479,11 +1490,13 @@ public class APIMgtDAOTest {
                     "CONSUMER_KEY_ID, AUTHZ_USER, TENANT_ID, USER_TYPE, GRANT_TYPE, VALIDITY_PERIOD, " +
                     "REFRESH_TOKEN_VALIDITY_PERIOD, TOKEN_STATE,TIME_CREATED,REFRESH_TOKEN_TIME_CREATED,USER_DOMAIN) " +
                     "VALUES ('" + tokenId + "'," + " '" + token + "'," + " 'aa', ?,?, " + "'-1234','" + APIConstants
-                    .ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600','3600', 'ACTIVE'," +
-                    "'2017-10-17','2017-10-17','PRIMARY')";
+                    .ACCESS_TOKEN_USER_TYPE_APPLICATION + "', 'client_credentials', '3600','3600', 'ACTIVE',?,?," +
+                    "'PRIMARY')";
             ps = conn.prepareStatement(query);
             ps.setInt(1, clientId);
             ps.setString(2, user);
+            ps.setTimestamp(3, new Timestamp(new Date().getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+            ps.setTimestamp(4, new Timestamp(new Date().getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
             ps.executeUpdate();
             conn.commit();
             return tokenId;

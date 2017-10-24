@@ -321,6 +321,7 @@ public class APIKeyValidatorTestCase {
         // Test for token cache is found in token cache
         AxisConfiguration axisConfig = Mockito.mock(AxisConfiguration.class);
         APIKeyValidator newApiKeyValidator = new APIKeyValidator(axisConfig) {
+            @Override
             protected String getTenantDomain() {
                 return "zyx";
             }
