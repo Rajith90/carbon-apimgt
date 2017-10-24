@@ -22,6 +22,7 @@ import io.swagger.codegen.config.CodegenConfigurator;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import io.swagger.util.Json;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -113,6 +114,7 @@ public class APIClientGenerationManagerTestCase {
         try {
             apiClientGenerationManager.generateSDK(null, "testAPI", "1.0.0",
                     "testProvider");
+            Assert.fail("API Client Generation exception not thrown for error scenario");
             assertFalse(true);
         } catch (APIClientGenerationException e) {
             assertEquals("SDK Language, API Name, API Version or API Provider should not be null.",
