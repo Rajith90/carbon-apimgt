@@ -24,6 +24,11 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.databridge.agent.DataPublisher;
+import org.wso2.carbon.databridge.agent.exception.DataEndpointAgentConfigurationException;
+import org.wso2.carbon.databridge.agent.exception.DataEndpointAuthenticationException;
+import org.wso2.carbon.databridge.agent.exception.DataEndpointConfigurationException;
+import org.wso2.carbon.databridge.agent.exception.DataEndpointException;
+import org.wso2.carbon.databridge.commons.exception.TransportException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ThrottleDataPublisher.class})
@@ -52,12 +57,20 @@ public class ThrottleDataPublisherPoolTest {
         ServiceReferenceHolder.getInstance().setThrottleProperties(throttleProperties);
         DataPublisher dataPublisher = Mockito.mock(DataPublisher.class);
         PowerMockito.whenNew(DataPublisher.class).withArguments(Mockito.anyString(), Mockito.anyString(), Mockito
-                .anyString(), Mockito.anyString(), Mockito.anyString()).thenReturn(dataPublisher);
+                .anyString(), Mockito.anyString(), Mockito.anyString()).thenReturn(dataPublisher).thenThrow
+                (DataEndpointAgentConfigurationException.class).thenThrow(DataEndpointException.class).thenThrow
+                (DataEndpointConfigurationException.class).thenThrow(DataEndpointAuthenticationException.class)
+                .thenThrow(TransportException.class);
         ThrottleDataPublisher throttleDataPublisher = new ThrottleDataPublisher();
         throttleDataPublisher.publishNonThrottledEvent("","","","","","","","","","","","","","",null,null);
         ThrottleDataPublisherPool throttleDataPublisherPool = ThrottleDataPublisherPool.getInstance();
         DataProcessAndPublishingAgent dataProcessAndPublishingAgent = throttleDataPublisherPool.get();
         throttleDataPublisherPool.release(dataProcessAndPublishingAgent);
         throttleDataPublisherPool.cleanup();
+        ThrottleDataPublisher throttleDataPublisher1 = new ThrottleDataPublisher();
+        ThrottleDataPublisher throttleDataPublisher2 = new ThrottleDataPublisher();
+        ThrottleDataPublisher throttleDataPublisher3 = new ThrottleDataPublisher();
+        ThrottleDataPublisher throttleDataPublisher4 = new ThrottleDataPublisher();
+        ThrottleDataPublisher throttleDataPublisher5 = new ThrottleDataPublisher();
     }
 }
