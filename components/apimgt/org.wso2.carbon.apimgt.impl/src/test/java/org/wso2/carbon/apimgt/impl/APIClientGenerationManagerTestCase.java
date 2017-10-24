@@ -114,8 +114,7 @@ public class APIClientGenerationManagerTestCase {
         try {
             apiClientGenerationManager.generateSDK(null, "testAPI", "1.0.0",
                     "testProvider");
-            Assert.fail("API Client Generation exception not thrown for error scenario");
-            assertFalse(true);
+            Assert.fail("API Client Generation exception not thrown for error scenario with empty SDK");
         } catch (APIClientGenerationException e) {
             assertEquals("SDK Language, API Name, API Version or API Provider should not be null.",
                     e.getMessage());
@@ -133,7 +132,7 @@ public class APIClientGenerationManagerTestCase {
         try {
             apiClientGenerationManager.generateSDK("testLanguage", "testAPI", "1.0.0",
                     "testProvider");
-            assertFalse(true);
+            Assert.fail("Registry exception not thrown for error scenario");
         } catch (APIClientGenerationException e) {
             assertEquals("Failed to load tenant registry for tenant ID : -1234",
                     e.getMessage());
@@ -155,7 +154,7 @@ public class APIClientGenerationManagerTestCase {
         try {
             apiClientGenerationManager.generateSDK("testLanguage", "testAPI", "1.0.0",
                     "testProvider");
-            assertFalse(true);
+            Assert.fail("API Client Generation exception not thrown for error scenario");
         } catch (APIClientGenerationException e) {
             assertEquals("Error loading swagger file for API testAPI from registry.", e.getMessage());
         }
