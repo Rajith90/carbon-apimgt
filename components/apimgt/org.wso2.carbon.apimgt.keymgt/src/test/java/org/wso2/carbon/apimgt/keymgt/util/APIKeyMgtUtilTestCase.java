@@ -26,7 +26,9 @@ import org.mockito.Mockito;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeStatement;
+import org.opensaml.ws.wssecurity.impl.AttributedStringImpl;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -199,10 +201,20 @@ public class APIKeyMgtUtilTestCase {
         XMLObject rawAttribute = PowerMockito.mock(XMLObject.class);
         PowerMockito.when(rawAttribute.toString()).thenReturn("sampleRole");
         List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
+        AttributedStringImpl mockedAttributedStringImpl = new AttributedStringImpl("nameSpaceURI", "elementLocalName",
+                "namespacePrefix");
+        String sampleAttrValue = "MockedAuthParamSampleAttribute";
+        mockedAttributedStringImpl.setValue(sampleAttrValue);
+        List<XMLObject> mockedXSSAttributeValues = Collections.singletonList((XMLObject) mockedAttributedStringImpl);
+        XSAnyImpl mockedXSAnyImpl = Mockito.mock(XSAnyImpl.class);
+        PowerMockito.when(mockedXSAnyImpl.getTextContent()).thenReturn(sampleAttrValue);
+        List<XMLObject> mockedXSAnyImplAttributeValues = Collections.singletonList((XMLObject) mockedXSAnyImpl);
         List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
-        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito.mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
+        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito
+                .mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
         PowerMockito.when(mockAttribute.getAttributeValues())
-                .thenReturn(mockedAttributeValues, multiMockedAttributeValues);
+                .thenReturn(mockedAttributeValues, multiMockedAttributeValues, mockedXSSAttributeValues,
+                        mockedXSAnyImplAttributeValues);
 
         PowerMockito.mockStatic(AuthenticatorsConfiguration.class);
         AuthenticatorsConfiguration mockedAuthenticatorsConfiguration = PowerMockito
@@ -219,8 +231,12 @@ public class APIKeyMgtUtilTestCase {
 
         String[] roles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
         String[] multiRoles = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] rolesXSS = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
+        String[] rolesXSAnyImpl = APIKeyMgtUtil.getRolesFromAssertion(mockedAssertion);
 
         Assert.assertTrue(roles[0].equals("sampleRole"));
+        Assert.assertTrue(rolesXSS[1].equals("SampleAttribute"));
+        Assert.assertTrue(rolesXSAnyImpl[1].equals("SampleAttribute"));
         Assert.assertTrue(multiRoles.length == 2);
     }
 
@@ -303,13 +319,14 @@ public class APIKeyMgtUtilTestCase {
         Mockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
         String cacheExpTime = "9000";
         String sampleCacheKey = UUID.randomUUID().toString();
-        PowerMockito.when(amConfig.getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY)).thenReturn(cacheExpTime);
+        PowerMockito.when(amConfig.getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY)).thenReturn(cacheExpTime,null);
         Cache mockedCache = PowerMockito.mock(Cache.class);
         PowerMockito.mockStatic(Caching.class);
         CacheManager mockedCacheManager = PowerMockito.mock(CacheManager.class);
         Mockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(mockedCacheManager);
         CacheBuilder mockedCacheBuilder = PowerMockito.mock(CacheBuilder.class);
         Mockito.when(mockedCacheManager.createCacheBuilder(APIConstants.KEY_CACHE_NAME)).thenReturn(mockedCacheBuilder);
+        Mockito.when(mockedCacheManager.getCache(APIConstants.KEY_CACHE_NAME)).thenReturn(mockedCache);
         Mockito.when(mockedCacheBuilder.build()).thenReturn(mockedCache);
         Mockito.when(mockedCacheBuilder.setStoreByValue(Mockito.anyBoolean())).thenReturn(mockedCacheBuilder);
         PowerMockito.when(mockedCache.get(sampleCacheKey)).thenReturn(Mockito.mock(APIKeyValidationInfoDTO.class));
@@ -321,6 +338,7 @@ public class APIKeyMgtUtilTestCase {
                 .thenReturn(mockedCacheBuilder);
 
         APIKeyValidationInfoDTO cacheInfo = APIKeyMgtUtil.getFromKeyManagerCache(sampleCacheKey);
+        APIKeyValidationInfoDTO cacheInfoWithoutKeyCacheInistialized = APIKeyMgtUtil.getFromKeyManagerCache(sampleCacheKey);
         Assert.assertNotNull(cacheInfo);
     }
 }
