@@ -20,6 +20,7 @@ package org.wso2.carbon.apimgt.impl.dao.test;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axis2.AxisFault;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -70,18 +71,21 @@ import org.wso2.carbon.apimgt.api.model.policy.SubscriptionPolicy;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationServiceImpl;
+import org.wso2.carbon.apimgt.impl.caching.CacheInvalidator;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.APIInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationRegistrationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationWorkflowDTO;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.SubscriptionWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.TierPermissionDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.factory.SQLConstantManagerFactory;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.apimgt.impl.utils.APIAuthenticationAdminClient;
 import org.wso2.carbon.apimgt.impl.utils.APIMgtDBUtil;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowConstants;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowStatus;
@@ -99,13 +103,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -1063,9 +1065,17 @@ public class APIMgtDAOTest {
         assertTrue(map.size()==2);
         insertTokenScope(tokenIdProduction, "default");
         insertTokenScope(tokenIdSandbox, "default");
-//        String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(new Date(System
-//                .currentTimeMillis()));
-//        assertEquals(apiMgtDAO.getAccessTokensByDate(dateString, true, subscriber.getName()).size(), 2);
+        Set<String> tokenSet  = new HashSet<String>();
+        tokenSet.add(tokenProduction);
+        PowerMockito.when(keyManager.getActiveTokensByConsumerKey(oAuthApplicationInfoToUpdate.getClientId()))
+                .thenReturn(tokenSet);
+        APIAuthenticationAdminClient apiAuthenticationAdminClient = Mockito.mock(APIAuthenticationAdminClient.class);
+        PowerMockito.whenNew(APIAuthenticationAdminClient.class).withArguments(Mockito.any(Environment.class)).thenReturn(apiAuthenticationAdminClient);
+        PowerMockito.doNothing().when(apiAuthenticationAdminClient).invalidateCachedTokens(tokenSet);
+        PowerMockito.doThrow(new AxisFault("")).when(apiAuthenticationAdminClient).invalidateCachedTokens(tokenSet);
+        CacheInvalidator cacheInvalidator = CacheInvalidator.getInstance();
+        cacheInvalidator.invalidateCacheForApp(application.getId());
+
         assertEquals(apiMgtDAO.getAccessTokenData(tokenProduction).getConsumerKey(),clientIdProduction);
         assertTrue(apiMgtDAO.getApplicationsWithPagination(subscriber, null, 0, 2, application.getName(),
                 "APPLICATION_ID", "ASC").length >0);
