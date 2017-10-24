@@ -108,7 +108,6 @@ public class UtilsTestCase {
         Mockito.when(apiKeyValidationInfoDTO.getValidityPeriod()).thenReturn(Long.MAX_VALUE);
         Assert.assertFalse(Utils.hasAccessTokenExpired(apiKeyValidationInfoDTO));
 
-
     }
 
     @Test
