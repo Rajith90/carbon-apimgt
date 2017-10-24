@@ -30,15 +30,18 @@ public class HandlerConfigTest {
     public void testHandlerConfig() throws Exception {
 
         Map<String, String> properties = new HashMap<String, String>();
-        properties.put("key", "value");
         HandlerConfig handlerConfig = new HandlerConfig("test", properties);
-        Assert.assertTrue("test".equalsIgnoreCase(handlerConfig.getClassName()));
+        Assert.assertFalse(handlerConfig.hasProperties());
+        properties.put("key", "value");
+        handlerConfig.setProperties(properties);
         Assert.assertTrue(handlerConfig.getProperties().get("key").equalsIgnoreCase("value"));
+        Assert.assertTrue("test".equalsIgnoreCase(handlerConfig.getClassName()));
         handlerConfig.setClassName("HandlerConfigTest");
         Assert.assertTrue("HandlerConfigTest".equalsIgnoreCase(handlerConfig.getClassName()));
         properties.put("key1", "value1");
         handlerConfig.setProperties(properties);
         Assert.assertTrue(handlerConfig.hasProperties());
         Assert.assertTrue(handlerConfig.getProperties().get("key1").equalsIgnoreCase("value1"));
+        Assert.assertTrue(handlerConfig.hasProperties());
     }
 }

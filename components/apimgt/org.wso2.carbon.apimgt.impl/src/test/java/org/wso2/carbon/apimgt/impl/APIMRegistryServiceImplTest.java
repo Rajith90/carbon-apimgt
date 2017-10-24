@@ -19,6 +19,7 @@ package org.wso2.carbon.apimgt.impl;
 
 
 import junit.framework.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -44,23 +45,27 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 public class APIMRegistryServiceImplTest {
     private final int TENANT_ID = 1234;
     private final String TENANT_DOMAIN = "test.foo";
-    @Test
-    public void getConfigRegistryResourceContentTestCase() throws UserStoreException, RegistryException, APIManagementException{
-        APIMRegistryServiceImpl apimRegistryService = new APIMRegistryServiceImplWrapper();
+    private RealmService realmService;
+    private TenantManager tenantManager;
 
+    @Before
+    public void init() {
         System.setProperty(CARBON_HOME, "");
         PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
         PowerMockito.mockStatic(PrivilegedCarbonContext.class);
         PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
         Mockito.when(privilegedCarbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
         Mockito.when(privilegedCarbonContext.getTenantId()).thenReturn(TENANT_ID);
+        realmService = Mockito.mock(RealmService.class);
+        tenantManager = Mockito.mock(TenantManager.class);
+    }
 
-        RealmService realmService = Mockito.mock(RealmService.class);
-        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+    @Test
+    public void getConfigRegistryResourceContentTestCase() throws UserStoreException, RegistryException, APIManagementException{
+        APIMRegistryServiceImpl apimRegistryService = new APIMRegistryServiceImplWrapper();
         RegistryService registryService = Mockito.mock(RegistryService.class);
         UserRegistry registry = Mockito.mock(UserRegistry.class);
         Resource resource = Mockito.mock(Resource.class);
-
         ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
@@ -68,16 +73,12 @@ public class APIMRegistryServiceImplTest {
         Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
         Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
 
-
         Mockito.when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
         Mockito.when(registryService.getConfigSystemRegistry(TENANT_ID)).thenReturn(registry);
-
         PowerMockito.mockStatic(APIUtil.class);
         APIUtil.loadTenantConf(TENANT_ID);
         Mockito.when(registry.resourceExists("testLocation")).thenReturn(true);
         Mockito.when(registry.get("testLocation")).thenReturn(resource);
-
-
         Assert.assertEquals("testContent", apimRegistryService.
                 getConfigRegistryResourceContent("test.foo", "testLocation"));
 
@@ -86,16 +87,6 @@ public class APIMRegistryServiceImplTest {
     @Test
     public void getGovernanceRegistryResourceContentTestCase() throws UserStoreException, RegistryException{
         APIMRegistryServiceImpl apimRegistryService = new APIMRegistryServiceImplWrapper();
-
-        System.setProperty(CARBON_HOME, "");
-        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
-        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
-        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
-        Mockito.when(privilegedCarbonContext.getTenantDomain()).thenReturn(TENANT_DOMAIN);
-        Mockito.when(privilegedCarbonContext.getTenantId()).thenReturn(TENANT_ID);
-
-        RealmService realmService = Mockito.mock(RealmService.class);
-        TenantManager tenantManager = Mockito.mock(TenantManager.class);
         RegistryService registryService = Mockito.mock(RegistryService.class);
         UserRegistry registry = Mockito.mock(UserRegistry.class);
         Resource resource = Mockito.mock(Resource.class);
@@ -107,14 +98,10 @@ public class APIMRegistryServiceImplTest {
         Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
         Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
 
-
         Mockito.when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(TENANT_ID);
         Mockito.when(registryService.getGovernanceSystemRegistry(TENANT_ID)).thenReturn(registry);
-
         Mockito.when(registry.resourceExists("testLocation")).thenReturn(true);
         Mockito.when(registry.get("testLocation")).thenReturn(resource);
-
-
         Assert.assertEquals("testContent", apimRegistryService.
                 getGovernanceRegistryResourceContent("test.foo", "testLocation"));
     }

@@ -19,6 +19,7 @@ package org.wso2.carbon.apimgt.impl;
 
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -52,27 +53,40 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DocumentBuilderFactory.class, Configuration.class, ServiceReferenceHolder.class})
 public class SAMLGroupIDExtractorImplTest {
+
+    private DocumentBuilder documentBuilder;
+    private DocumentBuilderFactory documentBuilderFactory;
+    private Document document;
+    private Element element;
+    private UnmarshallerFactory unmarshallerFactory;
+    private Unmarshaller unmarshaller;
+
+    @Before
+    public void init() {
+        PowerMockito.mockStatic(DocumentBuilderFactory.class);
+        documentBuilder = Mockito.mock(DocumentBuilder.class);
+        documentBuilderFactory = Mockito.mock(DocumentBuilderFactory.class);
+        document = Mockito.mock(Document.class);
+        element = Mockito.mock(Element.class);
+        unmarshallerFactory = Mockito.mock(UnmarshallerFactory.class);
+        unmarshaller = Mockito.mock(Unmarshaller.class);
+    }
 
     @Test
     public void getGroupingIdentifiersTestCase() throws ParserConfigurationException, IOException, SAXException,
             UnmarshallingException, UserStoreException {
 
         SAMLGroupIDExtractorImpl samlGroupIDExtractor = new SMALGroupIDExtractorImplWrapper();
-        DocumentBuilderFactory documentBuilderFactory = Mockito.mock(DocumentBuilderFactory.class);
-        PowerMockito.mockStatic(DocumentBuilderFactory.class);
-        DocumentBuilder documentBuilder = Mockito.mock(DocumentBuilder.class);
-        Document document = Mockito.mock(Document.class);
-
-        Element element = Mockito.mock(Element.class);
-        UnmarshallerFactory unmarshallerFactory = Mockito.mock(UnmarshallerFactory.class);
-        Unmarshaller unmarshaller = Mockito.mock(Unmarshaller.class);
-
         Mockito.when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
-        Mockito.when(documentBuilderFactory.newDocumentBuilder()).thenReturn(documentBuilder);
+        Mockito.when(documentBuilderFactory.newDocumentBuilder()).
+                thenReturn(documentBuilder);
         Mockito.when(documentBuilder.parse(samlGroupIDExtractor.getByteArrayInputStream("test"))).
                 thenReturn(document);
         Mockito.when(document.getDocumentElement()).thenReturn(element);
@@ -86,7 +100,7 @@ public class SAMLGroupIDExtractorImplTest {
         assertion.add(assertion1);
         Mockito.when(Configuration.getUnmarshallerFactory()).thenReturn(unmarshallerFactory);
         Mockito.when(unmarshallerFactory.getUnmarshaller(element)).thenReturn(unmarshaller);
-        Mockito.when(unmarshaller.unmarshall(element)).thenReturn(response);
+        Mockito.when(unmarshaller.unmarshall(element)).thenThrow(UnmarshallingException.class).thenReturn(response);
         Mockito.when(response.getAssertions()).thenReturn(assertion);
         Mockito.when(assertion.get(0).getSubject()).thenReturn(subject);
         Mockito.when(subject.getNameID()).thenReturn(nameID);
@@ -104,12 +118,29 @@ public class SAMLGroupIDExtractorImplTest {
 
         Mockito.when(tenantManager.getTenantId("carbon.super")).thenReturn(1234);
         Mockito.when(realmService.getTenantUserRealm(1234)).thenReturn(userRealm);
-        Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(userRealm.getUserStoreManager()).thenThrow(UserStoreException.class).thenReturn(userStoreManager);
         Mockito.when(userStoreManager.getUserClaimValue(MultitenantUtils.
                 getTenantAwareUsername("user"), "http://wso2.org/claims/organization", null)).
                 thenReturn("organization");
+        //UserStore exception path
+        Assert.assertEquals("", samlGroupIDExtractor.
+                getGroupingIdentifiers("test"));
+        //UnmarshallingException Exception Path
+        Assert.assertEquals("", samlGroupIDExtractor.
+                getGroupingIdentifiers("test"));
+        //Normal Path
+        Assert.assertEquals("carbon.super/organization", samlGroupIDExtractor.
+                getGroupingIdentifiers("test"));
+    }
 
-       Assert.assertEquals("carbon.super/organization",samlGroupIDExtractor.
-               getGroupingIdentifiers("test"));
+    @Test
+    public void testSAMLGroup_ParserConfigurationException() throws ParserConfigurationException {
+        SAMLGroupIDExtractorImpl samlGroupIDExtractor = new SMALGroupIDExtractorImplWrapper();
+        DocumentBuilderFactory documentBuilderFactory = Mockito.mock(DocumentBuilderFactory.class);
+        PowerMockito.mockStatic(DocumentBuilderFactory.class);
+        Mockito.when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
+        Mockito.when(documentBuilderFactory.newDocumentBuilder()).
+                thenThrow(ParserConfigurationException.class);
+        Assert.assertEquals("", samlGroupIDExtractor.getGroupingIdentifiers("test"));
     }
 }
