@@ -8467,7 +8467,7 @@ public class ApiMgtDAO {
             }
 
             // Returns only single row
-            if (rowsUpdated>0) {
+            if (rowsUpdated > 0) {
                 List<Pipeline> pipelines = policy.getPipelines();
                 if (pipelines != null) {
                     for (Pipeline pipeline : pipelines) { // add each pipeline data to AM_CONDITION_GROUP table
