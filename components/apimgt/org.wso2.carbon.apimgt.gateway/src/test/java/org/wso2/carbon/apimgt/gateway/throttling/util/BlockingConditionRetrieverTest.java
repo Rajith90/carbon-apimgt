@@ -34,6 +34,7 @@ import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 @RunWith (PowerMockRunner.class)
 @PrepareForTest({APIUtil.class})
@@ -49,7 +50,8 @@ public class BlockingConditionRetrieverTest {
         BasicHttpEntity httpEntity = new BasicHttpEntity();
         httpEntity.setContent(new ByteArrayInputStream(content.getBytes()));
         Mockito.when(httpResponse.getEntity()).thenReturn(httpEntity);
-        Mockito.when(httpClient.execute(Mockito.any(HttpGet.class))).thenReturn(httpResponse);
+        Mockito.when(httpClient.execute(Mockito.any(HttpGet.class))).thenThrow(IOException.class).thenReturn
+                (httpResponse);
         BDDMockito.given(APIUtil.getHttpClient(Mockito.anyInt(),Mockito.anyString())).willReturn(httpClient);
         ThrottleProperties throttleProperties = new ThrottleProperties();
         ThrottleProperties.BlockCondition blockCondition = new ThrottleProperties.BlockCondition();

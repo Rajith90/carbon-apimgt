@@ -20,16 +20,24 @@ package org.wso2.carbon.apimgt.gateway.service;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
+import org.apache.axis2.AxisFault;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.gateway.utils.MediationSecurityAdminServiceClient;
 import org.wso2.carbon.apimgt.gateway.utils.RESTAPIAdminClient;
 import org.wso2.carbon.apimgt.gateway.utils.SequenceAdminServiceClient;
 import org.wso2.carbon.rest.api.stub.types.carbon.APIData;
 import org.wso2.carbon.rest.api.stub.types.carbon.ResourceData;
 
-
+@RunWith(PowerMockRunner.class)
+@PrepareForTest( {GatewayUtils.class})
 public class APIGatewayAdminTest {
     String provider = "admin";
     String name = "API";
@@ -191,7 +199,10 @@ public class APIGatewayAdminTest {
     }
 
     @Test
-    public void deleteApiForTenant() throws Exception {
+    public void testDeleteApiForTenant() throws Exception {
+        PowerMockito.mockStatic(GatewayUtils.class);
+        PowerMockito.doNothing().when(GatewayUtils.class, "deleteRegistryProperty",
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
         Mockito.when(restapiAdminClient.deleteApi(tenantDomain)).thenReturn(true);
         APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, null);
@@ -199,11 +210,44 @@ public class APIGatewayAdminTest {
     }
 
     @Test
-    public void deleteApi() throws Exception {
+    public void testDeleteApiForTenantWhileThrowingException() throws Exception {
+        PowerMockito.mockStatic(GatewayUtils.class);
+        PowerMockito.doThrow(new APIManagementException("")).when(GatewayUtils.class, "deleteRegistryProperty",
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
+        APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, null);
+
+        try {
+            apiGatewayAdmin.deleteApiForTenant(provider, name, version, tenantDomain);
+        } catch (AxisFault axisFault) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
+    public void testDeleteApi() throws Exception {
+        PowerMockito.mockStatic(GatewayUtils.class);
+        PowerMockito.doNothing().when(GatewayUtils.class, "deleteRegistryProperty",
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
         Mockito.when(restapiAdminClient.deleteApi()).thenReturn(true);
         APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, null);
         Assert.assertTrue(apiGatewayAdmin.deleteApi(provider, name, version));
+    }
+
+    @Test
+    public void testDeleteApiWhileThrowingException() throws Exception {
+        PowerMockito.mockStatic(GatewayUtils.class);
+        PowerMockito.doThrow(new APIManagementException("")).when(GatewayUtils.class, "deleteRegistryProperty",
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
+        APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, null);
+
+        try {
+            apiGatewayAdmin.deleteApi(provider, name, version);
+        } catch (AxisFault axisFault) {
+            Assert.assertTrue(true);
+        }
     }
 
     @Test
@@ -223,7 +267,7 @@ public class APIGatewayAdminTest {
     }
 
     @Test
-    public void addSequence() throws Exception {
+    public void testAddSequence() throws Exception {
         String sequence = "<api></api>";
         RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
         SequenceAdminServiceClient sequenceAdminServiceClient = Mockito.mock(SequenceAdminServiceClient.class);
@@ -299,7 +343,10 @@ public class APIGatewayAdminTest {
 
     @Test
     public void doEncryption() throws Exception {
+        PowerMockito.mockStatic(GatewayUtils.class);
         RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
+        PowerMockito.doNothing().when(GatewayUtils.class, "setRegistryProperty",
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         SequenceAdminServiceClient sequenceAdminServiceClient = Mockito.mock(SequenceAdminServiceClient.class);
         MediationSecurityAdminServiceClient mediationSecurityAdminServiceClient = Mockito.mock
                 (MediationSecurityAdminServiceClient.class);
@@ -308,5 +355,35 @@ public class APIGatewayAdminTest {
                 mediationSecurityAdminServiceClient);
         Mockito.when(mediationSecurityAdminServiceClient.doEncryption("abcde")).thenReturn("defg===");
         Assert.assertEquals(apiGatewayAdmin.doEncryption(tenantDomain, "wso2carbon", "abcde"), "defg===");
+    }
+
+    @Test
+    public void doEncryptionThrowApimException() {
+        PowerMockito.mockStatic(GatewayUtils.class);
+        try {
+            PowerMockito.doThrow(new APIManagementException("")).when(GatewayUtils.class, "setRegistryProperty",
+                    Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+            RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
+            SequenceAdminServiceClient sequenceAdminServiceClient = Mockito.mock(SequenceAdminServiceClient.class);
+            MediationSecurityAdminServiceClient mediationSecurityAdminServiceClient = Mockito.mock
+                    (MediationSecurityAdminServiceClient.class);
+            APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, sequenceAdminServiceClient,
+                    mediationSecurityAdminServiceClient);
+            Mockito.when(mediationSecurityAdminServiceClient.doEncryption("abcde")).thenReturn("defg===");
+            apiGatewayAdmin.doEncryption(tenantDomain, "wso2carbon", "abcde");
+        } catch (Exception e) {
+            Assert.assertTrue(true);
+        }
+    }
+    @Test
+    public void testDeployPolicy() throws Exception {
+        RESTAPIAdminClient restapiAdminClient = Mockito.mock(RESTAPIAdminClient.class);
+        SequenceAdminServiceClient sequenceAdminServiceClient = Mockito.mock(SequenceAdminServiceClient.class);
+        MediationSecurityAdminServiceClient mediationSecurityAdminServiceClient = Mockito.mock
+                (MediationSecurityAdminServiceClient.class);
+        APIGatewayAdmin apiGatewayAdmin = new APIGatewayAdminWrapper(restapiAdminClient, sequenceAdminServiceClient,
+                mediationSecurityAdminServiceClient);
+        apiGatewayAdmin.deployPolicy("abc","abc");
+        apiGatewayAdmin.undeployPolicy(new String[]{"abc"});
     }
 }

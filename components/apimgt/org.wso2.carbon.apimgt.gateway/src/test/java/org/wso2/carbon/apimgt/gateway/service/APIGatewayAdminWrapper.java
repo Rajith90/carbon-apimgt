@@ -35,15 +35,6 @@ public class APIGatewayAdminWrapper extends APIGatewayAdmin {
         return sequenceAdminServiceClient;
     }
 
-    @Override
-    protected void deleteRegistryProperty(String apiProviderName, String apiName, String version, String
-            tenantDomain) throws APIManagementException {
-    }
-
-    @Override
-    protected void setRegistryProperty(String tenantDomain, String secureVaultAlias, String encodedValue) throws
-            APIManagementException {
-    }
 
     @Override
     protected MediationSecurityAdminServiceClient getMediationSecurityAdminServiceClient() throws AxisFault {
