@@ -530,4 +530,32 @@ public class ThrottleHandlerTest {
         Assert.assertTrue(throttleHandler.handleRequest(messageContext));
     }
 
+    @Test
+    public void testWhenThrottleDataMapContainsExpiredData() {
+        ThrottleDataHolder throttleDataHolder = new ThrottleDataHolder();
+
+        ThrottleHandler throttleHandler = new ThrottlingHandlerWrapper(timer, throttleDataHolder, throttleEvaluator);
+        MessageContext messageContext = TestUtils.getMessageContextWithAuthContext(apiContext, apiVersion);
+        //Set conditional group
+        verbInfoDTO.setConditionGroups(conditionGroupDTOs);
+        messageContext.setProperty(VERB_INFO_DTO, verbInfoDTO);
+        ((Axis2MessageContext) messageContext).getAxis2MessageContext().getProperty(org.apache.axis2.context
+                .MessageContext.TRANSPORT_HEADERS);
+        AuthenticationContext authenticationContext = (AuthenticationContext) messageContext.getProperty
+                (API_AUTH_CONTEXT);
+        authenticationContext.setApiTier(throttlingTier);
+        messageContext.setProperty(API_AUTH_CONTEXT, authenticationContext);
+        ArrayList<ConditionGroupDTO> matchingConditions = new ArrayList<>();
+        matchingConditions.add(conditionGroupDTO);
+
+        String combinedResourceLevelThrottleKey = apiLevelThrottleKey + conditionGroupDTO.getConditionGroupId();
+        throttleDataHolder.addThrottledAPIKey(apiLevelThrottleKey, System.currentTimeMillis() - 10000);
+        throttleDataHolder.addThrottleData(combinedResourceLevelThrottleKey, System.currentTimeMillis() - 10000);
+        Mockito.when(throttleEvaluator.getApplicableConditions(messageContext, authenticationContext,
+                conditionGroupDTOs)).thenReturn(matchingConditions);
+
+        //Should throttle out and discontinue message flow, when api level is throttled out
+        Assert.assertTrue(throttleHandler.handleRequest(messageContext));
+    }
+
 }
