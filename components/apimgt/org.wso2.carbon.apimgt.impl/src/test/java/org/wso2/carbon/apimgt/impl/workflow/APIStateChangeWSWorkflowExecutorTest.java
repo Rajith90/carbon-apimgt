@@ -21,6 +21,7 @@ package org.wso2.carbon.apimgt.impl.workflow;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -42,6 +43,7 @@ import org.wso2.carbon.apimgt.impl.dto.WorkflowProperties;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
@@ -143,9 +145,11 @@ import java.util.UUID;
         HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
         StatusLine mockedStatusLine = Mockito.mock(StatusLine.class);
         Mockito.when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
-        Mockito.when(mockedStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK, HttpStatus.SC_CREATED);
-        Mockito.when(httpClient.execute(Mockito.any(HttpPost.class))).thenReturn(httpResponse);
-
+        Mockito.when(mockedStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK, HttpStatus.SC_CREATED).thenReturn
+                (HttpStatus.SC_BAD_GATEWAY);
+        Mockito.when(httpClient.execute(Mockito.any(HttpPost.class))).thenReturn(httpResponse).thenReturn
+                (httpResponse).thenReturn(httpResponse).thenThrow(IOException.class).thenThrow
+                (ClientProtocolException.class);
         String jsonResponse =
                 "{\"clientId\":\"" + UUID.randomUUID().toString() + "\",\"token_type\":\"Bearer\",\"clientSecret\":\""
                         + UUID.randomUUID().toString() + "\"}";
@@ -153,17 +157,31 @@ import java.util.UUID;
 
         PowerMockito.mockStatic(APIUtil.class);
         PowerMockito.when(APIUtil.getHttpClient(Mockito.anyInt(), Mockito.anyString())).thenReturn(httpClient);
+        PowerMockito.doNothing().when(apiMgtDAO).updateWorkflowStatus(mockedWorkflowDTO);
+        Mockito.when(mockedWorkflowExecutor.complete(mockedWorkflowDTO))
+                .thenReturn(Mockito.mock(WorkflowResponse.class));
+        apiStateChangeWSWorkflowExecutor
+                .setStateList("CREATED:CREATED,PROTOTYPED:PUBLISHED,DEPRECATED:PROTOTYPED,BLOCKED:BLOCKED");
+        WorkflowResponse sampleWorkflowResponse = apiStateChangeWSWorkflowExecutor.execute(workflowDTO);
+        Assert.assertNotNull(sampleWorkflowResponse);
         try {
-            PowerMockito.doNothing().when(apiMgtDAO).updateWorkflowStatus(mockedWorkflowDTO);
-            Mockito.when(mockedWorkflowExecutor.complete(mockedWorkflowDTO))
-                    .thenReturn(Mockito.mock(WorkflowResponse.class));
-            apiStateChangeWSWorkflowExecutor
-                    .setStateList("CREATED:CREATED,PROTOTYPED:PUBLISHED,DEPRECATED:PROTOTYPED,BLOCKED:BLOCKED");
-            WorkflowResponse sampleWorkflowResponse = apiStateChangeWSWorkflowExecutor.execute(workflowDTO);
-            Assert.assertNotNull(sampleWorkflowResponse);
-
+            apiStateChangeWSWorkflowExecutor.execute(workflowDTO);
+            Assert.fail();
         } catch (WorkflowException e) {
-            Assert.fail("Unexpected WorkflowException occurred while executing API state change WS workflow");
+            Assert.assertTrue(e.getMessage().contains("Error while starting the process:  "));
+        }
+        try {
+            apiStateChangeWSWorkflowExecutor.execute(workflowDTO);
+            Assert.fail();
+        } catch (WorkflowException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while connecting to the BPMN process server from the " +
+                    "WorkflowExecutor."));
+        }
+        try {
+            apiStateChangeWSWorkflowExecutor.execute(workflowDTO);
+            Assert.fail();
+        } catch (WorkflowException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while creating the http client"));
         }
     }
 
