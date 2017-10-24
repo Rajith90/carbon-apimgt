@@ -118,7 +118,7 @@ public class Utils {
         if (messageContext.isSOAP11()) {
             faultCode.setText(new QName(fault.getNamespace().getNamespaceURI(), code));
         } else {
-            SOAPFaultValue value = factory.createSOAPFaultValue(faultCode);
+             SOAPFaultValue value = factory.createSOAPFaultValue(faultCode);
             value.setText(new QName(fault.getNamespace().getNamespaceURI(), code));            
         }
         fault.setCode(faultCode);

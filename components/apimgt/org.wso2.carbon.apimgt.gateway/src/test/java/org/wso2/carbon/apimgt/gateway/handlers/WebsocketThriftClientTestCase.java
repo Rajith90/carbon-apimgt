@@ -51,10 +51,14 @@ public class WebsocketThriftClientTestCase {
     private String apiKey = "PhoneVerify";
     private String sessionId = "ggf7uuunhced7i8ftndi";
     private ThriftUtils thriftUtils;
-    APIKeyValidationService.Client client;
+    private APIKeyValidationService.Client client;
+    private APIKeyValidationService service;
+
     private String host = "192.168.0.100";
     private int port = 7711;
     private int timeout = 900;
+    private org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO thriftDTO;
+    private TBinaryProtocol protocol;
 
 
     @Before
@@ -81,21 +85,10 @@ public class WebsocketThriftClientTestCase {
         PowerMockito.when(TSSLTransportFactory.getClientSocket(host, port, timeout)).thenReturn(tSocket);
 
         PowerMockito.mockStatic(TBinaryProtocol.class);
-        TBinaryProtocol protocol = Mockito.mock(TBinaryProtocol.class);
+        protocol = Mockito.mock(TBinaryProtocol.class);
         PowerMockito.whenNew(TBinaryProtocol.class).withAnyArguments().thenReturn(protocol);
 
-        PowerMockito.mockStatic(APIKeyValidationService.class);
-        PowerMockito.mockStatic(APIKeyValidationService.Client.class);
-        APIKeyValidationService service = Mockito.mock(APIKeyValidationService.class);
-        client = Mockito.mock(APIKeyValidationService.Client.class);
-        PowerMockito.whenNew(APIKeyValidationService.Client.class).withArguments(protocol).thenReturn(client);
-
-        org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO thriftDTO =
-                Mockito.mock(org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO.class);
-
-
-        Mockito.when(client.validateKeyforHandshake(context, apiVersion,
-                apiKey, sessionId)).thenReturn(thriftDTO);
+        thriftDTO = Mockito.mock(org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO.class);
 
     }
 
@@ -115,11 +108,37 @@ public class WebsocketThriftClientTestCase {
     * Test for APISecurityException when Error while accessing backend services
     * */
     @Test
-    public void testGetAPIKeyDataAPISecurityException1() throws AxisFault, APISecurityException {
+    public void testGetAPIKeyDataAPISecurityException1() throws Exception {
+
+        PowerMockito.mockStatic(APIKeyValidationService.class);
+        PowerMockito.mockStatic(APIKeyValidationService.Client.class);
+        service = Mockito.mock(APIKeyValidationService.class);
+        client = Mockito.mock(APIKeyValidationService.Client.class);
+        PowerMockito.whenNew(APIKeyValidationService.Client.class).withArguments(protocol).thenReturn(client);
+        WebsocketThriftClient websocketThriftClient = new WebsocketThriftClient();
+
+        Mockito.when(client.validateKeyforHandshake(context, apiVersion,
+                apiKey, sessionId)).thenReturn(thriftDTO);
+        APIKeyValidationInfoDTO apiKeyValidationInfoDTOActual = websocketThriftClient.getAPIKeyData(context,
+                apiVersion, apiKey);
+        Assert.assertFalse(apiKeyValidationInfoDTOActual.isAuthorized());
+
+    }
+
+    /*
+    * Test for  getAPIKeyData when login failed
+    * */
+    @Test(expected = APISecurityException.class)
+    public void testGetAPIKeyDataLodinFailed() throws Exception {
+        PowerMockito.when(thriftUtils.getSessionId()).thenReturn(null);
+
+        PowerMockito.mockStatic(APIKeyValidationService.class);
+        PowerMockito.mockStatic(APIKeyValidationService.Client.class);
+        service = Mockito.mock(APIKeyValidationService.class);
         WebsocketThriftClient websocketThriftClient = new WebsocketThriftClient();
 
         APIKeyValidationInfoDTO apiKeyValidationInfoDTOActual = websocketThriftClient.getAPIKeyData(context,
-                apiVersion, apiKey);
+                apiVersion, "");
         Assert.assertFalse(apiKeyValidationInfoDTOActual.isAuthorized());
 
     }
