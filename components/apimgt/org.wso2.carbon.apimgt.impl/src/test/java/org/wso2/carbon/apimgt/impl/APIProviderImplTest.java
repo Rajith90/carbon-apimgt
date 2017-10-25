@@ -2055,13 +2055,11 @@ public class APIProviderImplTest {
         Mockito.doNothing().when(artifactManager).removeGenericArtifact(artifact);
         Mockito.doNothing().when(artifactManager).removeGenericArtifact("12640983654");
         
-        Mockito.when(APIUtil.getIconPath(identifier)).thenReturn("icon/path");
         Mockito.when(apiProvider.registry.resourceExists("icon/path")).thenReturn(false);
         
         String apiDefinitionFilePath = APIConstants.API_DOC_LOCATION + RegistryConstants.PATH_SEPARATOR +
                 identifier.getApiName() + '-'  + identifier.getVersion() + '-' + identifier.getProviderName();
         
-        Mockito.when(APIUtil.getIconPath(identifier)).thenReturn(apiDefinitionFilePath);
         Mockito.when(apiProvider.registry.resourceExists(apiDefinitionFilePath)).thenReturn(true);
         
         String apiCollectionPath = APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR +
