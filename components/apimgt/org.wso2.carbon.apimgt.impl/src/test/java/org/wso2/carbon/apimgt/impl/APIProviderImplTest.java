@@ -117,7 +117,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.cache.Caching;
 import javax.xml.namespace.QName;
@@ -687,7 +692,7 @@ public class APIProviderImplTest {
     @Test
     public void testGetBlockConditions() throws APIManagementException {
         APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
-        List<BlockConditionsDTO> list = new LinkedList<BlockConditionsDTO>();
+        List<BlockConditionsDTO> list = new ArrayList<BlockConditionsDTO>();
         Mockito.when(apimgtDAO.getBlockConditions(Mockito.anyString())).thenReturn(list);
         assertNotNull(apiProvider.getBlockConditions());
     }
