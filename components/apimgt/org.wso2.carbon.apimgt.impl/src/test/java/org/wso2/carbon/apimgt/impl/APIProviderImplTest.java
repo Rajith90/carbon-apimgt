@@ -136,7 +136,7 @@ import static org.junit.Assert.assertTrue;
 @PrepareForTest({ServiceReferenceHolder.class, ApiMgtDAO.class, APIUtil.class, APIGatewayManager.class, 
     GovernanceUtils.class, PrivilegedCarbonContext.class, WorkflowExecutorFactory.class, RegistryUtils.class,
     ThrottlePolicyDeploymentManager.class, LifecycleBeanPopulator.class, Caching.class, PaginationContext.class,
-    APIProviderImpl.class, MultitenantUtils.class, DocumentVisibility.class, DocumentationType.class})
+    APIProviderImpl.class, MultitenantUtils.class})
 public class APIProviderImplTest {
     
     private static String EP_CONFIG_WSDL = "{\"production_endpoints\":{\"url\":\"http://ws.cdyne.com/phoneverify/phoneverify.asmx?wsdl\""
