@@ -204,14 +204,6 @@ public class CORSRequestHandler extends AbstractHandler implements ManagedLifecy
         }
     }
 
-//    protected String getFullRequestPath(MessageContext messageContext) {
-//        return RESTUtils.getFullRequestPath(messageContext);
-//    }
-/*
-    protected void sendResponse(MessageContext messageContext) {
-        Utils.send(messageContext, HttpStatus.SC_OK);
-    }*/
-
     protected String getFullRequestPath(MessageContext messageContext) {
         return RESTUtils.getFullRequestPath(messageContext);
     }
