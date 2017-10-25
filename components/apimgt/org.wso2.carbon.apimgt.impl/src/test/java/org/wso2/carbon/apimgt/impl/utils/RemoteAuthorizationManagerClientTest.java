@@ -30,17 +30,18 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.CarbonConstants;
+import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.RemoteAuthorizationManagerClient;
 import org.wso2.carbon.um.ws.api.stub.RemoteAuthorizationManagerServiceStub;
 import org.wso2.carbon.um.ws.api.stub.RemoteUserStoreManagerServiceStub;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceReferenceHolder.class, RemoteAuthorizationManagerServiceStub.class,
-        RemoteUserStoreManagerServiceStub.class, RemoteAuthorizationManagerClient.class })
+@PrepareForTest({ ServiceReferenceHolder.class, RemoteAuthorizationManagerClient.class })
 public class RemoteAuthorizationManagerClientTest {
 
     private final String SESSION_COOKIE = "abcd-efgh";
@@ -103,7 +104,6 @@ public class RemoteAuthorizationManagerClientTest {
         Assert.assertTrue(status);
     }
 
-    @Test
     public void testInValidIsUserAuthorized() throws Exception {
         remoteAuthorizationManagerClient = new RemoteAuthorizationManagerClient();
         boolean status = remoteAuthorizationManagerClient.isUserAuthorized(USER_WRONG, PERMISSION);
@@ -124,5 +124,30 @@ public class RemoteAuthorizationManagerClientTest {
         Assert.assertEquals(ROLE_NAMES[0], roleList[0]);
         Assert.assertEquals(ROLE_NAMES[1], roleList[1]);
         Assert.assertEquals(ROLE_NAMES[2], roleList[2]);
+    }
+
+    @Test (expected = APIManagementException.class)
+    public void testExceptionIsUserAuthorized() throws Exception {
+        Mockito.when(
+                authorizationManager.isUserAuthorized(USER_WRONG, null, CarbonConstants.UI_PERMISSION_ACTION))
+                .thenThrow(APIManagementException.class);
+        remoteAuthorizationManagerClient = new RemoteAuthorizationManagerClient();
+        remoteAuthorizationManagerClient.isUserAuthorized(USER_WRONG, null);
+    }
+
+    @Test (expected = APIManagementException.class)
+    public void testExceptionGetRoleListOfUser() throws Exception {
+        Mockito.when(
+                userStoreManager.getRoleListOfUser("")).thenThrow(APIManagementException.class);
+        remoteAuthorizationManagerClient = new RemoteAuthorizationManagerClient();
+        remoteAuthorizationManagerClient.getRolesOfUser("");
+    }
+
+    @Test (expected = APIManagementException.class)
+    public void testExceptionGetRoleNames() throws Exception {
+        Mockito.when(
+                userStoreManager.getRoleNames()).thenThrow(APIManagementException.class);
+        remoteAuthorizationManagerClient = new RemoteAuthorizationManagerClient();
+        remoteAuthorizationManagerClient.getRoleNames();
     }
 }
