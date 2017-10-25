@@ -93,11 +93,39 @@ public class TenantServiceCreatorTestCase {
 
         Mockito.when(tracker.getCurrentConfigurationName()).thenReturn("config-name");
         Mockito.when(synapseConfigsDir.exists()).thenReturn(false, false, false, true);
-        File fileMain = Mockito.mock(File.class);
-        PowerMockito.whenNew(File.class).withArguments("/repository/resources/apim-synapse-config/main.xml")
-                .thenReturn(fileMain);
-        PowerMockito.doNothing().when(FileUtils.class, "copyFile", Mockito.anyObject(), Mockito.anyObject());
+
+        copyFile("/repository/resources/apim-synapse-config/main.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "main.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/fault.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "falut.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/_auth_failure_handler_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_auth_failure_handler_.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/_resource_mismatch_handler_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_resource_mismatch_handler_.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/_throttle_out_handler_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_throttle_out_handler_.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/_sandbox_key_error_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_sandbox_key_error_.xml");
+
+        copyFile("/repository/resources/apim-synapse-config/_production_key_error_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_production_key_error_.xml");
+        
+        copyFile("/repository/resources/apim-synapse-config/_cors_request_handler_.xml",
+                "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_cors_request_handler_.xml");
         // test IOException Error while copying API manager specific synapse sequences
         tenantServiceCreator.createdConfigurationContext(configurationContext);
+    }
+
+    private void copyFile(String sourceFile, String destinationFile) throws Exception {
+        File fileMain = Mockito.mock(File.class);
+        File fileMainTo = Mockito.mock(File.class);
+        PowerMockito.whenNew(File.class).withArguments(sourceFile).thenReturn(fileMain);
+        PowerMockito.whenNew(File.class).withArguments(destinationFile).thenReturn(fileMainTo);
+        PowerMockito.doNothing().when(FileUtils.class, "copyFile", fileMain, fileMainTo);
     }
 }

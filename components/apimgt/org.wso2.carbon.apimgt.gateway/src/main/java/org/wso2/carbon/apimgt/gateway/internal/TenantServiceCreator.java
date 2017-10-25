@@ -158,7 +158,7 @@ public class TenantServiceCreator extends AbstractAxis2ConfigurationContextObser
                     return;
                 }
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(0);
                 } catch (InterruptedException e) {
                     log.error("Error occurred while waiting for Synapse Configuration hierarchy of tenant "
                               + tenantDomain, e);
