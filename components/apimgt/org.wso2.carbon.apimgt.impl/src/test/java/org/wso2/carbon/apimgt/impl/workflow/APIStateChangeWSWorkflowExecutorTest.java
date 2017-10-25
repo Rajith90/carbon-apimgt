@@ -185,4 +185,59 @@ import java.util.UUID;
         }
     }
 
+    @Test public void testCleanUpPendingTask() throws Exception {
+        WorkflowDTO mockedWorkflowDTO = Mockito.mock(WorkflowDTO.class);
+        WorkflowExecutor mockedWorkflowExecutor = PowerMockito.mock(WorkflowExecutor.class);
+
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder mockedServiceReferenceHolder = PowerMockito.mock(ServiceReferenceHolder.class);
+        APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
+        APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(mockedServiceReferenceHolder);
+
+        PowerMockito.when(mockedServiceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(amConfigService);
+        PowerMockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
+        WorkflowExecutorFactory wfe = PowerMockito.mock(WorkflowExecutorFactory.class);
+        PowerMockito.mockStatic(WorkflowExecutorFactory.class);
+        Mockito.when(WorkflowExecutorFactory.getInstance()).thenReturn(wfe);
+
+        WorkflowProperties workflowProperties = Mockito.mock(WorkflowProperties.class);
+        Mockito.when(amConfig.getWorkflowProperties()).thenReturn(workflowProperties);
+
+        Mockito.when(workflowProperties.getdCREndPoint()).thenReturn("http://mock.sample.wso2.com/dcr");
+        Mockito.when(workflowProperties.getServerUrl()).thenReturn("http://mock.sample.wso2.com/server");
+
+        URL url = PowerMockito.mock(URL.class);
+        PowerMockito.whenNew(URL.class).withAnyArguments().thenReturn(url);
+        HttpURLConnection urlConnection = PowerMockito.mock(HttpURLConnection.class);
+        PowerMockito.when(url.openConnection()).thenReturn(urlConnection);
+        PowerMockito.when(urlConnection.getResponseCode()).thenReturn(200);
+        HttpClient httpClient = Mockito.mock(HttpClient.class);
+        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        StatusLine mockedStatusLine = Mockito.mock(StatusLine.class);
+        Mockito.when(httpResponse.getStatusLine()).thenReturn(mockedStatusLine);
+        Mockito.when(mockedStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK, HttpStatus.SC_NO_CONTENT)
+                .thenReturn(HttpStatus.SC_BAD_GATEWAY);
+        Mockito.when(httpClient.execute(Mockito.any(HttpPost.class))).thenReturn(httpResponse).thenReturn(httpResponse)
+                .thenReturn(httpResponse).thenThrow(IOException.class).thenThrow(ClientProtocolException.class);
+        String jsonResponse =
+                "{\"clientId\":\"" + UUID.randomUUID().toString() + "\",\"token_type\":\"Bearer\",\"clientSecret\":\""
+                        + UUID.randomUUID().toString() + "\",\"data\":[{\"id\":\"sda67sadsa8f6a87fa6f87a99saa\"}]}";
+        Mockito.when(httpResponse.getEntity()).thenReturn(new StringEntity(jsonResponse));
+
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.when(APIUtil.getHttpClient(Mockito.anyInt(), Mockito.anyString())).thenReturn(httpClient);
+        PowerMockito.doNothing().when(apiMgtDAO).updateWorkflowStatus(mockedWorkflowDTO);
+        Mockito.when(mockedWorkflowExecutor.complete(mockedWorkflowDTO))
+                .thenReturn(Mockito.mock(WorkflowResponse.class));
+
+        String mockedWorkflowExtRef = UUID.randomUUID().toString();
+        apiStateChangeWSWorkflowExecutor.cleanUpPendingTask(mockedWorkflowExtRef);
+        Mockito.verify(apiMgtDAO, Mockito.atLeastOnce()).removeWorkflowEntry(Mockito.anyString(), Mockito.anyString());
+    }
+
 }
