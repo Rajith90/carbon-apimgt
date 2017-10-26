@@ -2477,9 +2477,12 @@ public class APIUtilTest {
         Mockito.doNothing().
                 when(authorizationManager)
                 .authorizeRole(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET);
-
+        visibility = "restricted";
+        roles = new String[] { "" };
         APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
-        roles = new String[] { "test4" };
+        roles = new String[] { "test3", "internal/everyone" };
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        roles = new String[] { "test3" };
         APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
 
         visibility = "private";
