@@ -323,8 +323,8 @@ public class APIManagerComponent {
         //create a FilenameFilter
         FilenameFilter filenameFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                //if the file extension is .rxt return true, else false
-                return name.endsWith(".rxt");
+                //if the file extension is .rxts return true, else false
+                return name.endsWith(".rxts");
             }
         };
         String[] rxtFilePaths = file.list(filenameFilter);
@@ -355,10 +355,10 @@ public class APIManagerComponent {
                 resource.setMediaType(APIConstants.RXT_MEDIA_TYPE);
                 systemRegistry.put(resourcePath, resource);
             } catch (IOException e) {
-                String msg = "Failed to read rxt files";
+                String msg = "Failed to read rxts files";
                 throw new APIManagementException(msg, e);
             } catch (RegistryException e) {
-                String msg = "Failed to add rxt to registry ";
+                String msg = "Failed to add rxts to registry ";
                 throw new APIManagementException(msg, e);
             }
         }

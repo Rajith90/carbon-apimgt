@@ -30,10 +30,10 @@ import java.util.Set;
  */
 public final class APIConstants {
 
-    //key value of the provider rxt
+    //key value of the provider rxts
     public static final String PROVIDER_KEY = "provider";
 
-    //key value of the APIImpl rxt
+    //key value of the APIImpl rxts
     public static final String API_KEY = "api";
 
     //governance registry apimgt root location
@@ -333,7 +333,7 @@ public final class APIConstants {
     public static final String REVOKE_API_URL = OAUTH_CONFIGS + "RevokeAPIURL";
     public static final String ENCRYPT_TOKENS_ON_PERSISTENCE = OAUTH_CONFIGS + "EncryptPersistedTokens";
 
-    //documentation rxt
+    //documentation rxts
 
     public static final String DOC_NAME = "overview_name";
     public static final String DOC_SUMMARY = "overview_summary";

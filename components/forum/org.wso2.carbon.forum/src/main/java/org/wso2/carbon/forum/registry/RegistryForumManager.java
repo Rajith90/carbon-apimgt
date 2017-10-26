@@ -201,7 +201,7 @@ public class RegistryForumManager implements ForumManager {
 
         if(artifactManager == null){
             if(log.isDebugEnabled()){
-                log.debug("Could not get artifact manager for topic.rxt, probably no topics found");
+                log.debug("Could not get artifact manager for topic.rxts, probably no topics found");
             }
             return null;
         }
@@ -254,7 +254,7 @@ public class RegistryForumManager implements ForumManager {
 
         if(topicArtifactManager == null){
             if(log.isDebugEnabled()){
-                log.debug("Could not get artifact manager for topic.rxt, probably no topics found");
+                log.debug("Could not get artifact manager for topic.rxts, probably no topics found");
             }
             return null;
         }
@@ -593,7 +593,7 @@ public class RegistryForumManager implements ForumManager {
 
         if(artifactManager == null){
             if(log.isDebugEnabled()){
-                log.debug("Could not get artifact manager for topic.rxt, probably no topics found");
+                log.debug("Could not get artifact manager for topic.rxts, probably no topics found");
             }
             return null;
         }
@@ -663,7 +663,7 @@ public class RegistryForumManager implements ForumManager {
 
         if (artifactManager == null) {
             if (log.isDebugEnabled()) {
-                log.debug("Could not get artifact manager for topic.rxt, probably no topics found");
+                log.debug("Could not get artifact manager for topic.rxts, probably no topics found");
             }
             return null;
         }
@@ -715,7 +715,7 @@ public class RegistryForumManager implements ForumManager {
 
         if(artifactManager == null){
             if(log.isDebugEnabled()){
-                log.debug("Could not get artifact manager for topic.rxt, probably no topics found");
+                log.debug("Could not get artifact manager for topic.rxts, probably no topics found");
             }
             return null;
         }

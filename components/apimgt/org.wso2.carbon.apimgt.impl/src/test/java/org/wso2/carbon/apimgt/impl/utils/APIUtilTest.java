@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.juddi.v3.error.RegistryException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -66,7 +65,6 @@ import org.wso2.carbon.apimgt.impl.ServiceReferenceHolderMockCreator;
 import org.wso2.carbon.apimgt.impl.clients.ApplicationManagementServiceClient;
 import org.wso2.carbon.apimgt.impl.clients.OAuthAdminClient;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
-import org.wso2.carbon.apimgt.impl.dao.constants.SQLConstants;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
@@ -89,9 +87,13 @@ import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.Tag;
 import org.wso2.carbon.registry.core.config.RegistryContext;
+import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.jdbc.realm.RegistryAuthorizationManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
+import org.wso2.carbon.registry.core.utils.RegistryUtils;
+import org.wso2.carbon.user.api.Permission;
+import org.wso2.carbon.user.api.RealmConfiguration;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -104,6 +106,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.text.DateFormat;
@@ -118,18 +121,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import javax.validation.constraints.AssertTrue;
 import javax.xml.stream.XMLStreamException;
 
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ LogFactory.class, ServiceReferenceHolder.class,
-        SSLSocketFactory.class, CarbonUtils.class, GovernanceUtils.class, AuthorizationManager.class,
-        MultitenantUtils.class, GenericArtifactManager.class, APIUtil.class, KeyManagerHolder.class,
-        SubscriberKeyMgtClient.class, ApplicationManagementServiceClient.class, OAuthAdminClient.class, ApiMgtDAO.class,
-        AXIOMUtil.class, OAuthServerConfiguration.class, RegistryContext.class })
+@PrepareForTest( {LogFactory.class, ServiceReferenceHolder.class, SSLSocketFactory.class, CarbonUtils.class,
+        GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
+        APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
+        .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
+        RegistryUtils.class,RegistryAuthorizationManager.class,RegistryContext.class})
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -2249,6 +2251,116 @@ public class APIUtilTest {
         Mockito.when(OAuthServerConfiguration.getInstance()).thenReturn(oAuthServerConfiguration);
         Mockito.when(OAuthServerConfiguration.getInstance().isUserNameAssertionEnabled()).thenReturn(true);
         Assert.assertTrue(APIUtil.checkUserNameAssertionEnabled());
+    }
+    @Test
+    public void testLoadloadTenantAPIRXT() throws Exception {
+        PowerMockito.mockStatic(RegistryUtils.class);
+        PowerMockito.when(RegistryUtils.getRelativePathToOriginal(Mockito.anyString(), Mockito.anyString()))
+                .thenReturn("abc/def");
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        ServiceReferenceHolder.getInstance().setRegistryService(registryService);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(CarbonUtils.class);
+        URL url = Thread.currentThread().getContextClassLoader().getResource("api-manager.xml");
+        PowerMockito.when(CarbonUtils.getCarbonHome()).thenReturn(url.getPath().split("/api-manager.xml")[0]);
+        PowerMockito.mockStatic(RegistryAuthorizationManager.class);
+        RegistryAuthorizationManager authorizationManager = Mockito.mock(RegistryAuthorizationManager.class);
+        PowerMockito.whenNew(RegistryAuthorizationManager.class).withArguments(Mockito.any(UserRealm.class))
+                .thenReturn(authorizationManager);
+        org.wso2.carbon.user.api.AuthorizationManager authManager = Mockito.mock(org.wso2.carbon.user.api
+                .AuthorizationManager.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        Resource resource = Mockito.mock(Resource.class);
+        ServiceReferenceHolder.getInstance().setRealmService(realmService);
+        Mockito.when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authManager);
+        Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(false).thenReturn(true).thenReturn
+                (false);
+        Mockito.when(registryService.getGovernanceSystemRegistry(-1234)).thenReturn(userRegistry).thenThrow
+                (RegistryException.class).thenReturn(userRegistry).thenReturn(userRegistry).thenReturn(userRegistry);
+        Mockito.doNothing().doNothing().doThrow(UserStoreException.class).doNothing().when(authManager).authorizeRole
+                (Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.when(userRegistry.newResource()).thenReturn(resource).thenReturn(resource).thenThrow
+                (RegistryException.class);
+        APIUtil.loadloadTenantAPIRXT("carbon.super",-1234);
+        try {
+            APIUtil.loadloadTenantAPIRXT("carbon.super",-1234);
+            Assert.fail();
+        }catch (APIManagementException ex){
+            Assert.assertTrue(ex.getMessage().contains("Error when create registry instance "));
+        }
+        APIUtil.loadloadTenantAPIRXT("carbon.super",-1234);
+        try {
+            APIUtil.loadloadTenantAPIRXT("carbon.super",-1234);
+            Assert.fail();
+        }catch (APIManagementException ex){
+            Assert.assertTrue(ex.getMessage().contains("Error while adding role permissions to API"));
+        }
+        try {
+            APIUtil.loadloadTenantAPIRXT("carbon.super",-1234);
+            Assert.fail();
+        }catch (APIManagementException ex){
+            Assert.assertTrue(ex.getMessage().contains("Failed to add rxt to registry "));
+        }
+    }
+    @Test
+    public void testSetDomainNameToUppercase(){
+        String username = "wso2/admin";
+        Assert.assertEquals(APIUtil.setDomainNameToUppercase(username),"WSO2/admin");
+    }
+    @Test
+    public void testCreateRoles() throws UserStoreException {
+        RealmService realmService = Mockito.mock(RealmService.class);
+        ServiceReferenceHolder.getInstance().setRealmService(realmService);
+        org.wso2.carbon.user.core.UserRealm userRealm = Mockito.mock(org.wso2.carbon.user.core.UserRealm.class);
+        Mockito.when(realmService.getBootstrapRealm()).thenReturn(userRealm);
+        org.wso2.carbon.user.api.UserRealm tenantRealm = Mockito.mock(org.wso2.carbon.user.api.UserRealm.class);
+        Mockito.when(realmService.getTenantUserRealm(1)).thenReturn(tenantRealm);
+        Mockito.when(realmService.getTenantUserRealm(-1234)).thenReturn(tenantRealm);
+        org.wso2.carbon.user.core.UserStoreManager userStoreManager = Mockito.mock(org.wso2.carbon.user.core
+                .UserStoreManager.class);
+        Mockito.when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(tenantRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        Mockito.when(userStoreManager.isExistingRole(Mockito.anyString())).thenReturn(false);
+        RealmConfiguration realmConfiguration = Mockito.mock(RealmConfiguration.class);
+        Mockito.when(tenantRealm.getRealmConfiguration()).thenReturn(realmConfiguration);
+        Mockito.when(realmConfiguration.getAdminUserName()).thenReturn("admin");
+        Mockito.doNothing().doNothing().doNothing().doNothing().doThrow(UserStoreException.class).when
+                (userStoreManager).addRole(Mockito.anyString(), Mockito.any(String[].class), Mockito.any(Permission[]
+                .class));
+        try {
+            APIUtil.createSubscriberRole("role1",-1234);
+            Assert.assertTrue(true);
+        } catch (APIManagementException e) {
+            e.printStackTrace();
+        }
+        try {
+            APIUtil.createPublisherRole("role1",-1234);
+            Assert.assertTrue(true);
+        } catch (APIManagementException e) {
+            e.printStackTrace();
+        }
+        try {
+            APIUtil.createCreatorRole("role1",-1234);
+            Assert.assertTrue(true);
+        } catch (APIManagementException e) {
+            e.printStackTrace();
+        }
+        try {
+            APIUtil.createCreatorRole("role1",1);
+            Assert.assertTrue(true);
+        } catch (APIManagementException e) {
+            e.printStackTrace();
+        }
+        try {
+            APIUtil.createCreatorRole("role1",1);
+            Assert.fail();
+        } catch (APIManagementException e) {
+          Assert.assertTrue(e.getMessage().contains("Error while creating role: "));
+        }
+
+
     }
 
     @Test
