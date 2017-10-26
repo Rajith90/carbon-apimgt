@@ -61,7 +61,7 @@ public class TenantServiceCreator extends AbstractAxis2ConfigurationContextObser
 
     public void createdConfigurationContext(ConfigurationContext configurationContext) {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        log.info("Initializing APIM TenantServiceCreator for the tenant domain : " + tenantDomain);
+        log.info("Initializing APIM TenantServiceCrseator for the tenant domain : " + tenantDomain);
         try {
 
             // first check which configuration should be active
