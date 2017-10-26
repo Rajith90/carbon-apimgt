@@ -290,8 +290,8 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
         apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
         PowerMockito.doNothing().when(apiMgtDAO)
-                .recordAPILifeCycleEvent(Mockito.any(APIIdentifier.class), Mockito.anyString(),
-                        Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+                .recordAPILifeCycleEvent(Mockito.any(APIIdentifier.class), Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyString(), Mockito.anyInt());
 
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         ServiceReferenceHolder mockedServiceReferenceHolder = PowerMockito.mock(ServiceReferenceHolder.class);
@@ -317,8 +317,8 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 
         apiStateChangeWSWorkflowExecutor.complete(workflowDTO);
         Mockito.verify(apiMgtDAO, Mockito.atLeastOnce())
-                .recordAPILifeCycleEvent(Mockito.any(APIIdentifier.class), Mockito.anyString(),
-                        Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+                .recordAPILifeCycleEvent(Mockito.any(APIIdentifier.class), Mockito.anyString(), Mockito.anyString(),
+                        Mockito.anyString(), Mockito.anyInt());
     }
 
     @Test public void testPublicGetters() throws Exception {
@@ -342,23 +342,23 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 
         String sampleProcessDefinitionKey = "dummyProcessDefinitionKey";
         sampleStateChangeWSWorkflowExecutor.setProcessDefinitionKey(sampleProcessDefinitionKey);
-        Assert.assertEquals(sampleProcessDefinitionKey , sampleStateChangeWSWorkflowExecutor.getProcessDefinitionKey());
+        Assert.assertEquals(sampleProcessDefinitionKey, sampleStateChangeWSWorkflowExecutor.getProcessDefinitionKey());
 
         String sampleServiceEndpoint = "https://test.wso2.com/testEndpoint";
         sampleStateChangeWSWorkflowExecutor.setServiceEndpoint(sampleServiceEndpoint);
-        Assert.assertEquals(sampleServiceEndpoint , sampleStateChangeWSWorkflowExecutor.getServiceEndpoint());
+        Assert.assertEquals(sampleServiceEndpoint, sampleStateChangeWSWorkflowExecutor.getServiceEndpoint());
 
         String sampleTokenAPI = "https://test.wso2.com/testEndpoint";
         sampleStateChangeWSWorkflowExecutor.setTokenAPI(sampleTokenAPI);
-        Assert.assertEquals(sampleTokenAPI , sampleStateChangeWSWorkflowExecutor.getTokenAPI());
+        Assert.assertEquals(sampleTokenAPI, sampleStateChangeWSWorkflowExecutor.getTokenAPI());
 
         String sampleUsername = "dummyUsername";
         sampleStateChangeWSWorkflowExecutor.setUsername(sampleUsername);
-        Assert.assertEquals(sampleUsername , sampleStateChangeWSWorkflowExecutor.getUsername());
+        Assert.assertEquals(sampleUsername, sampleStateChangeWSWorkflowExecutor.getUsername());
 
         String sampleCallbackURL = "https://test.sample.wso2.com/callbackURL";
         sampleStateChangeWSWorkflowExecutor.setCallbackURL(sampleCallbackURL);
-        Assert.assertEquals(sampleCallbackURL , sampleStateChangeWSWorkflowExecutor.getCallbackURL());
+        Assert.assertEquals(sampleCallbackURL, sampleStateChangeWSWorkflowExecutor.getCallbackURL());
     }
 
 }
