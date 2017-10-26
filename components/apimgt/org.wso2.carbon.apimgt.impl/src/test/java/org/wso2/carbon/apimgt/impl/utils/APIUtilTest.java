@@ -51,6 +51,8 @@ import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.DocumentationType;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
+import org.wso2.carbon.apimgt.api.model.Provider;
+import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
@@ -64,6 +66,7 @@ import org.wso2.carbon.apimgt.impl.ServiceReferenceHolderMockCreator;
 import org.wso2.carbon.apimgt.impl.clients.ApplicationManagementServiceClient;
 import org.wso2.carbon.apimgt.impl.clients.OAuthAdminClient;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.dao.constants.SQLConstants;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
@@ -85,6 +88,7 @@ import org.wso2.carbon.registry.core.Tag;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserRealm;
+import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
@@ -104,6 +108,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1999,5 +2004,112 @@ public class APIUtilTest {
 
         Mockito.doThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException("")).when(registry).get(Matchers.anyString());
         APIUtil.getTierDisplayName(5443, "Gold");
+    }
+
+    @Test
+    public void testGetProvider() throws GovernanceException, APIManagementException {
+        String providerName = "John";
+        String providerDescription = "This is the description that goes under this provider object";
+        String providerEmail = "email@provider.email.com";
+
+        GenericArtifact genericArtifact = Mockito.mock(GenericArtifact.class);
+        Mockito.when(genericArtifact.getAttribute(APIConstants.PROVIDER_OVERVIEW_NAME)).thenReturn(providerName);
+        Mockito.when(genericArtifact.getAttribute(APIConstants.PROVIDER_OVERVIEW_DESCRIPTION)).thenReturn(providerDescription);
+        Mockito.when(genericArtifact.getAttribute(APIConstants.PROVIDER_OVERVIEW_EMAIL)).thenReturn(providerEmail);
+
+        Provider provider = APIUtil.getProvider(genericArtifact);
+        Assert.assertEquals(provider.getName(), providerName);
+        Assert.assertEquals(provider.getDescription(), providerDescription);
+        Assert.assertEquals(provider.getEmail(), providerEmail);
+    }
+
+    @Test
+    public void testGetProviderException() throws GovernanceException, APIManagementException {
+        String exceptionMessage = "Failed to get provider ";
+
+        GenericArtifact genericArtifact = Mockito.mock(GenericArtifact.class);
+        Mockito.when(genericArtifact.getAttribute(APIConstants.PROVIDER_OVERVIEW_NAME)).thenThrow(new GovernanceException());
+
+        try {
+            APIUtil.getProvider(genericArtifact);
+            Assert.fail();
+        } catch (APIManagementException e ) {
+            Assert.assertEquals(e.getMessage(), exceptionMessage);
+        }
+    }
+
+    @Test
+    public void testGetScopeByScopeKey() throws APIManagementException, UserStoreException {
+        String scopeKey = "api_view";
+        String provider = "john-AT-abc.com";
+        final String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        final int tenantId = -1234;
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        Mockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).
+                thenReturn(org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId(tenantDomain)).thenReturn(tenantId);
+
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        Mockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+
+        Set<Scope> scopes = new LinkedHashSet<Scope>();
+        Scope scope1 = new Scope();
+        scope1.setId(1);
+        scope1.setKey("api_view");
+        scope1.setName("api_view");
+        scope1.setDescription("Scope related to api view");
+        scope1.setRoles("role1,role2");
+
+        Scope scope2 = new Scope();
+        scope2.setId(1);
+        scope2.setKey("api_view");
+        scope2.setName("api_view");
+        scope2.setDescription("Scope related to api view");
+        scope2.setRoles("role1,role2");
+
+        scopes.add(scope1);
+        scopes.add(scope2);
+
+
+        Mockito.when(ApiMgtDAO.getInstance().getAPIScopesByScopeKey(scopeKey, tenantId)).thenReturn(scopes);
+        Set<Scope> returnedScopes = APIUtil.getScopeByScopeKey(scopeKey, provider);
+        Assert.assertEquals(returnedScopes.size(), 2);
+    }
+
+    @Test public void testGetScopeByScopeKeyException() throws APIManagementException, UserStoreException {
+        String scopeKey = "api_view";
+        String provider = "john-AT-abc.com";
+        String expectedException = "Error while retrieving Scopes";
+        final String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        Mockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).
+                thenReturn(org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId(tenantDomain)).thenThrow(new UserStoreException());
+
+        try {
+            APIUtil.getScopeByScopeKey(scopeKey, provider);
+            Assert.fail();
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), expectedException);
+        }
     }
 }
