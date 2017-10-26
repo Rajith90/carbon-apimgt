@@ -18,16 +18,10 @@
 
 package org.wso2.carbon.apimgt.impl.workflow;
 
-import java.util.UUID;
-
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.Constants;
-import org.apache.axis2.addressing.EndpointReference;
-import org.apache.axis2.client.Options;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.AxisService;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,15 +37,18 @@ import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.ServiceReferenceHolderMockCreator;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationWorkflowDTO;
-import org.wso2.carbon.apimgt.impl.dto.SubscriptionWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+
+import javax.xml.stream.XMLStreamException;
+import java.util.UUID;
 
 /**
  * ApplicationCreationWSWorkflowExecutor test cases
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceReferenceHolder.class, ApiMgtDAO.class, ApplicationCreationWSWorkflowExecutor.class })
+@PrepareForTest({ ServiceReferenceHolder.class, ApiMgtDAO.class, ApplicationCreationWSWorkflowExecutor.class,
+		AXIOMUtil.class})
 public class ApplicationCreationWSWorkflowExecutorTest {
 
 	private ApplicationCreationWSWorkflowExecutor applicationCreationWSWorkflowExecutor;
@@ -168,6 +165,25 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 		applicationCreationWSWorkflowExecutor.complete(workflowDTO);
 		
 	}
+
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowCompleteExceptionWhenStatusUpdateFailed() throws APIManagementException, WorkflowException {
+		WorkflowDTO workflowDTO = new WorkflowDTO();
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+		workflowDTO.setStatus(WorkflowStatus.APPROVED);
+
+		Application app = Mockito.mock(Application.class);
+		//application is not in DB for the given id
+		PowerMockito.doReturn(app).when(apiMgtDAO)
+				.getApplicationById(Integer.parseInt(workflowDTO.getWorkflowReference()));
+		PowerMockito.doThrow(new APIManagementException("Error occurred when updating the status of the Application " +
+				"creation process")).when(apiMgtDAO).updateApplicationStatus(
+				Integer.parseInt(workflowDTO.getWorkflowReference()),
+				APIConstants.ApplicationStatus.APPLICATION_APPROVED);
+		applicationCreationWSWorkflowExecutor.complete(workflowDTO);
+
+	}
 	
 	@Test(expected = WorkflowException.class)
 	public void testWorkflowCompleteExceptionWhenReadingDB() throws APIManagementException, WorkflowException {
@@ -269,6 +285,18 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 		applicationCreationWSWorkflowExecutor.cleanUpPendingTask(workflowDTO.getExternalWorkflowReference());
 	}
 
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowCleanupTaskExceptionWhenMessageProcessingFailed() throws Exception {
+		WorkflowDTO workflowDTO = new WorkflowDTO();
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+		PowerMockito.mockStatic(AXIOMUtil.class);
+		PowerMockito.when(AXIOMUtil.stringToOM(Mockito.anyString())).thenThrow(new XMLStreamException("Error " +
+				"converting String to OMElement"));
+		applicationCreationWSWorkflowExecutor.cleanUpPendingTask(workflowDTO.getExternalWorkflowReference());
+	}
 
 	@Test
 	public void testWorkflowExecute() throws Exception {
@@ -303,6 +331,42 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 		}
 
 	}
+
+	@Test
+	public void testWorkflowExecuteFailWhenMessageProcessingFailed() throws Exception {
+		ApplicationWorkflowDTO workflowDTO = new ApplicationWorkflowDTO();
+		PowerMockito.mockStatic(AXIOMUtil.class);
+		PowerMockito.when(AXIOMUtil.stringToOM(Mockito.anyString())).thenThrow(new XMLStreamException("Error " +
+				"converting String to OMElement"));
+		Application application = new Application("TestAPP", new Subscriber(null));
+
+		application.setTier("Gold");
+		application.setCallbackUrl("www.wso2.com");
+		application.setDescription("Description");
+		workflowDTO.setApplication(application);
+		workflowDTO.setTenantDomain("wso2");
+		workflowDTO.setUserName("admin");
+		workflowDTO.setCallbackUrl("http://localhost:8280/workflow-callback");
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+
+		PowerMockito.doNothing().when(apiMgtDAO).updateSubscriptionStatus(
+				Integer.parseInt(workflowDTO.getWorkflowReference()), APIConstants.SubscriptionStatus.REJECTED);
+
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+
+		PowerMockito.whenNew(ServiceClient.class)
+				.withArguments(Mockito.any(ConfigurationContext.class), Mockito.any(AxisService.class))
+				.thenReturn(serviceClient);
+		try {
+			applicationCreationWSWorkflowExecutor.execute(workflowDTO);
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
+		} catch (WorkflowException e) {
+			Assert.assertEquals(e.getMessage(), "Error converting String to OMElement");
+		}
+	}
+
 	@Test
 	public void testWorkflowExecuteWithLimitedParam() throws Exception {
 		//application without a callback url 
@@ -331,7 +395,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 		try {
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 	}
@@ -394,7 +458,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 		// empty values
 		applicationCreationWSWorkflowExecutor.setUsername("");
@@ -403,7 +467,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 		// one empty value and other null
@@ -413,7 +477,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 		applicationCreationWSWorkflowExecutor.setUsername(null);
@@ -422,7 +486,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 		// without a password
@@ -432,7 +496,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case.
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 		applicationCreationWSWorkflowExecutor.setUsername("admin");
@@ -441,7 +505,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail. this checks for unsecured enpoint use case.
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 	}
@@ -477,7 +541,7 @@ public class ApplicationCreationWSWorkflowExecutorTest {
 			// shouldn't fail.
 			Assert.assertNotNull(applicationCreationWSWorkflowExecutor.execute(workflowDTO));
 		} catch (WorkflowException e) {
-			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
+			Assert.fail("Unexpected WorkflowException occurred while executing Application creation ws workflow");
 		}
 
 	}
