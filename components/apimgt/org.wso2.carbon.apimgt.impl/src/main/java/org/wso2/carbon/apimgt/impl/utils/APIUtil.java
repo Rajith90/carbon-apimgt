@@ -1217,7 +1217,7 @@ public final class APIUtil {
                 default:
                     throw new APIManagementException("Unknown sourceType " + sourceType + " provided for documentation");
             }
-            //Documentation Source URL is a required field in the documentation.rxt for migrated setups
+            //Documentation Source URL is a required field in the documentation.rxts for migrated setups
             //Therefore setting a default value if it is not set. 
             if (documentation.getSourceUrl() == null) {
                 documentation.setSourceUrl(" ");
