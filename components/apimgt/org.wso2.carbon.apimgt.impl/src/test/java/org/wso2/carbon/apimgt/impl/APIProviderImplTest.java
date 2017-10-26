@@ -35,6 +35,7 @@ import org.powermock.core.classloader.annotations.SuppressStaticInitializationFo
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.BlockConditionNotFoundException;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
 import org.wso2.carbon.apimgt.api.PolicyDeploymentFailureException;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
@@ -44,6 +45,7 @@ import org.wso2.carbon.apimgt.api.model.APIPublisher;
 import org.wso2.carbon.apimgt.api.model.APIStateChangeResponse;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.APIStore;
+import org.wso2.carbon.apimgt.api.model.BlockConditionsDTO;
 import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.Documentation.DocumentSourceType;
@@ -53,6 +55,7 @@ import org.wso2.carbon.apimgt.api.model.DuplicateAPIException;
 import org.wso2.carbon.apimgt.api.model.Provider;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
@@ -95,6 +98,7 @@ import org.wso2.carbon.registry.core.CollectionImpl;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.jdbc.realm.RegistryAuthorizationManager;
@@ -127,6 +131,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -654,6 +660,181 @@ public class APIProviderImplTest {
         Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
         Mockito.when(apiManagerConfiguration.getFirstProperty(Mockito.anyString())).thenReturn("synapse");
         assertTrue(apiProvider.isSynapseGateway());
+    }
+
+    @Test
+    public void testGetPolicyNames() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        String[] test = new String[]{};
+        Mockito.when(apimgtDAO.getPolicyNames("testLevel", "testName")).thenReturn(test);
+        assertNotNull(apiProvider.getPolicyNames("testName", "testLevel"));
+    }
+
+    @Test
+    public void testIsGlobalPolicyKeyTemplateExists() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        GlobalPolicy globalPolicy = Mockito.mock(GlobalPolicy.class);
+        Mockito.when(apimgtDAO.isKeyTemplatesExist(globalPolicy)).thenReturn(true);
+        assertTrue(apiProvider.isGlobalPolicyKeyTemplateExists(globalPolicy));
+    }
+
+    @Test
+    public void testHasAttachments() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        PowerMockito.when(APIUtil.getTenantId(Mockito.anyString())).thenReturn(0);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantDomain("testName")).thenReturn("carbon.super");
+        Mockito.when(apimgtDAO.hasSubscription("testId", "testName", "testPolicy")).
+                thenReturn(true);
+        assertTrue(apiProvider.hasAttachments("testName", "testId", "testPolicy"));
+    }
+
+    @Test
+    public void testGetBlockConditions() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        List<BlockConditionsDTO> list = new ArrayList<BlockConditionsDTO>();
+        Mockito.when(apimgtDAO.getBlockConditions(Mockito.anyString())).thenReturn(list);
+        assertNotNull(apiProvider.getBlockConditions());
+    }
+
+    @Test
+    public void testGetBlockCondition() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        Mockito.when(apimgtDAO.getBlockCondition(Mockito.anyInt())).thenReturn(blockConditionsDTO);
+        assertNotNull(apiProvider.getBlockCondition(Mockito.anyInt()));
+    }
+
+    @Test
+    public void testGetBlockConditionByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        Mockito.when(apimgtDAO.getBlockConditionByUUID("testUUID")).thenReturn(blockConditionsDTO);
+        // Normal Path
+        assertNotNull(apiProvider.getBlockConditionByUUID("testUUID"));
+        Mockito.when(apimgtDAO.getBlockConditionByUUID("testUUID")).thenThrow(BlockConditionNotFoundException.class);
+        // BlockConditionNotFound exception
+        try {
+            assertNull(apiProvider.getBlockConditionByUUID("testUUID"));
+        } catch (APIManagementException e){
+            Assert.assertEquals(null, e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testUpdateBlockCondition() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Mockito.when(apimgtDAO.updateBlockConditionState(1, "testState")).thenReturn(false, true);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        blockConditionsDTO.setConditionType("testType");
+        blockConditionsDTO.setConditionValue("USER");
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantAwareUsername("User")).thenReturn("testValue");
+        Mockito.when(apimgtDAO.getBlockCondition(1)).thenReturn(blockConditionsDTO);
+        //updateState false
+        assertFalse(apiProvider.updateBlockCondition(1, "testState"));
+        //updateState true
+        assertTrue(apiProvider.updateBlockCondition(1, "testState"));
+    }
+
+    @Test
+    public void testUpdateBlockConditionByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Mockito.when(apimgtDAO.updateBlockConditionStateByUUID("testID", "testState")).
+                thenReturn(false, true);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        blockConditionsDTO.setConditionType("testType");
+        blockConditionsDTO.setConditionValue("USER");
+        Mockito.when(apimgtDAO.getBlockConditionByUUID("testState")).thenReturn(blockConditionsDTO);
+        //updateState false
+        assertFalse(apiProvider.updateBlockConditionByUUID("testID", "testState"));
+        //updateState true
+        assertTrue(apiProvider.updateBlockConditionByUUID("testID", "testState"));
+    }
+
+    @Test
+    public void testAddBlockCondition() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Mockito.when(apimgtDAO.addBlockConditions(Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).
+                thenReturn("testID");
+        //condition type IP
+        assertEquals("testID", apiProvider.addBlockCondition("IP", "testValue"));
+        //condition type User
+        assertEquals("testID", apiProvider.addBlockCondition("USER", "testValue"));
+    }
+
+    @Test public void testDeleteBlockCondition() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        Mockito.when(apimgtDAO.getBlockCondition(1111)).thenReturn(blockConditionsDTO);
+        Mockito.when(apimgtDAO.deleteBlockCondition(1111)).thenReturn(false, true);
+        //deleteState false
+        assertFalse(apiProvider.deleteBlockCondition(1111));
+        //deleteState true
+        assertTrue(apiProvider.deleteBlockCondition(1111));
+    }
+
+    @Test
+    public void testDeleteBlockConditionByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        BlockConditionsDTO blockConditionsDTO = new BlockConditionsDTO();
+        blockConditionsDTO.setConditionType("testType");
+        blockConditionsDTO.setConditionValue("USER");
+        blockConditionsDTO.setConditionId(1111);
+        Mockito.when(apimgtDAO.getBlockConditionByUUID("testId")).thenReturn(blockConditionsDTO);
+        Mockito.when(apimgtDAO.deleteBlockCondition(1111)).thenReturn(false, true);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantAwareUsername("User")).thenReturn("testValue");
+        //deleteState false
+        assertFalse(apiProvider.deleteBlockConditionByUUID("testId"));
+        //deleteState true
+        assertTrue(apiProvider.deleteBlockConditionByUUID("testId"));
+    }
+
+    @Test
+    public void testAddTier() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Tier tier = new Tier("testTier");
+        tier.setDescription("testDescription");
+        tier.setTierPlan("testPlan");
+
+        Map<String, Tier> tierMap = new HashMap<String, Tier>();
+        tierMap.put("tier", tier);
+        PowerMockito.when(APIUtil.getAllTiers()).thenReturn(tierMap);
+        Resource resource = new ResourceImpl();
+        Mockito.when(apiProvider.registry.newResource()).thenReturn(resource);
+        apiProvider.addTier(tier);
+        Mockito.verify(apiProvider.registry);
+    }
+
+    @Test
+    public void testGetExternalWorkflowReferenceId() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Mockito.when(apimgtDAO.getExternalWorkflowReferenceForSubscription(Mockito.anyInt())).thenReturn("testValue");
+        assertNotNull("testValue", apiProvider.getExternalWorkflowReferenceId(Mockito.anyInt()));
+    }
+
+    @Test
+    public void testGetAPIPolicy() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        PowerMockito.when(APIUtil.getTenantId("testUser")).thenReturn(1111);
+        APIPolicy apiPolicy = Mockito.mock(APIPolicy.class);
+        Mockito.when(apimgtDAO.getAPIPolicy("testPolicy", 1111)).thenReturn(apiPolicy);
+        assertNotNull(apiProvider.getAPIPolicy("testUser", "testPolicy"));
+    }
+
+    @Test
+    public void testGetAPIPolicyByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIPolicy apiPolicy = Mockito.mock(APIPolicy.class);
+        Mockito.when(apimgtDAO.getAPIPolicyByUUID("1111")).thenReturn(apiPolicy, null);
+        apiProvider.getAPIPolicyByUUID("1111");
+        try {
+            assertNotNull(apiProvider.getAPIPolicyByUUID("1111"));
+        } catch(APIManagementException e) {
+            assertEquals("Advanced Policy: 1111 was not found.", e.getMessage());
+        }
     }
 
     @Test
