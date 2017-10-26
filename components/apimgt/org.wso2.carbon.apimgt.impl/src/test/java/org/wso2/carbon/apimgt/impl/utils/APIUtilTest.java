@@ -20,7 +20,9 @@
 
 package org.wso2.carbon.apimgt.impl.utils;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,6 +36,7 @@ import org.json.simple.parser.JSONParser;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -79,10 +82,8 @@ import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.Tag;
-import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
-import org.wso2.carbon.registry.core.utils.RegistryUtils;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -94,7 +95,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.net.URL;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -103,9 +104,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.xml.stream.XMLStreamException;
 
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
@@ -114,7 +117,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
 @PrepareForTest( {LogFactory.class, ServiceReferenceHolder.class, SSLSocketFactory.class, CarbonUtils.class,
         GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
-        .class, OAuthAdminClient.class,ApiMgtDAO.class})
+        .class, OAuthAdminClient.class,ApiMgtDAO.class, AXIOMUtil.class})
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -1825,4 +1828,176 @@ public class APIUtilTest {
 
     }
 
+    private Resource getMockedResource() throws Exception {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        UserRegistry registry = Mockito.mock(UserRegistry.class);
+        Mockito.when(registryService.getGovernanceSystemRegistry(5443)).thenReturn(registry);
+        Mockito.when(registry.resourceExists(APIConstants.API_TIER_LOCATION)).thenReturn(true);
+
+        Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(resource.getContent()).thenReturn("wsdl".getBytes());
+        Mockito.when(registry.get(APIConstants.API_TIER_LOCATION)).thenReturn(resource);
+        return resource;
+
+    }
+    @Test(expected = APIManagementException.class)
+    public void testDeleteTiersTierWhenTierNotExists() throws Exception {
+        Resource resource = getMockedResource();
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
+        OMElement element = Mockito.mock(OMElement.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(content)).thenReturn(element);
+        Mockito.when(element.getFirstChildWithName(APIConstants.ASSERTION_ELEMENT)).thenReturn(element);
+
+        List<OMElement> list = new ArrayList<OMElement>();
+        list.add(Mockito.mock(OMElement.class));
+        Mockito.when(element.getChildrenWithName(APIConstants.POLICY_ELEMENT)).thenReturn(list.iterator());
+        Tier tier = Mockito.mock(Tier.class);
+        APIUtil.deleteTier(tier, 5443);
+        Mockito.verify(resource, Mockito.times(0)).setContent(Matchers.anyString());
+    }
+
+    @Test
+    public void testDeleteTiersTierWhenTierExists() throws Exception {
+        Resource resource = getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
+        OMElement element = Mockito.mock(OMElement.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(content)).thenReturn(element);
+        Mockito.when(element.getFirstChildWithName(APIConstants.ASSERTION_ELEMENT)).thenReturn(element);
+
+        List<OMElement> list = new ArrayList<OMElement>();
+        OMElement omElement1 = Mockito.mock(OMElement.class);
+        list.add(omElement1);
+        OMElement omElement2 = Mockito.mock(OMElement.class);
+        Mockito.when(omElement1.getFirstChildWithName(APIConstants.THROTTLE_ID_ELEMENT)).thenReturn(omElement2);
+        Mockito.when(omElement2.getText()).thenReturn("GOLD");
+        Mockito.when(element.getChildrenWithName(APIConstants.POLICY_ELEMENT)).thenReturn(list.iterator());
+        APIUtil.deleteTier(tier, 5443);
+        Mockito.verify(resource, Mockito.times(1)).setContent(Matchers.anyString());
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testDeleteTiersTierWhenXMLStreamException() throws Exception {
+        getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(Matchers.anyString())).thenThrow(new XMLStreamException());
+        APIUtil.deleteTier(tier, 5443);
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testDeleteTiersTierWhenRegistryException() throws Exception {
+        Resource resource = getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
+        OMElement element = Mockito.mock(OMElement.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(content)).thenReturn(element);
+        Mockito.when(element.getFirstChildWithName(APIConstants.ASSERTION_ELEMENT)).thenReturn(element);
+
+        List<OMElement> list = new ArrayList<OMElement>();
+        OMElement omElement1 = Mockito.mock(OMElement.class);
+        list.add(omElement1);
+        OMElement omElement2 = Mockito.mock(OMElement.class);
+        Mockito.when(omElement1.getFirstChildWithName(APIConstants.THROTTLE_ID_ELEMENT)).thenReturn(omElement2);
+        Mockito.when(omElement2.getText()).thenReturn("GOLD");
+        Mockito.when(element.getChildrenWithName(APIConstants.POLICY_ELEMENT)).thenReturn(list.iterator());
+        Mockito.doThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException("")).when(resource).setContent(Matchers.anyString());
+        APIUtil.deleteTier(tier, 5443);
+    }
+
+    @Test
+    public void testGetTierDisplayNameWhenUnlimited() throws APIManagementException {
+        String result = APIUtil.getTierDisplayName(5443, "Unlimited");
+        Assert.assertEquals("Unlimited", result );
+    }
+
+    @Test
+    public void testGetTierDisplayNameWhenDisplayNameNull() throws Exception {
+        Resource resource = getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
+        OMElement element = Mockito.mock(OMElement.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(content)).thenReturn(element);
+        Mockito.when(element.getFirstChildWithName(APIConstants.ASSERTION_ELEMENT)).thenReturn(element);
+
+        List<OMElement> list = new ArrayList<OMElement>();
+        OMElement omElement1 = Mockito.mock(OMElement.class);
+        list.add(omElement1);
+        OMElement omElement2 = Mockito.mock(OMElement.class);
+        Mockito.when(omElement1.getFirstChildWithName(APIConstants.THROTTLE_ID_ELEMENT)).thenReturn(omElement2);
+        Mockito.when(omElement2.getText()).thenReturn("Gold");
+        Mockito.when(element.getChildrenWithName(APIConstants.POLICY_ELEMENT)).thenReturn(list.iterator());
+        String result = APIUtil.getTierDisplayName(5443, "Gold");
+        Assert.assertEquals("Gold", result);
+    }
+
+    @Test
+    public void testGetTierDisplayNameWithDisplayName() throws Exception {
+        Resource resource = getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
+        OMElement element = Mockito.mock(OMElement.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(content)).thenReturn(element);
+        Mockito.when(element.getFirstChildWithName(APIConstants.ASSERTION_ELEMENT)).thenReturn(element);
+
+        List<OMElement> list = new ArrayList<OMElement>();
+        OMElement omElement1 = Mockito.mock(OMElement.class);
+        list.add(omElement1);
+        OMElement omElement2 = Mockito.mock(OMElement.class);
+        Mockito.when(omElement1.getFirstChildWithName(APIConstants.THROTTLE_ID_ELEMENT)).thenReturn(omElement2);
+        Mockito.when(omElement2.getText()).thenReturn("Gold");
+        Mockito.when(omElement2.getAttribute(APIConstants.THROTTLE_ID_DISPLAY_NAME_ELEMENT)).thenReturn(Mockito.mock(
+                OMAttribute.class));
+        Mockito.when(omElement2.getAttributeValue(APIConstants.THROTTLE_ID_DISPLAY_NAME_ELEMENT)).thenReturn("Gold");
+        Mockito.when(element.getChildrenWithName(APIConstants.POLICY_ELEMENT)).thenReturn(list.iterator());
+        String result = APIUtil.getTierDisplayName(5443, "Gold");
+        Assert.assertEquals("Gold", result);
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testGetTierDisplayNameXMLStreamException() throws Exception {
+        getMockedResource();
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+
+        PowerMockito.mockStatic(AXIOMUtil.class);
+        PowerMockito.when(AXIOMUtil.stringToOM(Matchers.anyString())).thenThrow(new XMLStreamException());
+        APIUtil.getTierDisplayName(5443, "Gold");
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testGetTierDisplayNameRegistryException() throws Exception {
+        Tier tier = Mockito.mock(Tier.class);
+        Mockito.when(tier.getName()).thenReturn("GOLD");
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        UserRegistry registry = Mockito.mock(UserRegistry.class);
+        Mockito.when(registryService.getGovernanceSystemRegistry(5443)).thenReturn(registry);
+        Mockito.when(registry.resourceExists(APIConstants.API_TIER_LOCATION)).thenReturn(true);
+
+        Mockito.doThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException("")).when(registry).get(Matchers.anyString());
+        APIUtil.getTierDisplayName(5443, "Gold");
+    }
 }
