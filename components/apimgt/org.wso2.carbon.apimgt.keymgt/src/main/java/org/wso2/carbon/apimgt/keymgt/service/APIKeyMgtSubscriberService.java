@@ -636,9 +636,6 @@ public class APIKeyMgtSubscriberService extends AbstractAdmin {
             throw new APIKeyMgtException(errMsg, e);
         }
 
-        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        apiMgtDAO.updateRefreshedApplicationAccessToken(tokenScope, newAccessToken,
-                validityPeriod);
         return newAccessToken;
 
     }
