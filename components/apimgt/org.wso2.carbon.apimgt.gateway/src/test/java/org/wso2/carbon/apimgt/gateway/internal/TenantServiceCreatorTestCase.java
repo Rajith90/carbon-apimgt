@@ -24,6 +24,7 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.synapse.SynapseConstants;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -114,7 +115,7 @@ public class TenantServiceCreatorTestCase {
 
         copyFile("/repository/resources/apim-synapse-config/_production_key_error_.xml",
                 "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_production_key_error_.xml");
-        
+
         copyFile("/repository/resources/apim-synapse-config/_cors_request_handler_.xml",
                 "/file/synapse-confgs" + File.separator + "sequences" + File.separator + "_cors_request_handler_.xml");
         // test IOException Error while copying API manager specific synapse sequences
@@ -124,8 +125,14 @@ public class TenantServiceCreatorTestCase {
     private void copyFile(String sourceFile, String destinationFile) throws Exception {
         File fileMain = Mockito.mock(File.class);
         File fileMainTo = Mockito.mock(File.class);
+        Mockito.when(fileMain.exists()).thenReturn(true);
         PowerMockito.whenNew(File.class).withArguments(sourceFile).thenReturn(fileMain);
         PowerMockito.whenNew(File.class).withArguments(destinationFile).thenReturn(fileMainTo);
         PowerMockito.doNothing().when(FileUtils.class, "copyFile", fileMain, fileMainTo);
+    }
+
+    @Test
+    public void testIsRunningSamplesMode() {
+        Assert.assertTrue(TenantServiceCreator.isRunningSamplesMode());
     }
 }

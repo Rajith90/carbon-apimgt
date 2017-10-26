@@ -157,4 +157,8 @@ public class APIHandlerServiceComponent {
                 File.separator + "conf" + File.separator + "api-manager.xml";
     }
 
+    protected void setConfiguration(APIManagerConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
 }
