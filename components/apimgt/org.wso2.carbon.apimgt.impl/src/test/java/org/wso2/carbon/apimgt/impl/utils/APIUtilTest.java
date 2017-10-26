@@ -80,6 +80,7 @@ import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
 import org.wso2.carbon.governance.api.util.GovernanceArtifactConfiguration;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
+import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
@@ -122,7 +123,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
 @PrepareForTest( {LogFactory.class, ServiceReferenceHolder.class, SSLSocketFactory.class, CarbonUtils.class,
         GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
-        .class, OAuthAdminClient.class,ApiMgtDAO.class, AXIOMUtil.class})
+        .class, OAuthAdminClient.class,ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class})
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -2208,6 +2209,39 @@ public class APIUtilTest {
         }finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
+    }
 
+    @Test
+    public void testGetAvailableKeyStoreTables() throws APIManagementException {
+
+        String domainString = "A:abc.com,B:pqr.com,C:xya.com";
+        OAuthServerConfiguration oAuthServerConfiguration = Mockito.mock(OAuthServerConfiguration.class);
+        PowerMockito.mockStatic(OAuthServerConfiguration.class);
+        Mockito.when(OAuthServerConfiguration.getInstance()).thenReturn(oAuthServerConfiguration);
+        Mockito.when(OAuthServerConfiguration.getInstance().getAccessTokenPartitioningDomains()).thenReturn(domainString);
+
+        String[] keyStoreTables = APIUtil.getAvailableKeyStoreTables();
+
+        Assert.assertEquals(keyStoreTables[0],"IDN_OAUTH2_ACCESS_TOKEN_C");
+        Assert.assertEquals(keyStoreTables[1],"IDN_OAUTH2_ACCESS_TOKEN_A");
+        Assert.assertEquals(keyStoreTables[2],"IDN_OAUTH2_ACCESS_TOKEN_B");
+    }
+
+    @Test
+    public void testCheckAccessTokenPartitioningEnabled(){
+        OAuthServerConfiguration oAuthServerConfiguration = Mockito.mock(OAuthServerConfiguration.class);
+        PowerMockito.mockStatic(OAuthServerConfiguration.class);
+        Mockito.when(OAuthServerConfiguration.getInstance()).thenReturn(oAuthServerConfiguration);
+        Mockito.when(OAuthServerConfiguration.getInstance().isAccessTokenPartitioningEnabled()).thenReturn(true);
+        Assert.assertTrue(APIUtil.checkAccessTokenPartitioningEnabled());
+    }
+
+    @Test
+    public void testCheckUserNameAssertionEnabled(){
+        OAuthServerConfiguration oAuthServerConfiguration = Mockito.mock(OAuthServerConfiguration.class);
+        PowerMockito.mockStatic(OAuthServerConfiguration.class);
+        Mockito.when(OAuthServerConfiguration.getInstance()).thenReturn(oAuthServerConfiguration);
+        Mockito.when(OAuthServerConfiguration.getInstance().isUserNameAssertionEnabled()).thenReturn(true);
+        Assert.assertTrue(APIUtil.checkUserNameAssertionEnabled());
     }
 }
