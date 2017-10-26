@@ -8,7 +8,7 @@
             <p class="marked"></p>
 
             <p class="marked">This operation can be used to delete an existing tier. The only supported tier level is `api` tiers.
-`DELETE https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low`
+`DELETE https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low`
 
 **IMPORTANT:**
 * This is only effective when Advanced Throttling is disabled in the Server. If enabled, we need to use Admin REST API for throttling tiers modification related operations.
@@ -30,7 +30,7 @@
             </div>
 
             
-                <div id="request-tiersTierLevelTierNameDelete"class="pre collapse in"><code class="json">DELETE https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low
+                <div id="request-tiersTierLevelTierNameDelete"class="pre collapse in"><code class="json">DELETE https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
@@ -51,7 +51,7 @@ Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -X DELETE &quot;https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -X DELETE &quot;https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low&quot;</code></div>
             
             
 
@@ -269,7 +269,7 @@ Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
             <p class="marked"></p>
 
             <p class="marked">This operation can be used to retrieve details of a single tier by specifying the tier level and tier name.
-Note that the scope of the API is mandatory while retreiving the access token with the following cURL command : `curl -k -d \&quot;grant_type=password&amp;username=username&amp;password=password&amp;scope=apim:tier_view\&quot; -H \&quot;Authorization: Basic &lt;token&gt;\&quot; https://127.0.0.1:8243/token`.
+Note that the scope of the API is mandatory while retreiving the access token with the following cURL command : `curl -k -d \&quot;grant_type=password&amp;username=username&amp;password=password&amp;scope=apim:tier_view\&quot; -H \&quot;Authorization: Basic &lt;token&gt;\&quot; https://localhost:8243/token`.
 You will receive the access token as the response, for example `&quot;access_token&quot;:&quot;8644c013-7ff1-3217-b150-d7b92cae6be7&quot;`.
 </p>
 
@@ -289,7 +289,7 @@ You will receive the access token as the response, for example `&quot;access_tok
             </div>
 
             
-                <div id="request-tiersTierLevelTierNameGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Bronze
+                <div id="request-tiersTierLevelTierNameGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/publisher/v0.11/tiers/api/Bronze
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
@@ -322,7 +322,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Bronze</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://localhost:9443/api/am/publisher/v0.11/tiers/api/Bronze</code></div>
             
             
 
@@ -590,7 +590,7 @@ formerly retrieved variant of the resource (Will be supported in future).
             <p class="marked"></p>
 
             <p class="marked">This operation can be used to update an existing tier. The only supported tier level is `api` tiers.
-`PUT https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low`
+`PUT https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low`
 
 **IMPORTANT:**
 * This is only effective when Advanced Throttling is disabled in the Server. If enabled, we need to use Admin REST API for throttling tiers modification related operations.
@@ -612,7 +612,7 @@ formerly retrieved variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-tiersTierLevelTierNamePut"class="pre collapse in"><code class="json">PUT https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low
+                <div id="request-tiersTierLevelTierNamePut"class="pre collapse in"><code class="json">PUT https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 Content-Type: application/json
 
@@ -665,7 +665,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X PUT -d @data.json &quot;https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api/Low&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X PUT -d @data.json &quot;https://localhost:9443/api/am/publisher/v0.11/tiers/api/Low&quot;</code></div>
             
             
 
@@ -978,7 +978,7 @@ Content-Type: application/json
             </div>
 
             
-                <div id="request-tiersUpdatePermissionPost"class="pre collapse in"><code class="json">POST https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/update-permission?tierName=Bronze&amp;tierLevel=api
+                <div id="request-tiersUpdatePermissionPost"class="pre collapse in"><code class="json">POST https://localhost:9443/api/am/publisher/v0.11/tiers/update-permission?tierName=Bronze&amp;tierLevel=api
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 Content-Type: application/json
 
@@ -1004,7 +1004,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json &quot;https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/update-permission?tierName=Bronze&amp;tierLevel=api&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json &quot;https://localhost:9443/api/am/publisher/v0.11/tiers/update-permission?tierName=Bronze&amp;tierLevel=api&quot;</code></div>
             
             
 

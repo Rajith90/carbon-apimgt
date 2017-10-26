@@ -29,7 +29,7 @@ Each retrieved API is represented with a minimal amount of attributes. If you wa
             </div>
 
             
-                <div id="request-apisGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/publisher/v0.11/apis
+                <div id="request-apisGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/publisher/v0.11/apis
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
@@ -77,7 +77,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://127.0.0.1:9443/api/am/publisher/v0.11/apis</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://localhost:9443/api/am/publisher/v0.11/apis</code></div>
             
             
 
@@ -358,7 +358,7 @@ There is a special capability for a user who has `APIM Admin` permission such th
             </div>
 
             
-                <div id="request-apisPost"class="pre collapse in"><code class="json">POST https://127.0.0.1:9443/api/am/publisher/v0.11/apis
+                <div id="request-apisPost"class="pre collapse in"><code class="json">POST https://localhost:9443/api/am/publisher/v0.11/apis
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 
 {
@@ -437,7 +437,7 @@ Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
             </div>
             
                 <div id="response-apisPost" class="pre collapse in"><code class="json">HTTP/1.1 201 Created
-Location: https://127.0.0.1:9443/api/am/publisher/v0.11/apis/7a2298c4-c905-403f-8fac-38c73301631f
+Location: https://localhost:9443/api/am/publisher/v0.11/apis/7a2298c4-c905-403f-8fac-38c73301631f
 Content-Type: application/json
 
 {
@@ -509,7 +509,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json https://127.0.0.1:9443/api/am/publisher/v0.11/apis</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json https://localhost:9443/api/am/publisher/v0.11/apis</code></div>
             
             
 

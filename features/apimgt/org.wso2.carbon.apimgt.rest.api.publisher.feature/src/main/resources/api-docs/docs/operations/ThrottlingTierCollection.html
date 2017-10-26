@@ -26,7 +26,7 @@
             </div>
 
             
-                <div id="request-tiersTierLevelGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api
+                <div id="request-tiersTierLevelGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/publisher/v0.11/tiers/api
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
@@ -97,7 +97,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; https://localhost:9443/api/am/publisher/v0.11/tiers/api</code></div>
             
             
 
@@ -351,7 +351,7 @@ variant of the resource (Will be supported in future).
             <p class="marked"></p>
 
             <p class="marked">This operation can be used to create a new throttling tier. The only supported tier level is `api` tiers.
-`POST https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api`
+`POST https://localhost:9443/api/am/publisher/v0.11/tiers/api`
 
 **IMPORTANT:**
 * This is only effective when Advanced Throttling is disabled in the Server. If enabled, we need to use Admin REST API for throttling tiers modification related operations.
@@ -373,7 +373,7 @@ variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-tiersTierLevelPost"class="pre collapse in"><code class="json">POST https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api
+                <div id="request-tiersTierLevelPost"class="pre collapse in"><code class="json">POST https://localhost:9443/api/am/publisher/v0.11/tiers/api
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 Content-Type: application/json
 
@@ -403,7 +403,7 @@ Content-Type: application/json
             </div>
             
                 <div id="response-tiersTierLevelPost" class="pre collapse in"><code class="json">HTTP/1.1 201 Created
-Location: https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/Low
+Location: https://localhost:9443/api/am/publisher/v0.11/tiers/Low
 Content-Type: application/json
 
 {
@@ -424,7 +424,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json &quot;https://127.0.0.1:9443/api/am/publisher/v0.11/tiers/api&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X POST -d @data.json &quot;https://localhost:9443/api/am/publisher/v0.11/tiers/api&quot;</code></div>
             
             
 
