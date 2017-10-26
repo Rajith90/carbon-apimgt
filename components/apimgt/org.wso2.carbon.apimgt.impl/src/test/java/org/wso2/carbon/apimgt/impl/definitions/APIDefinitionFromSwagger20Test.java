@@ -19,97 +19,105 @@ package org.wso2.carbon.apimgt.impl.definitions;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+import org.wso2.carbon.apimgt.impl.APIManagerConfigurationServiceImpl;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
+import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.registry.api.Registry;
+import org.wso2.carbon.registry.api.RegistryException;
+import org.wso2.carbon.registry.api.Resource;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest( {APIUtil.class})
 public class APIDefinitionFromSwagger20Test {
     @Test
     public void getURITemplates() throws Exception {
+        Resource resource = Mockito.mock(Resource.class);
+        Registry registry = Mockito.mock(Registry.class);
         APIDefinitionFromSwagger20 apiDefinitionFromSwagger20 = new APIDefinitionFromSwagger20();
-        String swagger = "{\n" +
-                "  \"paths\": {\n" +
-                "    \"/*\": {\n" +
-                "      \"get\": {\n" +
-                "        \"x-auth-type\": \"Application\",\n" +
-                "        \"x-throttling-tier\": \"Unlimited\",\n" +
-                "        \"responses\": {\n" +
-                "          \"200\": {\n" +
-                "            \"description\": \"OK\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      },\n" +
-                "      \"post\": {\n" +
-                "        \"x-auth-type\": \"Application User\",\n" +
-                "        \"x-throttling-tier\": \"Unlimited\",\n" +
-                "        \"responses\": {\n" +
-                "          \"200\": {\n" +
-                "            \"description\": \"OK\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      },\n" +
-                "      \"put\": {\n" +
-                "        \"x-auth-type\": \"None\",\n" +
-                "        \"x-throttling-tier\": \"Unlimited\",\n" +
-                "        \"responses\": {\n" +
-                "          \"200\": {\n" +
-                "            \"description\": \"OK\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      },\n" +
-                "      \"delete\": {\n" +
-                "        \"x-throttling-tier\": \"Unlimited\",\n" +
-                "        \"responses\": {\n" +
-                "          \"200\": {\n" +
-                "            \"description\": \"OK\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      }\n" +
-                "    },\n" +
-                "    \"/abc\": {\n" +
-                "      \"get\": {\n" +
-                "        \"x-auth-type\": \"Application & Application User\",\n" +
-                "        \"x-throttling-tier\": \"Unlimited\",\n" +
-                "        \"responses\": {\n" +
-                "          \"200\": {\n" +
-                "            \"description\": \"OK\"\n" +
-                "          }\n" +
-                "        }\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"x-wso2-security\": {\n" +
-                "    \"apim\": {\n" +
-                "      \"x-wso2-scopes\": []\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"swagger\": \"2.0\",\n" +
-                "  \"info\": {\n" +
-                "    \"title\": \"PhoneVerification\",\n" +
-                "    \"description\": \"Verify a phone number\",\n" +
-                "    \"contact\": {\n" +
-                "      \"email\": \"xx@ee.com\",\n" +
-                "      \"name\": \"xx\"\n" +
-                "    },\n" +
-                "    \"version\": \"1.0.0\"\n" +
-                "  }\n" +
-                "}";
         Set<URITemplate> uriTemplates = new LinkedHashSet<URITemplate>();
-        uriTemplates.add(getUriTemplate("POST","Application_User","/*"));
-        uriTemplates.add(getUriTemplate("GET","Application","/*"));
-        uriTemplates.add(getUriTemplate("PUT","None","/*"));
-        uriTemplates.add(getUriTemplate("DELETE","Any","/*"));
-        uriTemplates.add(getUriTemplate("GET","Any","/abc"));
-        API api = new API(new APIIdentifier("admin","PhoneVerification","1.0.0"));
-        Set<URITemplate> uriTemplateSet = apiDefinitionFromSwagger20.getURITemplates(api,swagger);
-        Assert.assertEquals(uriTemplateSet,uriTemplates);
+        uriTemplates.add(getUriTemplate("POST", APIConstants.AUTH_APPLICATION_OR_USER_LEVEL_TOKEN, "/*"));
+        uriTemplates.add(getUriTemplate("GET", APIConstants.AUTH_APPLICATION_USER_LEVEL_TOKEN, "/*"));
+        uriTemplates.add(getUriTemplate("PUT", APIConstants.AUTH_APPLICATION_LEVEL_TOKEN, "/*"));
+        uriTemplates.add(getUriTemplate("DELETE", APIConstants.AUTH_APPLICATION_LEVEL_TOKEN, "/*"));
+        uriTemplates.add(getUriTemplate("GET", APIConstants.AUTH_APPLICATION_LEVEL_TOKEN, "/abc"));
+        API api = new API(new APIIdentifier("admin", "PhoneVerification", "1.0.0"));
+        api.setUriTemplates(uriTemplates);
+        Set<Scope> scopeSet = new HashSet<Scope>();
+        Scope scope = new Scope();
+        scope.setName("read");
+        scope.setRoles("admin");
+        scope.setDescription("read");
+        scope.setKey("read");
+        scopeSet.add(scope);
+        api.setScopes(scopeSet);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration));
+        Environment environment = new Environment();
+        environment.setApiGatewayEndpoint("http://localhost,https://localhost");
+        Map<String, Environment> environmentMap = new HashMap<String, Environment>();
+        environmentMap.put("Production", environment);
+        Mockito.when(apiManagerConfiguration.getApiGatewayEnvironments()).thenReturn(environmentMap);
+        String swagger = apiDefinitionFromSwagger20.generateAPIDefinition(api);
+        apiDefinitionFromSwagger20.getURITemplates(api, swagger);
+        Mockito.when(registry.resourceExists(Mockito.anyString())).thenReturn(false).thenReturn(true).thenReturn
+                (true).thenReturn(true).thenReturn(true).thenReturn(true).thenReturn(true).thenReturn(false)
+                .thenReturn(true);
+        Mockito.when(registry.get(Mockito.anyString())).thenReturn(resource).thenThrow(RegistryException.class)
+                .thenReturn(resource).thenReturn(resource).thenThrow(RegistryException.class).thenReturn(resource)
+                .thenThrow(RegistryException.class);
+        Mockito.when(resource.getContent()).thenReturn(org.apache.commons.io.IOUtils.toByteArray(swagger));
+        Mockito.when(resource.getLastModified()).thenReturn(new Date(System.currentTimeMillis()));
+        Mockito.when(registry.newResource()).thenReturn(resource);
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.doNothing().when(APIUtil.class, "setResourcePermissions", Mockito.anyString(), Mockito.anyString
+                (), Mockito.any(), Mockito.anyString());
+        Mockito.when(registry.put(Mockito.anyString(), Mockito.any(Resource.class))).thenReturn("").thenReturn("")
+                .thenThrow(RegistryException.class);
+        apiDefinitionFromSwagger20.saveAPIDefinition(api, swagger, registry);
+        apiDefinitionFromSwagger20.saveAPIDefinition(api, swagger, registry);
+        try {
+            apiDefinitionFromSwagger20.saveAPIDefinition(api, swagger, registry);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while adding Swagger Definition for "));
+        }
+        apiDefinitionFromSwagger20.getAPIDefinition(api.getId(), registry);
+        apiDefinitionFromSwagger20.getAPIDefinition(api.getId(), registry);
+        try {
+            apiDefinitionFromSwagger20.getAPIDefinition(api.getId(), registry);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while retrieving Swagger v2.0 Definition for "));
+        }
+        apiDefinitionFromSwagger20.getAPISwaggerDefinitionTimeStamps(api.getId(), registry);
+        apiDefinitionFromSwagger20.getAPISwaggerDefinitionTimeStamps(api.getId(), registry);
+        try {
+            apiDefinitionFromSwagger20.getAPISwaggerDefinitionTimeStamps(api.getId(), registry);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while retrieving Swagger v2.0 updated time for"));
+        }
     }
 
-    protected URITemplate getUriTemplate(String httpVerb,String authType,String uriTemplateString) {
+    protected URITemplate getUriTemplate(String httpVerb, String authType, String uriTemplateString) {
         URITemplate uriTemplate = new URITemplate();
         uriTemplate.setAuthTypes(authType);
         uriTemplate.setAuthType(authType);
@@ -118,29 +126,13 @@ public class APIDefinitionFromSwagger20Test {
         uriTemplate.setUriTemplate(uriTemplateString);
         uriTemplate.setThrottlingTier("Unlimited");
         uriTemplate.setThrottlingTiers("Unlimited");
-        uriTemplate.setScope(null);
-        uriTemplate.setScopes(null);
+        Scope scope = new Scope();
+        scope.setName("read");
+        scope.setRoles("admin");
+        scope.setDescription("read");
+        scope.setKey("read");
+        uriTemplate.setScope(scope);
+        uriTemplate.setScopes(scope);
         return uriTemplate;
     }
-
-    @Test
-    public void getScopes() throws Exception {
-    }
-
-    @Test
-    public void saveAPIDefinition() throws Exception {
-    }
-
-    @Test
-    public void getAPIDefinition() throws Exception {
-    }
-
-    @Test
-    public void generateAPIDefinition() throws Exception {
-    }
-
-    @Test
-    public void getAPISwaggerDefinitionTimeStamps() throws Exception {
-    }
-
 }
