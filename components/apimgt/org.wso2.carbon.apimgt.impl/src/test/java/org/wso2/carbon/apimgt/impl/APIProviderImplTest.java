@@ -1043,6 +1043,7 @@ public class APIProviderImplTest {
         Mockito.when(apimgtDAO.retrieveWorkflowFromInternalReference(Integer.toString(1111),
                 WorkflowConstants.WF_TYPE_AM_API_STATE)).thenReturn(workflowDTO);
         apiProvider.deleteWorkflowTask(apiId);
+        Mockito.verify(apimgtDAO, Mockito.times(1)).getAPIID(apiId, null);
     }
 
     @Test
