@@ -89,6 +89,7 @@ import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.Tag;
 import org.wso2.carbon.registry.core.config.RegistryContext;
+import org.wso2.carbon.registry.core.jdbc.realm.RegistryAuthorizationManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserRealm;
@@ -2401,5 +2402,95 @@ public class APIUtilTest {
         } catch (APIManagementException e) {
             Assert.fail();
         }
+    }
+
+    @Test
+    public void testSetResourcePermissionsForSuperTenant() throws Exception {
+        String username = "admin";
+        String visibility = "restricted";
+        String[] roles = new String[] { "test3", "internal/everyone" };
+        String artifactPath = "/_system/governance/apimgt/applicationdata/sourcepath";
+        String resourcePath = "/_system/governance/_system/governance/apimgt/applicationdata/sourcepath";
+        RegistryContext registryContext = Mockito.mock(RegistryContext.class);
+        PowerMockito.mockStatic(RegistryContext.class);
+        Mockito.when(RegistryContext.getBaseInstance()).thenReturn(registryContext);
+
+        RegistryAuthorizationManager registryAuthorizationManager = Mockito.mock(RegistryAuthorizationManager.class);
+        PowerMockito.whenNew(RegistryAuthorizationManager.class).withAnyArguments()
+                .thenReturn(registryAuthorizationManager);
+
+        Mockito.doNothing().
+                when(registryAuthorizationManager).authorizeRole("test3", resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(registryAuthorizationManager).authorizeRole("test4", resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(registryAuthorizationManager)
+                .authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(registryAuthorizationManager)
+                .authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(registryAuthorizationManager)
+                .authorizeRole(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET);
+
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        roles = new String[] { "test4" };
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+
+        visibility = "private";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        visibility = "OWNER_ONLY";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        roles = null;
+        visibility = "OWNER_ONLY";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        visibility = "none";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+
+        String tenantDomain = "abc.com";
+
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        Mockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).thenReturn(tenantDomain);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId(tenantDomain)).thenReturn(1);
+
+        org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        Mockito.when(realmService.getTenantUserRealm(1)).thenReturn(userRealm);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+
+        Mockito.doNothing().
+                when(authorizationManager).authorizeRole("test3", resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(authorizationManager).authorizeRole("test4", resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(authorizationManager).authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(authorizationManager).authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
+        Mockito.doNothing().
+                when(authorizationManager)
+                .authorizeRole(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET);
+
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        roles = new String[] { "test4" };
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+
+        visibility = "private";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        visibility = "OWNER_ONLY";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        roles = null;
+        visibility = "OWNER_ONLY";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+        visibility = "none";
+        APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+
     }
 }
