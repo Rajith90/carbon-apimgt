@@ -153,4 +153,7 @@ public class APIHandlerServiceComponent {
         ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(null);
     }
 
+    protected void setConfiguration(APIManagerConfiguration configuration) {
+        this.configuration = configuration;
+    }
 }
