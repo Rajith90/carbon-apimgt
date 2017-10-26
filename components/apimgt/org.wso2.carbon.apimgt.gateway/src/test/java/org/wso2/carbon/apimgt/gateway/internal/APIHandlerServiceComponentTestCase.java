@@ -83,11 +83,6 @@ public class APIHandlerServiceComponentTestCase {
         Mockito.doNothing().when(apiManagerConfiguration).load("/repository/conf/api-manager.xml");
         Mockito.when(serviceReferenceHolder.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
         configurationContextService = Mockito.mock(ConfigurationContextService.class);
-//        Mockito.when(serviceReferenceHolder.getConfigurationContextService())
-//                .thenReturn(configurationContextService);
-//        apiManagerConfigurationService = Mockito.mock(APIManagerConfigurationService.class);
-//        Mockito.when(serviceReferenceHolder.getApiManagerConfigurationService())
-//                .thenReturn(apiManagerConfigurationService);
 
         PowerMockito.mockStatic(ThriftKeyValidatorClientPool.class);
         PowerMockito.mockStatic(APIKeyValidatorClientPool.class);
