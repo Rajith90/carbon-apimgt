@@ -82,11 +82,13 @@ import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
 import org.wso2.carbon.governance.api.util.GovernanceArtifactConfiguration;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
+import org.wso2.carbon.registry.core.ActionConstants;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.Tag;
+import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserRealm;
@@ -122,10 +124,11 @@ import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest( {LogFactory.class, ServiceReferenceHolder.class, SSLSocketFactory.class, CarbonUtils.class,
-        GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
-        APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
-        .class, OAuthAdminClient.class,ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class})
+@PrepareForTest({ LogFactory.class, ServiceReferenceHolder.class,
+        SSLSocketFactory.class, CarbonUtils.class, GovernanceUtils.class, AuthorizationManager.class,
+        MultitenantUtils.class, GenericArtifactManager.class, APIUtil.class, KeyManagerHolder.class,
+        SubscriberKeyMgtClient.class, ApplicationManagementServiceClient.class, OAuthAdminClient.class, ApiMgtDAO.class,
+        AXIOMUtil.class, OAuthServerConfiguration.class, RegistryContext.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -2280,7 +2283,8 @@ public class APIUtilTest {
         Assert.assertEquals(accessToken, "IDN_OAUTH2_ACCESS_TOKEN");
     }
 
-    @Test public void testIsAccessTokenExpiredTrue() {
+    @Test
+    public void testIsAccessTokenExpiredTrue() {
         APIKeyValidationInfoDTO apiKeyValidationInfoDTO = Mockito.mock(APIKeyValidationInfoDTO.class);
         long issuedTime = 160000;
         long validTime = 180000;
@@ -2297,7 +2301,8 @@ public class APIUtilTest {
         Assert.assertEquals(isExpired, true);
     }
 
-    @Test public void testIsAccessTokenExpiredFalse() {
+    @Test
+    public void testIsAccessTokenExpiredFalse() {
         APIKeyValidationInfoDTO apiKeyValidationInfoDTO = Mockito.mock(APIKeyValidationInfoDTO.class);
         long issuedTime = 160000;
         Mockito.when(apiKeyValidationInfoDTO.getValidityPeriod()).thenReturn(Long.MAX_VALUE);
@@ -2313,44 +2318,88 @@ public class APIUtilTest {
         Assert.assertEquals(isExpired, false);
     }
 
-    @Test public void testReplaceEmailDomain(){
+    @Test
+    public void testReplaceEmailDomain(){
         String input = "abc@abc.com";
         String emailStringExpected = "abc-AT-abc.com";
         String emailString = APIUtil.replaceEmailDomain(input);
         Assert.assertEquals(emailString, emailStringExpected);
     }
 
-    @Test public void testReplaceEmailDomainForNullInputs(){
+    @Test
+    public void testReplaceEmailDomainForNullInputs(){
         String input = null;
         String emailString = APIUtil.replaceEmailDomain(input);
         Assert.assertNull(emailString);
     }
 
-    @Test public void testReplaceEmailDomainInvalidInputs(){
+    @Test
+    public void testReplaceEmailDomainInvalidInputs(){
         String input = "abc.com";
         String emailStringExpected = "abc.com";
         String emailString = APIUtil.replaceEmailDomain(input);
         Assert.assertEquals(emailString, emailStringExpected);
     }
 
-    @Test public void testReplaceEmailDomainBack(){
+    @Test
+    public void testReplaceEmailDomainBack(){
         String input = "abc-AT-abc.com";
         String emailStringExpected = "abc@abc.com";
         String emailString = APIUtil.replaceEmailDomainBack(input);
         Assert.assertEquals(emailString, emailStringExpected);
     }
 
-    @Test public void testReplaceEmailDomainBackForNullInputs(){
+    @Test
+    public void testReplaceEmailDomainBackForNullInputs(){
         String input = null;
         String emailString = APIUtil.replaceEmailDomainBack(input);
         Assert.assertNull(emailString);
     }
 
-    @Test public void testReplaceEmailDomainBackInvalidInputs(){
+    @Test
+    public void testReplaceEmailDomainBackInvalidInputs(){
         String input = "abc.com";
         String emailStringExpected = "abc.com";
         String emailString = APIUtil.replaceEmailDomainBack(input);
         Assert.assertEquals(emailString, emailStringExpected);
     }
 
+    @Test
+    public void testCopyResourcePermissions() throws UserStoreException {
+        try {
+            RegistryContext registryContext = Mockito.mock(RegistryContext.class);
+            PowerMockito.mockStatic(RegistryContext.class);
+            Mockito.when(RegistryContext.getBaseInstance()).thenReturn(registryContext);
+
+            ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+            RealmService realmService = Mockito.mock(RealmService.class);
+            TenantManager tenantManager = Mockito.mock(TenantManager.class);
+            UserRealm userRealm = Mockito.mock(UserRealm.class);
+            org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                    .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+
+            PowerMockito.mockStatic(ServiceReferenceHolder.class);
+            Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+            Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+            Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+            Mockito.when(realmService.getTenantUserRealm(Mockito.anyInt())).thenReturn(userRealm);
+            Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+            Mockito.when(ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                    .getTenantId(Mockito.anyString())).thenReturn(-1234);
+
+            String[] allowedRoles = new String[] { "test3", "test4", "test5" };
+
+            Mockito.when(authorizationManager.getAllowedRolesForResource(
+                    "/_system/governance/_system/governance/apimgt/applicationdata/sourcepath", ActionConstants.GET))
+                    .thenReturn(allowedRoles);
+
+            String username = "admin";
+            String sourceArtifactPath = "/_system/governance/apimgt/applicationdata/sourcepath";
+            String targetArtifactPath = "/_system/governance/apimgt/applicationdata/targetpath";
+            APIUtil.copyResourcePermissions(username, sourceArtifactPath, targetArtifactPath);
+
+        } catch (APIManagementException e) {
+            Assert.fail();
+        }
+    }
 }
