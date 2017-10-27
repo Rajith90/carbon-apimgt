@@ -106,6 +106,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -2784,6 +2785,70 @@ public class APIUtilTest {
         Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
         boolean result = APIUtil.hasPermission("john", "create"); // tenant case
         Assert.assertTrue(result);
+    }
 
+    @Test
+    public void testLoadTenantAPIPolicy()
+            throws APIManagementException, org.wso2.carbon.registry.core.exceptions.RegistryException {
+
+        String tenant = "carbon.super";
+        int tenantId = -1234;
+
+        PowerMockito.mockStatic(CarbonUtils.class);
+        Mockito.when(CarbonUtils.getCarbonHome())
+                .thenReturn(APIUtilTest.class.getResource("/").getPath().replaceAll("/$", ""));
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(userRegistry);
+
+        org.wso2.carbon.registry.core.Resource resource = Mockito.mock(org.wso2.carbon.registry.core.Resource.class);
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+
+        Mockito.when(userRegistry.put(APIConstants.API_TIER_LOCATION, resource))
+                .thenReturn(APIConstants.API_TIER_LOCATION);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.RES_TIER_LOCATION)).thenReturn(true);
+        APIUtil.loadTenantAPIPolicy(tenant, tenantId);
+    }
+
+    @Test
+    public void testLoadTenantAPIPolicyException() throws Exception {
+
+        String tenant = "carbon.super";
+        int tenantId = -1234;
+
+        PowerMockito.mockStatic(CarbonUtils.class);
+        Mockito.when(CarbonUtils.getCarbonHome())
+                .thenReturn(APIUtilTest.class.getResource("/").getPath().replaceAll("/$", ""));
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(userRegistry);
+
+        org.wso2.carbon.registry.core.Resource resource = Mockito.mock(org.wso2.carbon.registry.core.Resource.class);
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+
+        Mockito.when(userRegistry.put(APIConstants.API_TIER_LOCATION, resource))
+                .thenReturn(APIConstants.API_TIER_LOCATION);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.RES_TIER_LOCATION)).thenReturn(true);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234)))
+                .thenThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException(""));
+        String expectedString = "Error while saving policy information to the registry";
+        try {
+            APIUtil.loadTenantAPIPolicy(tenant, tenantId);
+            Assert.fail();
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), expectedString);
+        }
     }
 }
