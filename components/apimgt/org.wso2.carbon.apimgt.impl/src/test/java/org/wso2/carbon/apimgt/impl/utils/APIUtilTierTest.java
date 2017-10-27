@@ -53,6 +53,8 @@ import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.template.ThrottlePolicyTemplateBuilder;
 import org.wso2.carbon.base.MultitenantConstants;
+import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.session.UserRegistry;
@@ -66,6 +68,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import javax.xml.stream.XMLStreamException;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
@@ -607,7 +611,193 @@ public class APIUtilTierTest {
 
     @Test
     public void testGetAllTiers() throws APIManagementException, RegistryException {
-        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = getAllTiersCommon();
+
+        // Error path
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(RegistryException.class);
+        try {
+            APIUtil.getAllTiers();
+            fail("Registry exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_TIER_RET_ERROR, e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testGetAllTiersXMLStreamException() throws APIManagementException, RegistryException {
+    	ServiceReferenceHolder serviceReferenceHolder = getAllTiersCommon();
+
+        // Error path
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(XMLStreamException.class);
+        try {
+            APIUtil.getAllTiers();
+            fail("XML Stream exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_MALFORMED_XML_ERROR, e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testGetAllTiersForTenant() throws Exception {
+    	
+    	Resource resource = createResourceTier();
+    	ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
+        APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);        
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);      
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(amConfigService);
+        Mockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
+        Mockito.when(amConfig.getThrottleProperties()).thenReturn(throttleProperties);
+        Mockito.when(throttleProperties.isEnabled()).thenReturn(false);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(1)).thenReturn(userRegistry);
+        Mockito.when(userRegistry.get(APIConstants.API_TIER_LOCATION)).thenReturn(resource);    	
+    	Mockito.when(userRegistry.resourceExists(APIConstants.API_TIER_LOCATION)).thenReturn(true);
+
+        Assert.assertEquals(2, APIUtil.getAllTiers(1).size());
+        
+        Mockito.when(throttleProperties.isEnabled()).thenReturn(true);        
+        SubscriptionPolicy policies[] = new SubscriptionPolicy[2];
+        policies[0] = TestUtils.getUniqueSubscriptionPolicyWithBandwidthLimit();
+        policies[1] = TestUtils.getUniqueSubscriptionPolicyWithRequestCountLimit();
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        Mockito.when(apiMgtDAO.getSubscriptionPolicies(Mockito.anyInt())).thenReturn(policies);
+        Assert.assertEquals(2,APIUtil.getAllTiers(1).size());
+              
+    }
+    
+    @Test
+    public void testGetAllTiersForTenantTestXMLStreamException() throws Exception {
+    	
+    	RegistryService registryService = commonMockForExceptions();                
+        Mockito.when(registryService.getGovernanceSystemRegistry(1)).thenThrow(XMLStreamException.class);
+        
+        try {
+            APIUtil.getAllTiers(1);
+            fail("XML Stream exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_MALFORMED_XML_ERROR, e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testGetAllTiersForTenantTestRegistryException() throws Exception {
+    	
+    	RegistryService registryService = commonMockForExceptions();
+        Mockito.when(registryService.getGovernanceSystemRegistry(1)).thenThrow(RegistryException.class);
+        try {
+            APIUtil.getAllTiers(1);
+            fail("Registry exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_TIER_RET_ERROR, e.getMessage());
+        } 
+    }
+
+	private RegistryService commonMockForExceptions() throws Exception, RegistryException {
+		Resource resource = createResourceTier();
+    	ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
+        APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+       
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(amConfigService);
+        Mockito.when(amConfigService.getAPIManagerConfiguration()).thenReturn(amConfig);
+        Mockito.when(amConfig.getThrottleProperties()).thenReturn(throttleProperties);
+        Mockito.when(throttleProperties.isEnabled()).thenReturn(false);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(1)).thenReturn(userRegistry);
+        Mockito.when(userRegistry.get(APIConstants.API_TIER_LOCATION)).thenReturn(resource);    	
+    	Mockito.when(userRegistry.resourceExists(APIConstants.API_TIER_LOCATION)).thenReturn(true);
+		return registryService;
+	}
+
+    @Test
+    public void TestIPToLong() {
+        String ipString = InetAddresses.fromInteger(new Random().nextInt()).getHostAddress();
+        long ipLong = APIUtil.ipToLong(ipString);
+        Assert.assertEquals(ipString, longToIp(ipLong));
+    }
+
+    
+	private Resource createResourceTier() throws Exception {
+		Resource resource = new ResourceImpl();
+		String policies = "<wsp:Policy xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\"\n" + 
+				"            xmlns:throttle=\"http://www.wso2.org/products/wso2commons/throttle\">\n" + 
+				"    <throttle:MediatorThrottleAssertion>\n" + 
+				"        <wsp:Policy>\n" + 
+				"            <throttle:ID throttle:type=\"ROLE\">Gold</throttle:ID>\n" + 
+				"            <wsp:Policy>\n" + 
+				"                <throttle:Control>\n" + 
+				"                    <wsp:Policy>\n" + 
+				"                        <throttle:MaximumCount>20</throttle:MaximumCount>\n" + 
+				"                        <throttle:UnitTime>60000</throttle:UnitTime>\n" + 
+				"                        <!--It's possible to define tier level attributes as below for each tier level.For eg:Payment Plan for a tier\n" + 
+				"                        <wsp:Policy>\n" + 
+				"                        <throttle:Attributes>\n" + 
+				"                            <throttle:Attribute1>xxxx</throttle:Attribute1>\n" + 
+				"                            <throttle:Attribute2>xxxx</throttle:Attribute2>\n" + 
+				"                        </throttle:Attributes>\n" + 
+				"                        </wsp:Policy>\n" + 
+				"                        -->\n" + 
+				"                        <wsp:Policy>\n" + 
+				"                            <throttle:Attributes>\n" + 
+				"                                <throttle:x-wso2-BillingPlan>FREE</throttle:x-wso2-BillingPlan>\n" + 
+				"                                <throttle:x-wso2-StopOnQuotaReach>true</throttle:x-wso2-StopOnQuotaReach>\n" + 
+				"                            </throttle:Attributes>\n" + 
+				"                        </wsp:Policy>\n" + 
+				"\n" + 
+				"                    </wsp:Policy>\n" + 
+				"                </throttle:Control>\n" + 
+				"            </wsp:Policy>\n" + 
+				"        </wsp:Policy>\n" + 
+				"        <wsp:Policy>\n" + 
+				"            <throttle:ID throttle:type=\"ROLE\">Silver</throttle:ID>\n" + 
+				"            <wsp:Policy>\n" + 
+				"                <throttle:Control>\n" + 
+				"                    <wsp:Policy>\n" + 
+				"                        <throttle:MaximumCount>5</throttle:MaximumCount>\n" + 
+				"                        <throttle:UnitTime>60000</throttle:UnitTime>\n" + 
+				"                        <!--It's possible to define tier level attributes as below for each tier level.For eg:Payment Plan for a tier\n" + 
+				"                        <wsp:Policy>\n" + 
+				"                        <throttle:Attributes>\n" + 
+				"                            <throttle:Attribute1>xxxx</throttle:Attribute1>\n" + 
+				"                            <throttle:Attribute2>xxxx</throttle:Attribute2>\n" + 
+				"                        </throttle:Attributes>\n" + 
+				"                        </wsp:Policy>\n" + 
+				"                        -->\n" + 
+				"                        <wsp:Policy>\n" + 
+				"                            <throttle:Attributes>\n" + 
+				"                                <throttle:x-wso2-BillingPlan>FREE</throttle:x-wso2-BillingPlan>\n" + 
+				"                                <throttle:x-wso2-StopOnQuotaReach>true</throttle:x-wso2-StopOnQuotaReach>\n" + 
+				"                            </throttle:Attributes>\n" + 
+				"                        </wsp:Policy>\n" + 
+				"\n" + 
+				"                    </wsp:Policy>\n" + 
+				"                </throttle:Control>\n" + 
+				"            </wsp:Policy>\n" + 
+				"        </wsp:Policy>        \n" + 
+				"    </throttle:MediatorThrottleAssertion>\n" + 
+				"</wsp:Policy>\n" + 
+				"";
+		
+		resource.setContent(policies.getBytes());
+		return resource;
+	}
+
+	private ServiceReferenceHolder getAllTiersCommon() throws RegistryException, APIManagementException {
+		ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
         APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
         APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
         ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
@@ -638,25 +828,9 @@ public class APIUtilTierTest {
         // IsEnabled false scenario
         Mockito.when(throttleProperties.isEnabled()).thenReturn(false);
         Assert.assertEquals(0, APIUtil.getAllTiers().size());
-
-        // Error path
-        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(RegistryException.class);
-        try {
-            APIUtil.getAllTiers();
-            fail("Registry exception is not thrown");
-        } catch (APIManagementException e) {
-            Assert.assertEquals(APIConstants.MSG_TIER_RET_ERROR, e.getMessage());
-        }
-
-    }
-
-    @Test
-    public void TestIPToLong() {
-        String ipString = InetAddresses.fromInteger(new Random().nextInt()).getHostAddress();
-        long ipLong = APIUtil.ipToLong(ipString);
-        Assert.assertEquals(ipString, longToIp(ipLong));
-    }
-
+		return serviceReferenceHolder;
+	}
+    
     private String longToIp(long ip) {
         return ((ip >> 24) & 0xFF) + "." + ((ip >> 16) & 0xFF) + "." + ((ip >> 8) & 0xFF) + "." + (ip & 0xFF);
     }
