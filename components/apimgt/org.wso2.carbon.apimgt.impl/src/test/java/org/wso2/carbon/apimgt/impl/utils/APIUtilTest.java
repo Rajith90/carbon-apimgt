@@ -70,6 +70,7 @@ import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
+import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.keymgt.client.SubscriberKeyMgtClient;
 import org.wso2.carbon.base.ServerConfiguration;
@@ -106,6 +107,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -132,7 +135,8 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
-        RegistryUtils.class,RegistryAuthorizationManager.class,RegistryContext.class, PrivilegedCarbonContext.class})
+        RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
+        APIManagerComponent.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -2784,6 +2788,143 @@ public class APIUtilTest {
         Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
         boolean result = APIUtil.hasPermission("john", "create"); // tenant case
         Assert.assertTrue(result);
-
     }
+
+    @Test
+    public void testLoadTenantAPIPolicy()
+            throws APIManagementException, org.wso2.carbon.registry.core.exceptions.RegistryException {
+
+        String tenant = "carbon.super";
+        int tenantId = -1234;
+
+        PowerMockito.mockStatic(CarbonUtils.class);
+        Mockito.when(CarbonUtils.getCarbonHome())
+                .thenReturn(APIUtilTest.class.getResource("/").getPath().replaceAll("/$", ""));
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(userRegistry);
+
+        org.wso2.carbon.registry.core.Resource resource = Mockito.mock(org.wso2.carbon.registry.core.Resource.class);
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+
+        Mockito.when(userRegistry.put(APIConstants.API_TIER_LOCATION, resource))
+                .thenReturn(APIConstants.API_TIER_LOCATION);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.RES_TIER_LOCATION)).thenReturn(true);
+        APIUtil.loadTenantAPIPolicy(tenant, tenantId);
+    }
+
+    @Test
+    public void testLoadTenantAPIPolicyException() throws Exception {
+
+        String tenant = "carbon.super";
+        int tenantId = -1234;
+
+        PowerMockito.mockStatic(CarbonUtils.class);
+        Mockito.when(CarbonUtils.getCarbonHome())
+                .thenReturn(APIUtilTest.class.getResource("/").getPath().replaceAll("/$", ""));
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(userRegistry);
+
+        org.wso2.carbon.registry.core.Resource resource = Mockito.mock(org.wso2.carbon.registry.core.Resource.class);
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+
+        Mockito.when(userRegistry.put(APIConstants.API_TIER_LOCATION, resource))
+                .thenReturn(APIConstants.API_TIER_LOCATION);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.RES_TIER_LOCATION)).thenReturn(true);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234)))
+                .thenThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException(""));
+        String expectedString = "Error while saving policy information to the registry";
+        try {
+            APIUtil.loadTenantAPIPolicy(tenant, tenantId);
+            Assert.fail();
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), expectedString);
+        }
+    }
+
+    @Test
+    public void testLoadTenantExternalStoreConfigWhenResourceExists() throws APIManagementException, RegistryException {
+        int tenantID = -1234;
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(userRegistry);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.EXTERNAL_API_STORES_LOCATION)).thenReturn(true);
+        APIUtil.loadTenantExternalStoreConfig(tenantID);
+    }
+
+    @Test
+    public void testLoadTenantExternalStoreConfig()
+            throws APIManagementException, RegistryException, FileNotFoundException, UserStoreException {
+        int tenantID = -1234;
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(tenantID))).thenReturn(userRegistry);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.EXTERNAL_API_STORES_LOCATION)).thenReturn(false);
+
+        String defaultExternalAPIStoresXMLPath = "externalstores/default-external-api-stores.xml";
+
+        InputStream resourceStream = new FileInputStream(
+                APIUtilTest.class.getResource("/").getPath() + defaultExternalAPIStoresXMLPath);
+
+        PowerMockito.mockStatic(APIManagerComponent.class);
+        PowerMockito.when(APIManagerComponent.class.getResourceAsStream("/" + defaultExternalAPIStoresXMLPath))
+                .thenReturn(resourceStream);
+
+        org.wso2.carbon.registry.core.Resource resource = Mockito.mock(org.wso2.carbon.registry.core.Resource.class);
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+
+        Mockito.when(userRegistry.put(APIConstants.EXTERNAL_API_STORES_LOCATION, resource))
+                .thenReturn(APIConstants.EXTERNAL_API_STORES_LOCATION);
+
+        PowerMockito.mockStatic(RegistryUtils.class);
+        String resourcePath = "/_system/governance/apimgt/externalstores/external-api-stores.xml";
+        RegistryUtils registryUtils = Mockito.mock(RegistryUtils.class);
+
+        RegistryContext registryContext = Mockito.mock(RegistryContext.class);
+        PowerMockito.mockStatic(RegistryContext.class);
+        Mockito.when(RegistryContext.getBaseInstance()).thenReturn(registryContext);
+        PowerMockito.when(registryUtils.getAbsolutePath(registryContext, resourcePath)).thenReturn(resourcePath);
+
+        RealmService realmService = Mockito.mock(RealmService.class);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantUserRealm(Mockito.anyInt())).thenReturn(userRealm);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+
+        Mockito.doNothing().when(authorizationManager)
+                .denyRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
+        APIUtil.loadTenantExternalStoreConfig(tenantID);
+
+        Mockito.when(userRegistry.resourceExists(APIConstants.EXTERNAL_API_STORES_LOCATION)).thenReturn(true);
+        APIUtil.loadTenantExternalStoreConfig(tenantID);
+    }
+
 }
