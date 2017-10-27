@@ -1324,7 +1324,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 criteriaPublished.put(APIConstants.LCSTATE_SEARCH_KEY, new ArrayList<String>() {{
                     add(APIConstants.PUBLISHED);
                 }});
-                //rxt api media type
+                //rxts api media type
                 List<TermData> termsPublished = GovernanceUtils
                         .getTermDataList(criteriaPublished, APIConstants.API_OVERVIEW_TAG,
                                          APIConstants.API_RXT_MEDIA_TYPE, true);
@@ -1339,7 +1339,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 criteriaPrototyped.put(APIConstants.LCSTATE_SEARCH_KEY, new ArrayList<String>() {{
                     add(APIConstants.PROTOTYPED);
                 }});
-                //rxt api media type
+                //rxts api media type
                 List<TermData> termsPrototyped = GovernanceUtils
                         .getTermDataList(criteriaPrototyped, APIConstants.API_OVERVIEW_TAG,
                                          APIConstants.API_RXT_MEDIA_TYPE, true);

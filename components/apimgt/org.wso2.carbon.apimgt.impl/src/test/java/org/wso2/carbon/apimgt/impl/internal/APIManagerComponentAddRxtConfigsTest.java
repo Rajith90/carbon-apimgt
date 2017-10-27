@@ -65,8 +65,8 @@ public class APIManagerComponentAddRxtConfigsTest {
 
     @Test
     public void testShouldAddRxtConfigs() throws Exception {
-        folder.newFile("abc.rxt");
-        folder.newFile("abcd.rxt");
+        folder.newFile("abc.rxts");
+        folder.newFile("abcd.rxts");
         Mockito.when(registryService.getRegistry(Mockito.anyString())).thenReturn(userRegistry);
         Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(true).thenReturn(false);
         Mockito.when(userRegistry.newResource()).thenReturn(resource);
@@ -88,7 +88,7 @@ public class APIManagerComponentAddRxtConfigsTest {
 
     @Test
     public void testShouldThrowExceptionWhenFailToGetRegistry() throws Exception {
-        folder.newFile("abc.rxt");
+        folder.newFile("abc.rxts");
         Mockito.when(registryService.getRegistry(Mockito.anyString())).thenThrow(RegistryException.class);
         PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(folder.getRoot());
         APIManagerComponent apiManagerComponent = new APIManagerComponent();
@@ -105,7 +105,7 @@ public class APIManagerComponentAddRxtConfigsTest {
 
     @Test
     public void testShouldThrowExceptionWhenFailToSaveResource() throws Exception {
-        folder.newFile("abc.rxt");
+        folder.newFile("abc.rxts");
         Mockito.when(registryService.getRegistry(Mockito.anyString())).thenReturn(userRegistry);
         Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(false);
         Mockito.when(userRegistry.newResource()).thenThrow(RegistryException.class);

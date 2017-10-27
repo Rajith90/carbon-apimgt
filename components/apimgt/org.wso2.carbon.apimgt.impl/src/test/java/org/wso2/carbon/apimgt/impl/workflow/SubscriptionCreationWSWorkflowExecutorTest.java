@@ -20,6 +20,7 @@ package org.wso2.carbon.apimgt.impl.workflow;
 
 import java.util.UUID;
 
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
@@ -44,11 +45,14 @@ import org.wso2.carbon.apimgt.impl.dto.SubscriptionWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 
+import javax.xml.stream.XMLStreamException;
+
 /**
  * SubscriptionCreationSimpleWorkflowExecutor test cases
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceReferenceHolder.class, ApiMgtDAO.class, SubscriptionCreationWSWorkflowExecutor.class })
+@PrepareForTest({ ServiceReferenceHolder.class, ApiMgtDAO.class, SubscriptionCreationWSWorkflowExecutor.class,
+		AXIOMUtil.class })
 public class SubscriptionCreationWSWorkflowExecutorTest {
 
 	private SubscriptionCreationWSWorkflowExecutor subscriptionCreationWSWorkflowExecutor;
@@ -175,7 +179,23 @@ public class SubscriptionCreationWSWorkflowExecutorTest {
 		ServiceReferenceHolderMockCreator.initContextService();
 		subscriptionCreationWSWorkflowExecutor.cleanUpPendingTask(workflowDTO.getExternalWorkflowReference());
 
-	}	
+	}
+
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowCleanupTaskExceptionWhenMessageProcessingFailed() throws Exception {
+		WorkflowDTO workflowDTO = new WorkflowDTO();
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+		PowerMockito.mockStatic(AXIOMUtil.class);
+		PowerMockito.when(AXIOMUtil.stringToOM(Mockito.anyString())).thenThrow(new XMLStreamException("Error " +
+				"converting String to OMElement"));
+		subscriptionCreationWSWorkflowExecutor.cleanUpPendingTask(workflowDTO.getExternalWorkflowReference());
+
+	}
+
 
 
 	@Test
@@ -230,6 +250,30 @@ public class SubscriptionCreationWSWorkflowExecutorTest {
 		subscriptionCreationWSWorkflowExecutor.execute(workflowDTO);
 
 	}
+
+	@Test(expected = WorkflowException.class)
+	public void testWorkflowExecuteExceptionWhenMessageProcessingFailed() throws Exception {
+		SubscriptionWorkflowDTO workflowDTO = new SubscriptionWorkflowDTO();
+		workflowDTO.setApiContext("/test");
+		workflowDTO.setApiName("TestAPI");
+		workflowDTO.setApiVersion("1.0");
+		workflowDTO.setApiProvider("admin");
+		workflowDTO.setSubscriber("admin");
+		workflowDTO.setApplicationName("TestApp");
+		workflowDTO.setTierName("Gold");
+		workflowDTO.setWorkflowReference("1");
+		workflowDTO.setExternalWorkflowReference(UUID.randomUUID().toString());
+
+		PowerMockito.doNothing().when(apiMgtDAO).updateSubscriptionStatus(
+				Integer.parseInt(workflowDTO.getWorkflowReference()), APIConstants.SubscriptionStatus.REJECTED);
+		PowerMockito.mockStatic(AXIOMUtil.class);
+		PowerMockito.when(AXIOMUtil.stringToOM(Mockito.anyString())).thenThrow(new XMLStreamException("Error " +
+				"converting String to OMElement"));
+		ServiceReferenceHolderMockCreator serviceRefMock = new ServiceReferenceHolderMockCreator(-1234);
+		ServiceReferenceHolderMockCreator.initContextService();
+		subscriptionCreationWSWorkflowExecutor.execute(workflowDTO);
+	}
+
 	@Test
 	public void testWorkflowExecuteWithoutExecutorParam() throws Exception {
 		SubscriptionWorkflowDTO workflowDTO = new SubscriptionWorkflowDTO();
@@ -309,8 +353,6 @@ public class SubscriptionCreationWSWorkflowExecutorTest {
 		} catch (WorkflowException e) {
 			Assert.fail("Unexpected WorkflowException occurred while executing Subscription creation ws workflow");
 		}
-
-
 	}
 
 	@Test
