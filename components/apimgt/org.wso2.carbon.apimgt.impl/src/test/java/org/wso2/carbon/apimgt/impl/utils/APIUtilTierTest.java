@@ -67,6 +67,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.xml.stream.XMLStreamException;
+
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 
@@ -607,7 +609,33 @@ public class APIUtilTierTest {
 
     @Test
     public void testGetAllTiers() throws APIManagementException, RegistryException {
-        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = getAllTiersCommon();
+
+        // Error path
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(RegistryException.class);
+        try {
+            APIUtil.getAllTiers();
+            fail("Registry exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_TIER_RET_ERROR, e.getMessage());
+        }
+    }
+    
+    public void testGetAllTiersXMLStreamException() throws APIManagementException, RegistryException {
+    	ServiceReferenceHolder serviceReferenceHolder = getAllTiersCommon();
+
+        // Error path
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(XMLStreamException.class);
+        try {
+            APIUtil.getAllTiers();
+            fail("XML Stream exception is not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(APIConstants.MSG_MALFORMED_XML_ERROR, e.getMessage());
+        }
+    }
+
+	private ServiceReferenceHolder getAllTiersCommon() throws RegistryException, APIManagementException {
+		ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
         APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
         APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
         ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
@@ -638,17 +666,8 @@ public class APIUtilTierTest {
         // IsEnabled false scenario
         Mockito.when(throttleProperties.isEnabled()).thenReturn(false);
         Assert.assertEquals(0, APIUtil.getAllTiers().size());
-
-        // Error path
-        Mockito.when(serviceReferenceHolder.getRegistryService()).thenThrow(RegistryException.class);
-        try {
-            APIUtil.getAllTiers();
-            fail("Registry exception is not thrown");
-        } catch (APIManagementException e) {
-            Assert.assertEquals(APIConstants.MSG_TIER_RET_ERROR, e.getMessage());
-        }
-
-    }
+		return serviceReferenceHolder;
+	}
 
     @Test
     public void TestIPToLong() {
