@@ -41,6 +41,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -131,7 +132,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         GovernanceUtils.class, AuthorizationManager.class, MultitenantUtils.class, GenericArtifactManager.class,
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
-        RegistryUtils.class,RegistryAuthorizationManager.class,RegistryContext.class})
+        RegistryUtils.class,RegistryAuthorizationManager.class,RegistryContext.class, PrivilegedCarbonContext.class})
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -2606,6 +2607,183 @@ public class APIUtilTest {
         APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
         visibility = "none";
         APIUtil.setResourcePermissions(username, visibility, roles, artifactPath);
+
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testCheckPermissionUserNameNull() throws Exception {
+        APIUtil.checkPermission(null, "create");
+    }
+
+    @Test
+    public void testCheckPermissionUserName() throws Exception {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("true");
+        //permission check disabled scenario
+        APIUtil.checkPermission("john", "create");
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("false");
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantDomain("john")).thenReturn("foo.com");
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId("foo.com")).thenReturn(5443);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        Mockito.when(realmService.getTenantUserRealm(5443)).thenReturn(userRealm);
+        org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+        Mockito.when(authorizationManager.isUserAuthorized(MultitenantUtils.getTenantAwareUsername("john"), "create",
+                CarbonConstants.UI_PERMISSION_ACTION)).thenReturn(true);
+        //permission check enabled scenario
+        APIUtil.checkPermission("john", "create");
+
+        PowerMockito.when(MultitenantUtils.getTenantDomain("john")).thenReturn("carbon.super");
+        Mockito.when(tenantManager.getTenantId("carbon.super")).thenReturn(5443);
+        Mockito.when(realmService.getTenantUserRealm(5443)).thenReturn(Mockito.mock(org.wso2.carbon.user.core.UserRealm.class));
+        PowerMockito.mockStatic(AuthorizationManager.class);
+        AuthorizationManager authorizationManager1 = Mockito.mock(AuthorizationManager.class);
+        PowerMockito.when(AuthorizationManager.getInstance()).thenReturn(authorizationManager1);
+        try {
+            APIUtil.checkPermission("john", "create");//not authorized scenario
+            Assert.fail(); // if exception not thrown test should fail
+        } catch (APIManagementException e) {
+
+        }
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testCheckPermissionUserNameUserStoreException() throws Exception {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("false");
+
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantDomain("john")).thenReturn("foo.com");
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId("foo.com")).thenReturn(5443);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        Mockito.when(realmService.getTenantUserRealm(5443)).thenReturn(userRealm);
+        org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+        Mockito.when(
+                authorizationManager.isUserAuthorized(Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
+                .thenThrow(new org.wso2.carbon.user.core.UserStoreException());
+        APIUtil.checkPermission("john", "create");
+    }
+
+    @Test
+    public void testIsPermissionCheckDisabled() throws Exception {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito.mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK)).thenReturn("true");
+        Assert.assertTrue(APIUtil.isPermissionCheckDisabled());
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK)).thenReturn(null);
+        Assert.assertFalse(APIUtil.isPermissionCheckDisabled());
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testHasPermissionAnonymousUser() throws APIManagementException {
+        APIUtil.hasPermission(null, "create");
+    }
+
+    @Test
+    public void testHasPermissionPermissionDisabled() throws APIManagementException {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("true");
+        boolean result = APIUtil.hasPermission("john", "create");
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testHasPermissionPermissionEnabled() throws Exception {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("false");
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        PowerMockito.when(MultitenantUtils.getTenantDomain("john")).thenReturn("foo.com");
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        Mockito.when(tenantManager.getTenantId("foo.com")).thenReturn(5443);
+        UserRealm userRealm = Mockito.mock(UserRealm.class);
+        Mockito.when(realmService.getTenantUserRealm(5443)).thenReturn(userRealm);
+        org.wso2.carbon.user.api.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.api.AuthorizationManager.class);
+        Mockito.when(authorizationManager.isUserAuthorized(MultitenantUtils.getTenantAwareUsername("john"), "create",
+                CarbonConstants.UI_PERMISSION_ACTION)).thenReturn(true);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+        boolean result = APIUtil.hasPermission("john", "create"); // tenant case
+        Assert.assertTrue(result);
 
     }
 }
