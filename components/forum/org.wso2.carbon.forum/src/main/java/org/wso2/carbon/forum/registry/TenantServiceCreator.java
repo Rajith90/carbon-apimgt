@@ -37,7 +37,7 @@ public class TenantServiceCreator extends AbstractAxis2ConfigurationContextObser
             ForumRegistryComponent.createTopicsRootCollection(tenantId);
             ForumRegistryComponent.addRxtConfigs(tenantId);
         } catch (ForumException e) {
-            log.error("Could not add forum rxt configurations to the registry " + e.getMessage());
+            log.error("Could not add forum rxts configurations to the registry " + e.getMessage());
         }
     }
 }

@@ -27,11 +27,11 @@ import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityUtils;
 import org.wso2.carbon.apimgt.gateway.handlers.security.AuthenticationContext;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerAnalyticsConfiguration;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageDataPublisher;
 import org.wso2.carbon.apimgt.usage.publisher.DataPublisherUtil;
 import org.wso2.carbon.apimgt.usage.publisher.dto.RequestPublisherDTO;
-import org.wso2.carbon.apimgt.usage.publisher.internal.UsageComponent;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.Map;
@@ -43,12 +43,12 @@ public class APIMgtUsageHandler extends AbstractHandler {
     private static final Log log = LogFactory.getLog(APIMgtUsageHandler.class);
     public static final Pattern resourcePattern = Pattern.compile("^/.+?/.+?([/?].+)$");
 
-    private volatile APIMgtUsageDataPublisher publisher;
+    protected volatile APIMgtUsageDataPublisher publisher;
 
     public boolean handleRequest(MessageContext mc) {
 
-        boolean enabled = APIUtil.isAnalyticsEnabled();
-        boolean skipEventReceiverConnection = DataPublisherUtil.getApiManagerAnalyticsConfiguration().
+        boolean enabled = getApiManagerAnalyticsConfiguration().isAnalyticsEnabled();
+        boolean skipEventReceiverConnection = getApiManagerAnalyticsConfiguration().
                 isSkipEventReceiverConnection();
 
         if (!enabled || skipEventReceiverConnection) {
@@ -59,7 +59,7 @@ public class APIMgtUsageHandler extends AbstractHandler {
         synapse to enable or disable destination based stat publishing*/
         mc.setProperty("isStatEnabled", Boolean.toString(enabled));
 
-        String publisherClass = UsageComponent.getAmConfigService().getAPIAnalyticsConfiguration().getPublisherClass();
+        String publisherClass = getApiManagerAnalyticsConfiguration().getPublisherClass();
         try {
             long currentTime = System.currentTimeMillis();
             if (publisher == null) {
@@ -154,6 +154,10 @@ public class APIMgtUsageHandler extends AbstractHandler {
             log.error("Cannot publish event. " + e.getMessage(), e);
         }
         return true;
+    }
+
+    protected APIManagerAnalyticsConfiguration getApiManagerAnalyticsConfiguration() {
+        return DataPublisherUtil.getApiManagerAnalyticsConfiguration();
     }
 
 //moving to APIUTil

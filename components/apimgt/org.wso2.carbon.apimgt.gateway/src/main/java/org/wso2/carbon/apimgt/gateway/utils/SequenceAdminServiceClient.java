@@ -24,11 +24,11 @@ import org.wso2.carbon.sequences.stub.types.SequenceAdminServiceStub;
 
 /**
  * SequenceAdmin service client to deploy the custom sequences to multiple gateway environemnets.
- * 
+ *
  */
 
 public class SequenceAdminServiceClient {
-	
+
 	static final String backendURLl = "local:///services/";
 	private SequenceAdminServiceStub sequenceAdminStub;
 
@@ -39,9 +39,8 @@ public class SequenceAdminServiceClient {
 
 	/**
 	 * Deploy the sequence to the gateway
-	 * 
+	 *
 	 * @param sequence  - The sequence element , which to be deployed in synapse
-	 * @param tenantDomain
 	 * @throws AxisFault
 	 */
 	public void addSequence(OMElement sequence) throws AxisFault {
@@ -52,7 +51,7 @@ public class SequenceAdminServiceClient {
 			throw new AxisFault("Error while adding new sequence", e);
 		}
 	}
-	
+
 	public void addSequenceForTenant(OMElement sequence, String tenantDomain) throws AxisFault {
 		try {
 			sequenceAdminStub.addSequenceForTenant(sequence, tenantDomain);
@@ -75,7 +74,7 @@ public class SequenceAdminServiceClient {
 			throw new AxisFault("Error while deleting sequence", e);
 		}
 	}
-	
+
 	public void deleteSequenceForTenant(String sequenceName, String tenantDomain) throws AxisFault {
 		try {
 			sequenceAdminStub.deleteSequenceForTenant(sequenceName, tenantDomain);
@@ -87,7 +86,7 @@ public class SequenceAdminServiceClient {
 
 	/**
 	 * get the sequence from gateway
-	 * 
+	 *
 	 * @param sequenceName
 	 *            -The sequence name,
 	 * @param tenantDomain
@@ -96,16 +95,16 @@ public class SequenceAdminServiceClient {
 	public OMElement getSequence(String sequenceName) throws AxisFault {
 		try {
 			return  (OMElement) sequenceAdminStub.getSequence(sequenceName);
-			
+
 		} catch (Exception e) {
 			throw new AxisFault("Error while retriving the sequence", e);
 		}
 	}
-	
+
 	public OMElement getSequenceForTenant(String sequenceName, String tenantDomain) throws AxisFault {
 		try {
 			return (OMElement) sequenceAdminStub.getSequenceForTenant(sequenceName, tenantDomain);
-			
+
 		} catch (Exception e) {
 			throw new AxisFault("Error while retriving the sequence", e);
 		}
@@ -118,7 +117,7 @@ public class SequenceAdminServiceClient {
             throw new AxisFault("Error while checking for existence of sequence : " + sequenceName , e);
         }
     }
-    
+
     public boolean isExistingSequenceForTenant(String sequenceName, String tenantDomain) throws AxisFault{
         try{
         	return sequenceAdminStub.isExistingSequenceForTenant(sequenceName, tenantDomain);
@@ -128,5 +127,7 @@ public class SequenceAdminServiceClient {
         }
     }
 
-
+    protected void setSequenceAdminStub(SequenceAdminServiceStub sequenceAdminStub) {
+		this.sequenceAdminStub = sequenceAdminStub;
+	}
 }

@@ -657,7 +657,7 @@ public class SQLConstants {
             " SELECT " +
             "   IAT.ACCESS_TOKEN, " +
             "   IAT.AUTHZ_USER, " +
-            "   IAT.DOMAIN_NAME, " +
+            "   IAT.USER_DOMAIN, " +
             "   ISAT.TOKEN_SCOPE, " +
             "   ICA.CONSUMER_KEY, " +
             "   IAT.TIME_CREATED, " +
@@ -1730,7 +1730,7 @@ public class SQLConstants {
             "   AM_SUBSCRIPTION AMS," +
             "   AM_APPLICATION AMA " +
             "WHERE " +
-            "   TIER_ID=? " +
+            "   AMS.TIER_ID=? " +
             "   AND AMS.APPLICATION_ID=AMA.APPLICATION_ID";
 
     public static final String GET_URL_TEMPLATES_SQL =

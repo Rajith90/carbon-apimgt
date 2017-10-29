@@ -16,13 +16,36 @@
 package org.wso2.carbon.apimgt.gateway.handlers.security.oauth;
 
 
+import org.wso2.carbon.apimgt.gateway.handlers.security.APIKeyValidator;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+import org.wso2.carbon.metrics.manager.Timer;
 
 public class OauthAuthenticatorWrapper extends OAuthAuthenticator{
     private APIManagerConfiguration apiManagerConfiguration;
+    private Timer timer;
+
+    private APIKeyValidator apiKeyValidator;
 
     public OauthAuthenticatorWrapper(APIManagerConfiguration apiManagerConfiguration) {
         this.apiManagerConfiguration = apiManagerConfiguration;
+    }
+
+    public OauthAuthenticatorWrapper(APIManagerConfiguration apiManagerConfiguration, Timer timer,
+                                     APIKeyValidator apiKeyValidator)
+    {
+        this.apiKeyValidator =apiKeyValidator;
+        this.apiManagerConfiguration = apiManagerConfiguration;
+        this.timer = timer;
+    }
+
+    @Override
+    protected Timer getTimer(String name) {
+        return timer;
+    }
+
+    @Override
+    protected APIKeyValidator getAPIKeyValidator() {
+        return apiKeyValidator;
     }
 
     @Override

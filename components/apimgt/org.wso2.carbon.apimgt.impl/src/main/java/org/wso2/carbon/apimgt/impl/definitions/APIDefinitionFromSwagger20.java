@@ -332,6 +332,9 @@ public class APIDefinitionFromSwagger20 extends APIDefinition {
                 }
                 operationObject.put(APIConstants.SWAGGER_X_AUTH_TYPE, authType);
                 operationObject.put(APIConstants.SWAGGER_X_THROTTLING_TIER, uriTemplate.getThrottlingTier());
+                if (uriTemplate.getScope() != null) {
+                    operationObject.put(APIConstants.SWAGGER_X_SCOPE, uriTemplate.getScope().getKey());
+                }
                 operationObject.put(APIConstants.SWAGGER_RESPONSES, responseObject);
                 pathItemObject.put(httpVerb.toLowerCase(), operationObject);
             }

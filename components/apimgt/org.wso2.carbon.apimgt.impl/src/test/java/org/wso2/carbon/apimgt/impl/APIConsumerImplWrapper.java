@@ -21,6 +21,20 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.api.model.APIStatus;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.dao.test.TestTenantManager;
+import org.wso2.carbon.apimgt.impl.workflow.APIStateChangeSimpleWorkflowExecutor;
+import org.wso2.carbon.apimgt.impl.workflow.SampleWorkFlowExecutor;
+import org.wso2.carbon.apimgt.impl.workflow.WorkflowException;
+import org.wso2.carbon.apimgt.impl.workflow.WorkflowExecutor;
+import org.wso2.carbon.registry.core.Registry;
+import org.wso2.carbon.registry.core.exceptions.RegistryException;
+import org.wso2.carbon.registry.core.session.UserRegistry;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.tenant.TenantManager;
 
 import java.io.File;
 
@@ -30,6 +44,17 @@ public class APIConsumerImplWrapper extends APIConsumerImpl {
 
     public APIConsumerImplWrapper() throws APIManagementException {
         super();
+    }
+
+
+    public APIConsumerImplWrapper(ApiMgtDAO apiMgtDAO) throws APIManagementException {
+        this.apiMgtDAO = apiMgtDAO;
+    }
+
+    public APIConsumerImplWrapper(Registry registry, ApiMgtDAO apiMgtDAO) throws APIManagementException {
+        this.apiMgtDAO = apiMgtDAO;
+        this.registry = registry;
+
     }
 
     /**
@@ -47,5 +72,43 @@ public class APIConsumerImplWrapper extends APIConsumerImpl {
             log.error("Error while reading configs from file api-manager.xml", e);
         }
         return apiManagerConfiguration;
+    }
+
+    protected WorkflowExecutor getWorkflowExecutor(String workflowType) throws WorkflowException {
+        return new SampleWorkFlowExecutor();
+    }
+
+
+    @Override
+    protected TenantManager getTenantManager() {
+        return new TestTenantManager();
+    }
+
+    protected boolean startTenantFlowForTenantDomain(String tenantDomain) {
+        return true;
+    }
+
+    protected void endTenantFlow(){
+    }
+
+    protected  int getTenantId(String requestedTenantDomain) throws UserStoreException {
+        return -1234;
+    }
+
+    protected UserRegistry getGovernanceUserRegistry(int tenantId) throws RegistryException {
+        return null;
+    }
+
+    protected void setUsernameToThreadLocalCarbonContext(String username) {
+    }
+
+    public API getAPI(APIIdentifier identifier) throws APIManagementException {
+        API api = new API(identifier);
+        if("published_api".equals(identifier.getApiName())) {
+            api.setStatus(APIStatus.PUBLISHED);
+        } else {
+            api.setStatus(APIStatus.CREATED);
+        }
+        return  api;
     }
 }

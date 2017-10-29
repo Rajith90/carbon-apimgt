@@ -19,6 +19,7 @@
 package org.wso2.carbon.apimgt.gateway.utils;
 
 import org.apache.axis2.AxisFault;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -61,4 +62,93 @@ public class RESTAPIAdminClientTestCase {
             // test for axisFault
         }
     }
+
+    @Test
+    public void testAddApi() throws Exception {
+        RESTAPIAdminClient restapiAdminClient = new RESTAPIAdminClient("admin", "PhoneVerify",
+                "1.0");
+        try {
+            restapiAdminClient.addApi("config", "abc.com");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.addApi("config");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.addPrototypeApiScriptImpl("config", "abc.com");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.addPrototypeApiScriptImpl("config");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.addDefaultAPI("config", "abc.com");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.addDefaultAPI("config");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+    }
+
+    @Test
+    public void testGetApi() throws Exception {
+        RESTAPIAdminClient restapiAdminClient = new RESTAPIAdminClient("admin", "PhoneVerify",
+                "1.0");
+        try {
+            restapiAdminClient.getApi("abc.com");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.getApi();
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.getDefaultApi();
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.getDefaultApi("config");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+    }
+
+    @Test
+    public void testDeleteApi() throws Exception {
+        RESTAPIAdminClient restapiAdminClient = new RESTAPIAdminClient("admin", "PhoneVerify",
+                "1.0");
+        try {
+            restapiAdminClient.deleteApi("abc.com");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.deleteApi();
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.deleteDefaultApi();
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+        try {
+            restapiAdminClient.deleteDefaultApi("config");
+        } catch (AxisFault axisFault) {
+            // test for axisFault
+        }
+    }
+
 }

@@ -21,12 +21,12 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 
-
+@Deprecated
 public class APITokenValidator {
 
     public APIKeyValidationInfoDTO validateKey(String context, String version, String accessToken,
                                                String requiredAuthenticationLevel) throws APIManagementException {
         ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        return apiMgtDAO.validateKey(context, version, accessToken, requiredAuthenticationLevel);
+        return null;
     }
 }

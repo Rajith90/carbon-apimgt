@@ -25,7 +25,11 @@ import org.apache.synapse.rest.RESTConstants;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageDataPublisher;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class APIMgtFaultHandlerTest {
@@ -54,6 +58,7 @@ public class APIMgtFaultHandlerTest {
         Mockito.when(messageContext.getProperty(RESTConstants.SYNAPSE_REST_API)).thenReturn("admin--api1-1.0.0");
         apiMgtFaultHandler.mediate(messageContext);
     }
+
     @Test
     public void mediate1() throws Exception {
         APIMgtUsageDataPublisher apiMgtUsageDataPublisher = Mockito.mock(APIMgtUsageDataPublisher.class);

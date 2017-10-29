@@ -51,8 +51,7 @@ public class WebsocketThriftClient {
 			TSSLTransportFactory.TSSLTransportParameters param =
 					new TSSLTransportFactory.TSSLTransportParameters();
 
-			param.setTrustStore(thriftUtils.getTrustStorePath(),
-			                    thriftUtils.getTrustStorePassword());
+			param.setTrustStore(thriftUtils.getTrustStorePath(), thriftUtils.getTrustStorePassword());
 
 			TTransport transport = TSSLTransportFactory
 					.getClientSocket(ThriftUtils.getThriftServerHost(), thriftUtils.getThriftPort(),
@@ -88,8 +87,7 @@ public class WebsocketThriftClient {
 		org.wso2.carbon.apimgt.impl.generated.thrift.APIKeyValidationInfoDTO thriftDTO;
 
 		try {
-			thriftDTO =
-					keyValClient.validateKeyforHandshake(context, apiVersion, apiKey, sessionId);
+			thriftDTO = keyValClient.validateKeyforHandshake(context, apiVersion, apiKey, sessionId);
 
 		} catch (Exception e) {
 			try {
@@ -103,8 +101,7 @@ public class WebsocketThriftClient {
 						.validateKeyforHandshake(context, apiVersion, apiKey, sessionId);
 
 			} catch (Exception e1) {
-				throw new APISecurityException(APISecurityConstants.API_AUTH_GENERAL_ERROR,
-				                               e1.getMessage(), e1);
+				throw new APISecurityException(APISecurityConstants.API_AUTH_GENERAL_ERROR, e1.getMessage(), e1);
 			}
 		}
 		//do the conversion other side

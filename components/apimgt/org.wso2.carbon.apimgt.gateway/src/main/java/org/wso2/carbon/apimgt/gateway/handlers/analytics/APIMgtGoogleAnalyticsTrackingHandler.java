@@ -235,7 +235,7 @@ public class APIMgtGoogleAnalyticsTrackingHandler extends AbstractHandler {
         throw new SynapseException(msg);
     }
 
-    protected class GoogleAnalyticsConfig {
+    private class GoogleAnalyticsConfig {
         private boolean enabled;
         private String googleAnalyticsTrackingID;
 

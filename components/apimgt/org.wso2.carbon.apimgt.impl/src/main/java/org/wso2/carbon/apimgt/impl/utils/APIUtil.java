@@ -82,9 +82,7 @@ import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.api.model.policy.APIPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.ApplicationPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.BandwidthLimit;
-import org.wso2.carbon.apimgt.api.model.policy.GlobalPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.Limit;
-import org.wso2.carbon.apimgt.api.model.policy.Pipeline;
 import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.api.model.policy.QuotaPolicy;
@@ -183,6 +181,12 @@ import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -865,8 +869,6 @@ public final class APIUtil {
             artifact.setAttribute(APIConstants.API_OVERVIEW_CONTEXT_TEMPLATE, api.getContextTemplate());
             artifact.setAttribute(APIConstants.API_OVERVIEW_VERSION_TYPE, "context");
             artifact.setAttribute(APIConstants.API_OVERVIEW_TYPE, api.getType());
-            APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
-                    .getAPIManagerConfiguration();
 
             StringBuilder policyBuilder = new StringBuilder();
             for (Tier tier : api.getAvailableTiers()) {
@@ -975,21 +977,14 @@ public final class APIUtil {
             Documentation.DocumentSourceType docSourceType = Documentation.DocumentSourceType.INLINE;
             String artifactAttribute = artifact.getAttribute(APIConstants.DOC_SOURCE_TYPE);
 
-            if (artifactAttribute.equals(Documentation.DocumentSourceType.URL.name())) {
+            if (Documentation.DocumentSourceType.URL.name().equals(artifactAttribute)) {
                 docSourceType = Documentation.DocumentSourceType.URL;
-            } else if (artifactAttribute.equals(Documentation.DocumentSourceType.FILE.name())) {
-                docSourceType = Documentation.DocumentSourceType.FILE;
-            }
-
-            documentation.setSourceType(docSourceType);
-            if ("URL".equals(artifact.getAttribute(APIConstants.DOC_SOURCE_TYPE))) {
                 documentation.setSourceUrl(artifact.getAttribute(APIConstants.DOC_SOURCE_URL));
-            }
-
-            if (docSourceType == Documentation.DocumentSourceType.FILE) {
+            } else if (Documentation.DocumentSourceType.FILE.name().equals(artifactAttribute)) {
+                docSourceType = Documentation.DocumentSourceType.FILE;
                 documentation.setFilePath(prependWebContextRoot(artifact.getAttribute(APIConstants.DOC_FILE_PATH)));
             }
-
+            documentation.setSourceType(docSourceType);
             if (documentation.getType() == DocumentationType.OTHER) {
                 documentation.setOtherTypeName(artifact.getAttribute(APIConstants.DOC_OTHER_TYPE_NAME));
             }
@@ -1222,7 +1217,7 @@ public final class APIUtil {
                 default:
                     throw new APIManagementException("Unknown sourceType " + sourceType + " provided for documentation");
             }
-            //Documentation Source URL is a required field in the documentation.rxt for migrated setups
+            //Documentation Source URL is a required field in the documentation.rxts for migrated setups
             //Therefore setting a default value if it is not set. 
             if (documentation.getSourceUrl() == null) {
                 documentation.setSourceUrl(" ");
@@ -1235,7 +1230,7 @@ public final class APIUtil {
                     apiId.getApiName() + RegistryConstants.PATH_SEPARATOR + apiId.getVersion();
             artifact.setAttribute(APIConstants.DOC_API_BASE_PATH, basePath);
         } catch (GovernanceException e) {
-            String msg = "Filed to create doc artifact content from :" + documentation.getName();
+            String msg = "Failed to create doc artifact content from :" + documentation.getName();
             log.error(msg, e);
             throw new APIManagementException(msg, e);
         }
@@ -5489,15 +5484,36 @@ public final class APIUtil {
         SchemeRegistry registry = new SchemeRegistry();
         SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
         String ignoreHostnameVerification = System.getProperty("org.wso2.ignoreHostnameVerification");
+        String sslValue = null;
+
+        AxisConfiguration axis2Config = ServiceReferenceHolder.getContextService().getServerConfigContext()
+                .getAxisConfiguration();
+        org.apache.axis2.description.Parameter sslVerifyClient = axis2Config.getTransportIn(APIConstants.HTTPS_PROTOCOL)
+                .getParameter(APIConstants.SSL_VERIFY_CLIENT);
+        if (sslVerifyClient != null) {
+            sslValue = (String) sslVerifyClient.getValue();
+        }
+
         if (ignoreHostnameVerification != null && "true".equalsIgnoreCase(ignoreHostnameVerification)) {
             X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
             socketFactory.setHostnameVerifier(hostnameVerifier);
         }
         if (APIConstants.HTTPS_PROTOCOL.equals(protocol)) {
-            if (port >= 0) {
-                registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, port, socketFactory));
-            } else {
-                registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, 443, socketFactory));
+            try {
+                if (APIConstants.SSL_VERIFY_CLIENT_STATUS_REQUIRE.equals(sslValue)) {
+                    socketFactory = createSocketFactory();
+                    if (ignoreHostnameVerification != null && "true".equalsIgnoreCase(ignoreHostnameVerification)) {
+                        X509HostnameVerifier hostnameVerifier = SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+                        socketFactory.setHostnameVerifier(hostnameVerifier);
+                    }
+                }
+                if (port >= 0) {
+                    registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, port, socketFactory));
+                } else {
+                    registry.register(new Scheme(APIConstants.HTTPS_PROTOCOL, 443, socketFactory));
+                }
+            } catch (APIManagementException e) {
+                log.error(e);
             }
         } else if (APIConstants.HTTP_PROTOCOL.equals(protocol)) {
             if (port >= 0) {
@@ -5510,6 +5526,36 @@ public final class APIUtil {
         ThreadSafeClientConnManager tcm = new ThreadSafeClientConnManager(registry);
         return new DefaultHttpClient(tcm, params);
 
+    }
+
+    private static SSLSocketFactory createSocketFactory() throws APIManagementException {
+        KeyStore keyStore;
+        String keyStorePath = null;
+        String keyStorePassword;
+        try {
+            keyStorePath = CarbonUtils.getServerConfiguration().getFirstProperty("Security.KeyStore.Location");
+            keyStorePassword = CarbonUtils.getServerConfiguration()
+                    .getFirstProperty("Security.KeyStore.Password");
+            keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(new FileInputStream(keyStorePath), keyStorePassword.toCharArray());
+            SSLSocketFactory sslSocketFactory = new SSLSocketFactory(keyStore, keyStorePassword);
+
+            return sslSocketFactory;
+
+        } catch (KeyStoreException e) {
+            handleException("Failed to read from Key Store", e);
+        } catch (CertificateException e) {
+            handleException("Failed to read Certificate", e);
+        } catch (NoSuchAlgorithmException e) {
+            handleException("Failed to load Key Store from " + keyStorePath, e);
+        } catch (IOException e) {
+            handleException("Key Store not found in " + keyStorePath, e);
+        } catch (UnrecoverableKeyException e) {
+            handleException("Failed to load key from" + keyStorePath, e);
+        } catch (KeyManagementException e) {
+            handleException("Failed to load key from" + keyStorePath, e);
+        }
+         return null;
     }
 
     /**
@@ -5933,38 +5979,7 @@ public final class APIUtil {
     }
 
 
-    /**
-     * check whether policy is content aware
-     *
-     * @param policy
-     * @return
-     */
-    public static boolean isContentAwarePolicy(Policy policy) {
-        boolean status = false;
-        if (policy instanceof APIPolicy) {
-            APIPolicy apiPolicy = (APIPolicy) policy;
-            status = isDefaultQuotaPolicyContentAware(apiPolicy);
-            if (!status) {
-                //only go and check the pipelines if default quota is not content aware
-                //check if atleast one pipeline is content aware
-                for (Pipeline pipeline : apiPolicy.getPipelines()) { // add each pipeline data to AM_CONDITION table
-                    if (PolicyConstants.BANDWIDTH_TYPE.equals(pipeline.getQuotaPolicy().getType())) {
-                        status = true;
-                        break;
-                    }
-                }
-            }
-        } else if (policy instanceof ApplicationPolicy) {
-            ApplicationPolicy appPolicy = (ApplicationPolicy) policy;
-            status = isDefaultQuotaPolicyContentAware(appPolicy);
-        } else if (policy instanceof SubscriptionPolicy) {
-            SubscriptionPolicy subPolicy = (SubscriptionPolicy) policy;
-            status = isDefaultQuotaPolicyContentAware(subPolicy);
-        } else if (policy instanceof GlobalPolicy) {
-            status = false;
-        }
-        return status;
-    }
+
 
     private static boolean isDefaultQuotaPolicyContentAware(Policy policy) {
         if (PolicyConstants.BANDWIDTH_TYPE.equalsIgnoreCase(policy.getDefaultQuotaPolicy().getType())) {

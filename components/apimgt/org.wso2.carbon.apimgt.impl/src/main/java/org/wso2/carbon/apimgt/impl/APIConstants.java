@@ -30,10 +30,10 @@ import java.util.Set;
  */
 public final class APIConstants {
 
-    //key value of the provider rxt
+    //key value of the provider rxts
     public static final String PROVIDER_KEY = "provider";
 
-    //key value of the APIImpl rxt
+    //key value of the APIImpl rxts
     public static final String API_KEY = "api";
 
     //governance registry apimgt root location
@@ -117,6 +117,10 @@ public final class APIConstants {
     public static final String API_CATEGORY_FREEMIUM = "Freemium";
 
     public static final String API_CATEGORY_PAID = "Paid";
+
+    public static final String SSL_VERIFY_CLIENT = "SSLVerifyClient";
+
+    public static final String SSL_VERIFY_CLIENT_STATUS_REQUIRE = "require";
 
     //location for custom url domain mapings. "<tenant-id>" will be replaced by actual tenant name.
     public static final String API_DOMAIN_MAPPINGS = "/customurl/api-cloud/<tenant-id>/urlMapping/<tenant-id>";
@@ -329,7 +333,7 @@ public final class APIConstants {
     public static final String REVOKE_API_URL = OAUTH_CONFIGS + "RevokeAPIURL";
     public static final String ENCRYPT_TOKENS_ON_PERSISTENCE = OAUTH_CONFIGS + "EncryptPersistedTokens";
 
-    //documentation rxt
+    //documentation rxts
 
     public static final String DOC_NAME = "overview_name";
     public static final String DOC_SUMMARY = "overview_summary";
@@ -735,6 +739,7 @@ public final class APIConstants {
     public static final String API_MANAGER_CACHE_MANAGER = "API_MANAGER_CACHE";
     public static final String API_CONTEXT_CACHE_MANAGER = "API_CONTEXT_CACHE_MANAGER";
     public static final String RESOURCE_CACHE_NAME = "resourceCache";
+    public static final String POLICY_CACHE_CONTEXT = "POLICY:";
     public static final String GATEWAY_KEY_CACHE_NAME = "gatewayKeyCache";
     public static final String GATEWAY_TOKEN_CACHE_NAME = "GATEWAY_TOKEN_CACHE";
     public static final String KEY_CACHE_NAME = "keyCache";

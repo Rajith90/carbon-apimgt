@@ -149,7 +149,6 @@ public class PropertyDeserializer extends JsonDeserializer<Property> {
     Property propertyFromNode(JsonNode node) {
         final String type = getString(node, PropertyBuilder.PropertyId.TYPE);
         final String format = getString(node, PropertyBuilder.PropertyId.FORMAT);
-        final Xml xml = getXml(node);
 
         String description = getString(node, PropertyBuilder.PropertyId.DESCRIPTION);
         JsonNode detailNode = node.get("$ref");
