@@ -94,12 +94,10 @@ public class APIGatewayAdminClientTest {
 
     @Test
     public void testAPIGatewayAdminClient() throws Exception {
-        PowerMockito.whenNew(APIGatewayAdminStub.class)
-                .withArguments(Mockito.any(ConfigurationContext.class), Mockito.anyString())
-                .thenReturn(apiGatewayAdminStub);
         APIGatewayAdminClient client = new APIGatewayAdminClient(null, environment);
         Assert.assertNotNull(client);
-        Mockito.verify(apiGatewayAdminStub, times(2))._getServiceClient();
+
+
     }
 
     @Test(expected = AxisFault.class)
