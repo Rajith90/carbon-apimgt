@@ -60,9 +60,12 @@ import org.wso2.carbon.apimgt.api.model.policy.QuotaPolicy;
 import org.wso2.carbon.apimgt.api.model.policy.RequestCountLimit;
 import org.wso2.carbon.apimgt.api.model.policy.SubscriptionPolicy;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIMRegistryServiceImpl;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
+import org.wso2.carbon.apimgt.impl.APIManagerConfigurationServiceImpl;
 import org.wso2.carbon.apimgt.impl.ServiceReferenceHolderMockCreator;
+import org.wso2.carbon.apimgt.impl.TestUtils;
 import org.wso2.carbon.apimgt.impl.clients.ApplicationManagementServiceClient;
 import org.wso2.carbon.apimgt.impl.clients.OAuthAdminClient;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
@@ -96,6 +99,7 @@ import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.registry.core.utils.RegistryUtils;
 import org.wso2.carbon.user.api.Permission;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.Tenant;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -2927,4 +2931,246 @@ public class APIUtilTest {
         APIUtil.loadTenantExternalStoreConfig(tenantID);
     }
 
+
+
+    @Test
+    public void testRemoveAnySymbolFromUriTempate() {
+        String uriTemplate = "/pizzashack/delivery/*";
+        Assert.assertEquals(APIUtil.removeAnySymbolFromUriTemplate(uriTemplate), "/pizzashack/delivery");
+    }
+
+    @Test
+    public void testGetAverageRatingByAPIIdentifier() throws APIManagementException {
+        ApiMgtDAO apiMgtDAO = TestUtils.getApiMgtDAO();
+        APIIdentifier apiIdentifier = new APIIdentifier("admin", "weatherAPI", "v1.0.0");
+        Mockito.when(apiMgtDAO.getAverageRating(apiIdentifier)).thenReturn(4.9f);
+        try {
+            Assert.assertEquals(APIUtil.getAverageRating(apiIdentifier), 4.9, 1e-1);
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving API's average rating");
+        }
+    }
+
+    @Test
+    public void testGetAverageRatingByAPIID() throws APIManagementException {
+        ApiMgtDAO apiMgtDAO = TestUtils.getApiMgtDAO();
+        Mockito.when(apiMgtDAO.getAverageRating(1)).thenReturn(4.9f);
+        try {
+            Assert.assertEquals(APIUtil.getAverageRating(1), 4.9, 1e-1);
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving API's average rating");
+        }
+    }
+
+    @Test
+    public void testGetAllTenantsWithSuperTenant() throws UserStoreException {
+        TenantManager tenantManager = TestUtils.getTenantManager();
+        Tenant tenant = new Tenant();
+        tenant.setDomain("wso2.com");
+        tenant.setId(1);
+        tenant.setAdminName("admin");
+        tenant.setAdminPassword("admin");
+        Tenant[] tenants = {tenant};
+        Mockito.when(tenantManager.getAllTenants()).thenReturn(tenants);
+
+        try {
+            List<Tenant> tenantList = APIUtil.getAllTenantsWithSuperTenant();
+            Assert.assertEquals(tenantList.size(), 2);
+        } catch (UserStoreException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving all available tenants");
+        }
+    }
+
+    @Test
+    public void testIsLoggedInUserAuthorizedToRevokeToken() {
+
+        //Test authorized super tenant user in super tenant domain
+        Assert.assertTrue(APIUtil.isLoggedInUserAuthorizedToRevokeToken("testUser@carbon.super", "testUser@carbon" +
+                ".super"));
+
+        //Test unauthorized tenant user in super tenant domain
+        Assert.assertFalse(APIUtil.isLoggedInUserAuthorizedToRevokeToken("testUser@wso2.com",
+                "testUser@carbon.super"));
+
+        //Test authorized tenant user in tenant domain
+        Assert.assertTrue(APIUtil.isLoggedInUserAuthorizedToRevokeToken("testUser@wso2.com", "testUser@wso2.com"));
+
+        //Test unauthorized tenant user in different tenant domain
+        Assert.assertFalse(APIUtil.isLoggedInUserAuthorizedToRevokeToken("testUser@hr.com",
+                "testUser@wso2.com"));
+    }
+
+    @Test
+    public void testGetApplicationId() throws APIManagementException {
+        ApiMgtDAO apiMgtDAO = TestUtils.getApiMgtDAO();
+        String appName = "DefaultApplication";
+        String userID = "admin";
+        Mockito.when(apiMgtDAO.getApplicationId(appName, userID)).thenReturn(1);
+
+        try {
+            Assert.assertEquals(APIUtil.getApplicationId(appName, userID), 1);
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while retrieving application ID by name and user");
+        }
+    }
+
+    @Test
+    public void testIsAPIManagementEnabled() {
+        PowerMockito.mockStatic(CarbonUtils.class);
+        ServerConfiguration serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        Mockito.when(serverConfiguration.getFirstProperty("APIManagement.Enabled")).thenReturn("true");
+        PowerMockito.when(CarbonUtils.getServerConfiguration()).thenReturn(serverConfiguration);
+        Assert.assertTrue(APIUtil.isAPIManagementEnabled());
+    }
+
+    @Test
+    public void testIsLoadAPIContextsAtStartup() {
+        PowerMockito.mockStatic(CarbonUtils.class);
+        ServerConfiguration serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        Mockito.when(serverConfiguration.getFirstProperty("APIManagement.LoadAPIContextsInServerStartup"))
+                .thenReturn("true");
+        PowerMockito.when(CarbonUtils.getServerConfiguration()).thenReturn(serverConfiguration);
+        Assert.assertTrue(APIUtil.isLoadAPIContextsAtStartup());
+    }
+
+    @Test
+    public void testIsAllowDisplayMultipleVersionsWhenConfiguredInTenantLevel() throws Exception {
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        File siteConfFile = new File(Thread.currentThread().getContextClassLoader().
+                getResource("tenant-conf.json").getFile());
+        String tenantConfValue = FileUtils.readFileToString(siteConfFile);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn(tenantConfValue);
+
+        try {
+            Assert.assertTrue(APIUtil.isAllowDisplayMultipleVersions());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayMultipleVersions' " +
+                    "is enabled in tenant level");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayMultipleVersionsUserStoreExceptionWhenConfiguredInTenantLevel() throws Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenThrow(new UserStoreException("UserStoreException thrown when tenant-config.json"));
+
+        try {
+            APIUtil.isAllowDisplayMultipleVersions();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "UserStoreException thrown when tenant-config.json");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayMultipleVersionsRegistryExceptionWhenConfiguredInTenantLevel() throws Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException
+                ("RegistryException thrown when getting tenant-config.json"));
+
+        try {
+            APIUtil.isAllowDisplayMultipleVersions();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "RegistryException thrown when getting tenant-config.json");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayMultipleVersionsParseExceptionWhenConfiguredInTenantLevel() throws Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn("{\"invalid\"}");
+
+        try {
+            APIUtil.isAllowDisplayMultipleVersions();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "ParseException thrown when parsing the tenant-config.json content");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayMultipleVersionsWhenConfiguredInGlobally() throws Exception {
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn(null);
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+
+        //When configuration is not found in api-manager.xml
+        try {
+            Assert.assertFalse(APIUtil.isAllowDisplayMultipleVersions());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayMultipleVersions' " +
+                    "is enabled in tenant level");
+        }
+
+        //When configuration is found in api-manager.xml
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISPLAY_MULTIPLE_VERSIONS))
+                .thenReturn("true");
+        try {
+            Assert.assertTrue(APIUtil.isAllowDisplayMultipleVersions());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayMultipleVersions' " +
+                    "is enabled in tenant level");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayAPIsWithMultipleStatusWhenConfiguredInTenantLevel() throws Exception {
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        File siteConfFile = new File(Thread.currentThread().getContextClassLoader().
+                getResource("tenant-conf.json").getFile());
+        String tenantConfValue = FileUtils.readFileToString(siteConfFile);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn(tenantConfValue);
+
+        try {
+            Assert.assertTrue(APIUtil.isAllowDisplayAPIsWithMultipleStatus());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayAllAPIs' " +
+                    "is enabled in tenant level");
+        }
+    }
 }

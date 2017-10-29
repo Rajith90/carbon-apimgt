@@ -3557,7 +3557,7 @@ public final class APIUtil {
         }
     }
 
-    public static String removeAnySymbolFromUriTempate(String uriTemplate) {
+    public static String removeAnySymbolFromUriTemplate(String uriTemplate) {
         if (uriTemplate != null) {
             int anySymbolIndex = uriTemplate.indexOf("/*");
             if (anySymbolIndex != -1) {
@@ -3909,7 +3909,7 @@ public final class APIUtil {
         for (URITemplate template : uriTemplates) {
             List<Operation> ops;
             List<Parameter> parameters;
-            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTempate(template.getUriTemplate());
+            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTemplate(template.getUriTemplate());
             /* path exists in uriTemplateDefinitions */
             if (uriTemplateDefinitions.get(path) != null) {
                 ops = uriTemplateDefinitions.get(path);
