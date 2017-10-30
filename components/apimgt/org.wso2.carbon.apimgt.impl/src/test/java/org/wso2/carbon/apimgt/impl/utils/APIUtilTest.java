@@ -23,9 +23,14 @@ package org.wso2.carbon.apimgt.impl.utils;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.util.threadpool.ThreadFactory;
+import org.apache.axis2.util.threadpool.ThreadPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.SSLSocketFactory;
@@ -78,6 +83,7 @@ import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.keymgt.client.SubscriberKeyMgtClient;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.governance.api.common.dataobjects.GovernanceArtifact;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
 import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
@@ -106,6 +112,7 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.utils.CarbonUtils;
+import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -139,7 +146,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
         RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
-        APIManagerComponent.class })
+        APIManagerComponent.class, TenantAxisUtils.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -3288,5 +3295,76 @@ public class APIUtilTest {
         Assert.assertTrue(APIUtil.isAPIGatewayKeyCacheEnabled());
     }
 
-    
+    @Test
+    public void testIsValidWSDLURL() {
+        String sampleHttpsURL = "https://mocked.test.wso2.org/sampleService?wsdl";
+        String sampleHttpURL = "http://mocked.test.wso2.org/sampleService?wsdl";
+        String sampleFileURL = "file:///home/wso2wsas/repository/mockedFile.wsdl";
+        String sampleRegistryURL = "/registry/path/to/wsdl";
+        String sampleInvalidURL = "invalid_https://mocked.test.wso2.org/sampleService?wsdl";
+
+        Assert.assertTrue(APIUtil.isValidWSDLURL(sampleHttpsURL, true));
+        Assert.assertEquals(false, APIUtil.isValidWSDLURL(sampleInvalidURL, false));
+        Assert.assertTrue(APIUtil.isValidWSDLURL(sampleHttpURL, true));
+        Assert.assertTrue(APIUtil.isValidWSDLURL(sampleFileURL, true));
+        Assert.assertTrue(APIUtil.isValidWSDLURL(sampleRegistryURL, true));
+        Assert.assertEquals(false, APIUtil.isValidWSDLURL(sampleInvalidURL, true));
+        Assert.assertEquals(false, APIUtil.isValidWSDLURL(null, false));
+    }
+
+    @Test
+    public void testLoadTenantConfig() throws Exception {
+        String tenantDomain = "sample.com";
+
+        ConfigurationContextService mockedConfigurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext mockedConfigurationContext = Mockito.mock(ConfigurationContext.class);
+        ThreadFactory mockedThreadFactory = new ThreadPool();
+        Mockito.when(mockedConfigurationContext.getThreadPool()).thenReturn(mockedThreadFactory);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(mockedConfigurationContextService);
+        Mockito.when(mockedConfigurationContextService.getServerConfigContext()).thenReturn(mockedConfigurationContext);
+        APIUtil.loadTenantConfig(tenantDomain);
+    }
+
+    @Test
+    public void testLoadTenantConfigBlockingMode() throws Exception {
+        String tenantDomain = "sample.com";
+
+        ConfigurationContextService mockedConfigurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext mockedConfigurationContext = Mockito.mock(ConfigurationContext.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(mockedConfigurationContextService);
+        Mockito.when(mockedConfigurationContextService.getServerConfigContext()).thenReturn(mockedConfigurationContext);
+        APIUtil.loadTenantConfigBlockingMode(tenantDomain);
+
+        PowerMockito.mockStatic(TenantAxisUtils.class);
+        AxisConfiguration mockedAxisConfiguration = Mockito.mock(AxisConfiguration.class);
+        PowerMockito.when(TenantAxisUtils.getTenantAxisConfiguration(tenantDomain, mockedConfigurationContext))
+                .thenReturn(mockedAxisConfiguration);
+        APIUtil.loadTenantConfigBlockingMode(tenantDomain);
+        PowerMockito.verifyStatic(TenantAxisUtils.class, Mockito.atLeastOnce());
+    }
+
+    @Test
+    public void testExtractCustomerKeyFromAuthHeader() throws Exception {
+        Map sampleHeadersMap = new HashMap();
+        String extractedCustomerKeyFromAuthHeader = APIUtil.extractCustomerKeyFromAuthHeader(sampleHeadersMap);
+        Assert.assertNull(extractedCustomerKeyFromAuthHeader);
+        String bearerToken = UUID.randomUUID().toString();
+        String lowerCaseHeader = "oauth realm=\"Example\",\n" + "    Bearer \"" + bearerToken + "\",\n"
+                + "    oauth_token=\"ad180jjd733klru7\",\n" + "    oauth_signature_method=\"HMAC-SHA1\",\n"
+                + "    oauth_signature=\"wOJIO9A2W5mFwDgiDvZbTSMK%2FPY%3D\",\n" + "    oauth_timestamp=\"137131200\",\n"
+                + "    oauth_nonce=\"4572616e48616d6d65724c61686176\",\n" + "    oauth_version=\"1.0\"";
+        String upperCaseHeader = "OAuth realm=\"Example\",\n" + "    oauth_consumer_key=\"0685bd9184jfhq22\",\n"
+                + "    oauth_token=\"ad180jjd733klru7\",\n" + "    oauth_signature_method=\"HMAC-SHA1\",\n"
+                + "    oauth_signature=\"wOJIO9A2W5mFwDgiDvZbTSMK%2FPY%3D\",\n" + "    oauth_timestamp=\"137131200\",\n"
+                + "    oauth_nonce=\"4572616e48616d6d65724c61686176\",\n" + "    oauth_version=\"1.0\"";
+        sampleHeadersMap.put(HttpHeaders.AUTHORIZATION, lowerCaseHeader);
+        extractedCustomerKeyFromAuthHeader = APIUtil.extractCustomerKeyFromAuthHeader(sampleHeadersMap);
+        Assert.assertEquals(bearerToken, extractedCustomerKeyFromAuthHeader);
+        sampleHeadersMap.put(HttpHeaders.AUTHORIZATION, upperCaseHeader);
+        extractedCustomerKeyFromAuthHeader = APIUtil.extractCustomerKeyFromAuthHeader(sampleHeadersMap);
+        // Should Return `NULL` because `Bearer` attribute is not present
+        Assert.assertNull(extractedCustomerKeyFromAuthHeader);
+    }
 }
