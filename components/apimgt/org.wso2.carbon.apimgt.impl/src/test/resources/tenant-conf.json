@@ -81,5 +81,7 @@
     "SubscriberRole" : {
       "CreateOnTenantLoad" : true
     }
-  }
+  },
+  "DisplayMultipleVersions" : true,
+  "DisplayAllAPIs": true
 }

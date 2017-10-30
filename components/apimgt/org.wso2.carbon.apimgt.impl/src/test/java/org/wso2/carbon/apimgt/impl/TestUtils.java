@@ -204,4 +204,13 @@ public class TestUtils {
         subscriptionPolicy.setDefaultQuotaPolicy(quotaPolicy);
         return subscriptionPolicy;
     }
+
+    public static TenantManager getTenantManager(){
+        ServiceReferenceHolder serviceReferenceHolder = getServiceReferenceHolder();
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        PowerMockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        PowerMockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+        return tenantManager;
+    }
 }
