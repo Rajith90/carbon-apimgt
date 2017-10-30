@@ -28,6 +28,7 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.util.threadpool.ThreadFactory;
 import org.apache.axis2.util.threadpool.ThreadPool;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
@@ -88,6 +89,7 @@ import org.wso2.carbon.governance.api.common.dataobjects.GovernanceArtifact;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
 import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
+import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifactImpl;
 import org.wso2.carbon.governance.api.util.GovernanceArtifactConfiguration;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
@@ -96,6 +98,7 @@ import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.ResourceImpl;
 import org.wso2.carbon.registry.core.Tag;
 import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
@@ -120,6 +123,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -136,6 +140,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
@@ -146,7 +152,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
         RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
-        APIManagerComponent.class, TenantAxisUtils.class })
+        APIManagerComponent.class, TenantAxisUtils.class, IOUtils.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -3367,4 +3373,182 @@ public class APIUtilTest {
         // Should Return `NULL` because `Bearer` attribute is not present
         Assert.assertNull(extractedCustomerKeyFromAuthHeader);
     }
+
+    @Test
+    public void testAddDefinedAllSequencesToRegistry() throws Exception {
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(true, false);
+        Resource resource = new ResourceImpl();
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+        Mockito.when(userRegistry.put(Mockito.anyString(), (Resource) Mockito.any())).thenThrow(RegistryException.class)
+                .thenReturn("");
+        APIUtil.addDefinedAllSequencesToRegistry(userRegistry, "/custom"); // covers the logged error scenario.
+        File file = Mockito.mock(File.class);
+        PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(file);
+        File file1 = Mockito.mock(File.class);
+        File[] files = new File[] { file1, new File("customNew") };
+        Mockito.when(file1.getName()).thenReturn(APIConstants.API_CUSTOM_SEQ_JSON_FAULT);
+        PowerMockito.when(file.listFiles()).thenReturn(files);
+        PowerMockito.mockStatic(IOUtils.class);
+        PowerMockito.doNothing().when(IOUtils.class, "closeQuietly", (InputStream) Mockito.any());
+        FileInputStream fileInputStream = Mockito.mock(FileInputStream.class);
+        PowerMockito.whenNew(FileInputStream.class).withAnyArguments().thenReturn(fileInputStream);
+
+        try {
+            APIUtil.addDefinedAllSequencesToRegistry(userRegistry, "/custom");
+            Assert.fail("Registry Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while saving defined sequences to the registry"));
+        }
+        Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(true, false);
+        String regResourcePath =
+                APIConstants.API_CUSTOM_SEQUENCE_LOCATION + '/' + APIConstants.API_CUSTOM_SEQUENCE_TYPE_FAULT + '/'
+                        + APIConstants.API_CUSTOM_SEQ_JSON_FAULT;
+        Resource resource1 = new ResourceImpl();
+        String oldFaultStatHandler = "org.wso2.carbon.apimgt.usage.publisher.APIMgtFaultHandler";
+        resource1.setContent(oldFaultStatHandler.getBytes(Charset.defaultCharset()));
+        Mockito.when(userRegistry.get(regResourcePath)).thenReturn(resource1);
+        APIUtil.addDefinedAllSequencesToRegistry(userRegistry, APIConstants.API_CUSTOM_SEQUENCE_TYPE_FAULT);
+        Mockito.verify(userRegistry, Mockito.times(3)).put(Mockito.anyString(), (Resource) Mockito.any());
+        PowerMockito.when(IOUtils.toByteArray((InputStream) Mockito.any())).thenThrow(IOException.class);
+        try {
+            APIUtil.addDefinedAllSequencesToRegistry(userRegistry, "/custom");
+            Assert.fail("IO Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while reading defined sequence"));
+        }
+
+    }
+
+    @Test
+    public void testWriteDefinedSequencesToTenantRegistry() throws Exception {
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(true, false);
+        Resource resource = new ResourceImpl();
+        Mockito.when(userRegistry.newResource()).thenReturn(resource);
+        Mockito.when(userRegistry.put(Mockito.anyString(), (Resource) Mockito.any())).thenReturn("");
+        File file = Mockito.mock(File.class);
+        PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(file);
+        File file1 = Mockito.mock(File.class);
+        File[] files = new File[] { file1, new File("customNew") };
+        Mockito.when(file1.getName()).thenReturn(APIConstants.API_CUSTOM_SEQ_JSON_FAULT);
+        PowerMockito.when(file.listFiles()).thenReturn(files);
+        PowerMockito.mockStatic(IOUtils.class);
+        PowerMockito.doNothing().when(IOUtils.class, "closeQuietly", (InputStream) Mockito.any());
+        FileInputStream fileInputStream = Mockito.mock(FileInputStream.class);
+        PowerMockito.whenNew(FileInputStream.class).withAnyArguments().thenReturn(fileInputStream);
+
+        Mockito.when(userRegistry.resourceExists(Mockito.anyString())).thenReturn(true, false);
+        String regResourcePath =
+                APIConstants.API_CUSTOM_SEQUENCE_LOCATION + '/' + APIConstants.API_CUSTOM_SEQUENCE_TYPE_FAULT + '/'
+                        + APIConstants.API_CUSTOM_SEQ_JSON_FAULT;
+        Resource resource1 = new ResourceImpl();
+        String oldFaultStatHandler = "org.wso2.carbon.apimgt.usage.publisher.APIMgtFaultHandler";
+        resource1.setContent(oldFaultStatHandler.getBytes(Charset.defaultCharset()));
+        Mockito.when(userRegistry.get(regResourcePath)).thenReturn(resource1);
+
+        int tenantID = -1234;
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(registryService.getGovernanceSystemRegistry(eq(tenantID))).thenThrow(RegistryException.class)
+                .thenReturn(userRegistry);
+        try {
+            APIUtil.writeDefinedSequencesToTenantRegistry(tenantID);
+            Assert.fail("Registry Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(
+                    e.getMessage().contains("Error while saving defined sequences to the registry of tenant with id"));
+        }
+        APIUtil.writeDefinedSequencesToTenantRegistry(tenantID);
+        Mockito.verify(userRegistry, Mockito.times(5)).put(Mockito.anyString(), (Resource) Mockito.any());
+    }
+
+    @Test
+    public void testSearchAPIsByURLPattern() throws Exception {
+        UserRegistry userRegistry = Mockito.mock(UserRegistry.class);
+        GenericArtifactManager genericArtifactManager = Mockito.mock(GenericArtifactManager.class);
+        PowerMockito.whenNew(GenericArtifactManager.class).withArguments(userRegistry, APIConstants.API_KEY)
+                .thenReturn(genericArtifactManager);
+        PowerMockito.mockStatic(GovernanceUtils.class);
+        PowerMockito.doNothing().when(GovernanceUtils.class, "loadGovernanceArtifacts", userRegistry);
+        GovernanceArtifactConfiguration governanceArtifactConfiguration = Mockito
+                .mock(GovernanceArtifactConfiguration.class);
+        PowerMockito.when(GovernanceUtils.findGovernanceArtifactConfiguration(APIConstants.API_KEY, userRegistry))
+                .thenReturn(governanceArtifactConfiguration);
+        Assert.assertEquals(0, APIUtil.searchAPIsByURLPattern(userRegistry, "pizza", 1, 5).get("length"));
+        GenericArtifact genericArtifact = new GenericArtifactImpl(new QName("sample"), "API");
+        GenericArtifact genericArtifact1 = new GenericArtifactImpl(new QName("sample1"), "API1");
+        genericArtifact.setAttribute(APIConstants.API_OVERVIEW_NAME, "pizza_api");
+        genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_NAME, "calculator_api");
+        GenericArtifact[] genericArtifacts = new GenericArtifact[] { genericArtifact, genericArtifact1 };
+        Mockito.when(genericArtifactManager.findGenericArtifacts(Mockito.anyMap())).thenThrow(GovernanceException.class)
+                .thenReturn(genericArtifacts);
+
+        try {
+            APIUtil.searchAPIsByURLPattern(userRegistry, "pizza", 1, 5);
+            Assert.fail("Governance Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Failed to search APIs with input url-pattern"));
+        }
+
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        try {
+            PrivilegedCarbonContext.startTenantFlow();
+            PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                    .setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
+            APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                    .mock(APIManagerConfigurationService.class);
+            PowerMockito.mockStatic(ServiceReferenceHolder.class);
+            ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+            PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+            Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                    .thenReturn(apiManagerConfigurationService);
+            RegistryService registryService = Mockito.mock(RegistryService.class);
+            Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+            Mockito.when(registryService.getGovernanceSystemRegistry(Mockito.anyInt())).thenReturn(userRegistry);
+            APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+            Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration())
+                    .thenThrow(APIManagementException.class).thenReturn(apiManagerConfiguration);
+            Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISPLAY_ALL_APIS))
+                    .thenReturn("true", "false");
+            genericArtifact.setAttribute(APIConstants.API_OVERVIEW_STATUS, APIConstants.PUBLISHED);
+            genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_STATUS, APIConstants.PUBLISHED);
+            ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+            PowerMockito.mockStatic(ApiMgtDAO.class);
+            PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+            Mockito.when(apiMgtDAO.getAPIID((APIIdentifier) Mockito.any(), (Connection) Mockito.any())).thenReturn(1);
+            Resource resource = new ResourceImpl();
+            Mockito.when(userRegistry.get(Mockito.anyString())).thenReturn(resource);
+            PowerMockito.mockStatic(MultitenantUtils.class);
+            PowerMockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).thenReturn("test.com");
+            RealmService realmService = Mockito.mock(RealmService.class);
+            Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+            TenantManager tenantManager = Mockito.mock(TenantManager.class);
+            Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+            ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+            Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+            Mockito.when(userRegistry.getTags(Mockito.anyString())).thenReturn(new Tag[0]);
+            String corsJsonString = "{corsConfigurationEnabled:false}";
+            genericArtifact.setAttribute(APIConstants.API_OVERVIEW_CORS_CONFIGURATION, corsJsonString);
+            genericArtifact.setAttribute(APIConstants.API_OVERVIEW_PROVIDER, "admin");
+            genericArtifact.setAttribute(APIConstants.API_OVERVIEW_VERSION, "1.0.0");
+            genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_CORS_CONFIGURATION, corsJsonString);
+            genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_PROVIDER, "admin");
+            genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_VERSION, "1.0.0");
+            try {
+                APIUtil.searchAPIsByURLPattern(userRegistry, "pizza", 1, 5);
+                Assert.fail("APIM Exception Not thrown for error scenario");
+            } catch (APIManagementException e) {
+                Assert.assertTrue(e.getMessage().contains("Failed to search APIs with input url-pattern"));
+            }
+            Assert.assertEquals(2, APIUtil.searchAPIsByURLPattern(userRegistry, "pizza", 0, 5).get("length"));
+        } finally {
+            PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
 }
