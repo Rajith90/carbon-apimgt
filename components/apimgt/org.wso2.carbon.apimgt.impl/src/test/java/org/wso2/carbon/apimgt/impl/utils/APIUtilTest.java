@@ -109,10 +109,10 @@ import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -129,7 +129,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import javax.xml.stream.XMLStreamException;
 
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
@@ -3065,13 +3064,14 @@ public class APIUtilTest {
         APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
         PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
         PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
-                .API_TENANT_CONF_LOCATION)).thenThrow(new UserStoreException("UserStoreException thrown when tenant-config.json"));
+                .API_TENANT_CONF_LOCATION)).thenThrow(new UserStoreException("UserStoreException thrown when " +
+                "tenant-config.json"));
 
         try {
             APIUtil.isAllowDisplayMultipleVersions();
             Assert.fail("Expected APIManagementException has not been thrown");
         } catch (APIManagementException e) {
-            Assert.assertEquals(e.getMessage(), "UserStoreException thrown when tenant-config.json");
+            Assert.assertEquals(e.getMessage(), "UserStoreException thrown when getting tenant-config.json");
         }
     }
 
@@ -3173,4 +3173,120 @@ public class APIUtilTest {
                     "is enabled in tenant level");
         }
     }
+
+
+    @Test
+    public void testIsAllowDisplayAPIsWithMultipleStatusUserStoreExceptionWhenConfiguredInTenantLevel() throws
+            Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenThrow(new UserStoreException("UserStoreException thrown when getting " +
+                "tenant-config.json"));
+
+        try {
+            APIUtil.isAllowDisplayAPIsWithMultipleStatus();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "UserStoreException thrown when getting tenant-config.json");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayAPIsWithMultipleStatusRegistryExceptionWhenConfiguredInTenantLevel() throws
+            Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenThrow(new org.wso2.carbon.registry.core.exceptions.RegistryException
+                ("RegistryException thrown when getting tenant-config.json"));
+
+        try {
+            APIUtil.isAllowDisplayAPIsWithMultipleStatus();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "RegistryException thrown when getting tenant-config.json");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayAPIsWithMultipleStatusParseExceptionWhenConfiguredInTenantLevel() throws Exception {
+
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn("{\"invalid\"}");
+
+        try {
+            APIUtil.isAllowDisplayAPIsWithMultipleStatus();
+            Assert.fail("Expected APIManagementException has not been thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "ParseException thrown when parsing the tenant-config.json content");
+        }
+    }
+
+    @Test
+    public void testIsAllowDisplayAPIsWithMultipleStatusWhenConfiguredInGlobally() throws Exception {
+        String tenantDomain = "wso2.com";
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain);
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withNoArguments().thenReturn(apimRegistryService);
+        PowerMockito.when(apimRegistryService.getConfigRegistryResourceContent(tenantDomain, APIConstants
+                .API_TENANT_CONF_LOCATION)).thenReturn(null);
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+
+        //When configuration is not found in api-manager.xml
+        try {
+            Assert.assertFalse(APIUtil.isAllowDisplayAPIsWithMultipleStatus());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayMultipleVersions' " +
+                    "is enabled in tenant level");
+        }
+
+        //When configuration is found in api-manager.xml
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISPLAY_ALL_APIS))
+                .thenReturn("true");
+        try {
+            Assert.assertTrue(APIUtil.isAllowDisplayAPIsWithMultipleStatus());
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected APIManagementException occurred while checking whether 'DisplayMultipleVersions' " +
+                    "is enabled in tenant level");
+        }
+    }
+
+    @Test
+    public void testIsAPIGatewayKeyCacheEnabled() {
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.GATEWAY_TOKEN_CACHE_ENABLED)).thenReturn
+                ("true");
+        Assert.assertTrue(APIUtil.isAPIGatewayKeyCacheEnabled());
+    }
+
+    
 }

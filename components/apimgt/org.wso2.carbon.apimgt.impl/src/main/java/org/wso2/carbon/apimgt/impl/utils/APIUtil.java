@@ -3654,7 +3654,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
@@ -3699,7 +3699,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
