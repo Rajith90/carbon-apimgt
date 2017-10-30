@@ -182,9 +182,6 @@ public class APIUtilTestCase {
         Mockito.when(resource.getContentStream()).thenReturn(content);
 
         APIUtil.createSelfSignUpRoles(tenantId);
-//        } catch (APIManagementException e) {
-//            Assert.assertTrue(e.getMessage().startsWith("Error while saving tenant conf to the registry"));
-//        }
     }
 
     @Test
