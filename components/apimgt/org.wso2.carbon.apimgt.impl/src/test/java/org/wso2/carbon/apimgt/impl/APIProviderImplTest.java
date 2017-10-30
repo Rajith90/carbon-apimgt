@@ -19,6 +19,7 @@
 package org.wso2.carbon.apimgt.impl;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -402,6 +403,11 @@ public class APIProviderImplTest {
         List<String> sequenceList = apiProvider.getCustomInSequences();
         Assert.assertNotNull(sequenceList);
         Assert.assertEquals(1, sequenceList.size());
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomOutSequences(apiId);
+
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -427,6 +433,8 @@ public class APIProviderImplTest {
         } catch(APIManagementException e) {
             Assert.assertEquals(msg1, e.getMessage());
         }
+
+
     }
 
     @Test
@@ -438,6 +446,10 @@ public class APIProviderImplTest {
         List<String> sequenceList = apiProvider.getCustomOutSequences();
         Assert.assertNotNull(sequenceList);
         Assert.assertEquals(1, sequenceList.size());
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomOutSequences();
 
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
@@ -475,6 +487,10 @@ public class APIProviderImplTest {
         List<String> sequenceList = apiProvider.getCustomFaultSequences();
         Assert.assertNotNull(sequenceList);
         Assert.assertEquals(1, sequenceList.size());
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomFaultSequences();
 
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
@@ -541,6 +557,11 @@ public class APIProviderImplTest {
                 apiId);
         List<String> sequenceList = apiProvider.getCustomApiInSequences(apiId);
         Assert.assertEquals(1, sequenceList.size());
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomApiInSequences(apiId);
+
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -559,7 +580,7 @@ public class APIProviderImplTest {
             Assert.assertEquals(msg, e.getMessage());
         }
 
-        //Registry Exception
+            //Registry Exception
         PowerMockito.when(registryService.getGovernanceSystemRegistry(Matchers.anyInt())).thenThrow(
                 RegistryException.class);
         String msg1 = "Error while retrieving registry for tenant -1";
@@ -579,6 +600,10 @@ public class APIProviderImplTest {
         List<String> sequenceList = apiProvider.getCustomApiOutSequences(apiId);
         Assert.assertNotNull(sequenceList);
         Assert.assertEquals(1, sequenceList.size());
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomApiOutSequences(apiId);
 
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
@@ -619,6 +644,10 @@ public class APIProviderImplTest {
         Assert.assertNotNull(sequenceList);
         Assert.assertEquals(1, sequenceList.size());
 
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomApiFaultSequences(apiId);
+
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -646,6 +675,7 @@ public class APIProviderImplTest {
         } catch(APIManagementException e) {
             Assert.assertEquals(msg1, e.getMessage());
         }
+
     }
 
     @Test
@@ -3482,7 +3512,11 @@ public class APIProviderImplTest {
         Assert.assertEquals(2, sequenceList.size());
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
-        
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomFaultSequences(apiId);
+
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -3525,7 +3559,11 @@ public class APIProviderImplTest {
         Assert.assertEquals(2, sequenceList.size());
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
-        
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomInSequences(apiId);
+
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
@@ -3567,6 +3605,10 @@ public class APIProviderImplTest {
         Assert.assertEquals(2, sequenceList.size());
         Assert.assertTrue(sequenceList.contains("fault-seq"));
         Assert.assertTrue(sequenceList.contains("custom-fault-seq"));
+
+        // OMException when building OMElement
+        PowerMockito.when(APIUtil.buildOMElement(Matchers.any(InputStream.class))).thenThrow(new OMException());
+        apiProvider.getCustomOutSequences(apiId);
         
         //org.wso2.carbon.registry.api.RegistryException
         ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
