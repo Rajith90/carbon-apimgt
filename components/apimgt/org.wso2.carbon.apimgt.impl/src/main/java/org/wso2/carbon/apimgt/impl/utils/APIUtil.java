@@ -1217,7 +1217,7 @@ public final class APIUtil {
                 default:
                     throw new APIManagementException("Unknown sourceType " + sourceType + " provided for documentation");
             }
-            //Documentation Source URL is a required field in the documentation.rxt for migrated setups
+            //Documentation Source URL is a required field in the documentation.rxts for migrated setups
             //Therefore setting a default value if it is not set. 
             if (documentation.getSourceUrl() == null) {
                 documentation.setSourceUrl(" ");
@@ -3557,7 +3557,7 @@ public final class APIUtil {
         }
     }
 
-    public static String removeAnySymbolFromUriTempate(String uriTemplate) {
+    public static String removeAnySymbolFromUriTemplate(String uriTemplate) {
         if (uriTemplate != null) {
             int anySymbolIndex = uriTemplate.indexOf("/*");
             if (anySymbolIndex != -1) {
@@ -3654,7 +3654,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
@@ -3699,7 +3699,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
@@ -3909,7 +3909,7 @@ public final class APIUtil {
         for (URITemplate template : uriTemplates) {
             List<Operation> ops;
             List<Parameter> parameters;
-            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTempate(template.getUriTemplate());
+            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTemplate(template.getUriTemplate());
             /* path exists in uriTemplateDefinitions */
             if (uriTemplateDefinitions.get(path) != null) {
                 ops = uriTemplateDefinitions.get(path);
