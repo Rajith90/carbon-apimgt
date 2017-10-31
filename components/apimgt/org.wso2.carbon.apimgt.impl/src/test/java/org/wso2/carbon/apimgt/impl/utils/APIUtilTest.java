@@ -23,6 +23,9 @@ package org.wso2.carbon.apimgt.impl.utils;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.client.Options;
+import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.util.threadpool.ThreadFactory;
@@ -84,6 +87,8 @@ import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.keymgt.client.SubscriberKeyMgtClient;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.commons.stub.loggeduserinfo.LoggedUserInfo;
+import org.wso2.carbon.core.commons.stub.loggeduserinfo.LoggedUserInfoAdminStub;
 import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.governance.api.common.dataobjects.GovernanceArtifact;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
@@ -93,6 +98,9 @@ import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifactImpl;
 import org.wso2.carbon.governance.api.util.GovernanceArtifactConfiguration;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
+import org.wso2.carbon.identity.user.profile.stub.UserProfileMgtServiceStub;
+import org.wso2.carbon.identity.user.profile.stub.UserProfileMgtServiceUserProfileExceptionException;
+import org.wso2.carbon.identity.user.profile.stub.types.UserProfileDTO;
 import org.wso2.carbon.registry.core.ActionConstants;
 import org.wso2.carbon.registry.core.Collection;
 import org.wso2.carbon.registry.core.Registry;
@@ -119,7 +127,6 @@ import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -127,6 +134,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -3549,6 +3557,151 @@ public class APIUtilTest {
         } finally {
             PrivilegedCarbonContext.endTenantFlow();
         }
+    }
+
+    @Test
+    public void testGetLoggedInUserInfo() throws Exception {
+        LoggedUserInfoAdminStub loggedUserInfoAdminStub = Mockito.mock(LoggedUserInfoAdminStub.class);
+        PowerMockito.whenNew(LoggedUserInfoAdminStub.class).withArguments(Mockito.any(), Mockito.anyString())
+                .thenReturn(loggedUserInfoAdminStub);
+        ServiceClient serviceClient = Mockito.mock(ServiceClient.class);
+        Options options = Mockito.mock(Options.class);
+        Mockito.when(loggedUserInfoAdminStub._getServiceClient()).thenReturn(serviceClient);
+        Mockito.when(serviceClient.getOptions()).thenReturn(options);
+        LoggedUserInfo loggedUserInfo = new LoggedUserInfo();
+        loggedUserInfo.setUserName("admin");
+        Mockito.when(loggedUserInfoAdminStub.getUserInfo()).thenReturn(loggedUserInfo);
+        Assert.assertEquals("admin", APIUtil.getLoggedInUserInfo("cookie", "/loggedInService").getUserName());
+    }
+
+    @Test
+    public void testGetUserDefaultProfile() throws Exception {
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        String url = "https://localhost:9443";
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_URL))
+                .thenReturn(url);
+        UserProfileMgtServiceStub userProfileMgtServiceStub = Mockito.mock(UserProfileMgtServiceStub.class);
+        ConfigurationContextService configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(configurationContextService);
+        Mockito.when(configurationContextService.getClientConfigContext()).thenReturn(configurationContext);
+        String completeURL = url + APIConstants.USER_PROFILE_MGT_SERVICE;
+        PowerMockito.whenNew(UserProfileMgtServiceStub.class).withArguments(configurationContext, completeURL)
+                .thenThrow(AxisFault.class).thenReturn(userProfileMgtServiceStub);
+        ServiceClient serviceClient = Mockito.mock(ServiceClient.class);
+        Mockito.when(userProfileMgtServiceStub._getServiceClient()).thenReturn(serviceClient);
+        PowerMockito.mockStatic(CarbonUtils.class);
+        PowerMockito.doNothing().when(CarbonUtils.class, "setBasicAccessSecurityHeaders", Mockito.anyString(),
+                Mockito.anyString(),Mockito.any());
+        UserProfileDTO userProfileDTO = new UserProfileDTO();
+        userProfileDTO.setProfileName(APIConstants.USER_DEFAULT_PROFILE);
+        UserProfileDTO[] userProfileDTOs = new UserProfileDTO[]{userProfileDTO};
+        Mockito.when(userProfileMgtServiceStub.getUserProfiles(Mockito.anyString())).thenThrow(RemoteException.class)
+                .thenThrow(UserProfileMgtServiceUserProfileExceptionException.class).
+                thenReturn(userProfileDTOs);
+        Assert.assertNull(APIUtil.getUserDefaultProfile("admin"));
+
+        try {
+            APIUtil.getUserDefaultProfile("admin");
+            Assert.fail("Remote Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while getting profile of user"));
+        }
+        try {
+            APIUtil.getUserDefaultProfile("admin");
+            Assert.fail("User Profile Mgt Service Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while getting profile of user"));
+        }
+        Assert.assertEquals(APIConstants.USER_DEFAULT_PROFILE, APIUtil.getUserDefaultProfile("admin").getProfileName());
+        userProfileDTO.setProfileName("default1");
+        Assert.assertNull(APIUtil.getUserDefaultProfile("admin"));
+
+    }
+
+    @Test
+    public void testGetListOfRoles() throws APIManagementException {
+        String user = "John";
+        AuthorizationManager authorizationManager = Mockito.mock(AuthorizationManager.class);
+        PowerMockito.mockStatic(AuthorizationManager.class);
+        PowerMockito.when(AuthorizationManager.getInstance()).thenReturn(authorizationManager);
+        String[] roles = new String[]{"role1", "role2"};
+        Mockito.when(authorizationManager.getRolesOfUser(user)).thenReturn(roles);
+        Assert.assertEquals(2, APIUtil.getListOfRoles(user).length);
+        try {
+            APIUtil.getListOfRoles(null);
+            Assert.fail("APIM  Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Attempt to execute privileged operation as"));
+        }
+    }
+
+    @Test
+    public void testGetListOfRolesQuietly() throws APIManagementException {
+        String user = "John";
+        AuthorizationManager authorizationManager = Mockito.mock(AuthorizationManager.class);
+        PowerMockito.mockStatic(AuthorizationManager.class);
+        PowerMockito.when(AuthorizationManager.getInstance()).thenReturn(authorizationManager);
+        String[] roles = new String[]{"role1", "role2", "role3"};
+        Mockito.when(authorizationManager.getRolesOfUser(user)).thenReturn(roles);
+        Assert.assertEquals(3, APIUtil.getListOfRolesQuietly(user).length);
+        Assert.assertEquals(0, APIUtil.getListOfRolesQuietly(null).length);
+    }
+
+    @Test
+    public void testSetFilePermission() throws UserStoreException, APIManagementException {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        org.wso2.carbon.user.core.UserRealm userRealm = Mockito.mock(org.wso2.carbon.user.core.UserRealm.class);
+        org.wso2.carbon.user.core.AuthorizationManager authorizationManager = Mockito
+                .mock(org.wso2.carbon.user.core.AuthorizationManager.class);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantUserRealm(Mockito.anyInt())).thenThrow(UserStoreException.class)
+                .thenReturn(userRealm);
+        Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authorizationManager);
+        Mockito.when(
+                authorizationManager.isRoleAuthorized(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(false);
+
+        try {
+            APIUtil.setFilePermission("/repository/conf");
+            Assert.fail("APIM  Exception Not thrown for error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while setting up permissions for file location"));
+        }
+        APIUtil.setFilePermission("/repository/conf");
+        Mockito.verify(authorizationManager, Mockito.times(1))
+                .isRoleAuthorized(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+
+    }
+
+    @Test
+    public void testCheckPermissionQuietly() throws APIManagementException {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_DISABLE_PERMISSION_CHECK))
+                .thenReturn("true", "false");
+        //permission check disabled scenario
+        Assert.assertTrue(APIUtil.checkPermissionQuietly("john", "create"));
+        Assert.assertFalse(APIUtil.checkPermissionQuietly(null, "create"));
     }
 
 }
