@@ -1,28 +1,23 @@
 <div class="main-content">
-    <h1><a name="Tag (Collection)"></a>Tag (Collection)</h1>
+    <h1><a name="Application (individual)"></a>Application (individual)</h1>
 
     
         
             <hr/>
-            <h3 class="operation-heading"><a name="tagsGet"></a>Get all tags
- <br><small>GET https://apis.wso2.com/api/am/store/v0.11/tags</small></h3>
+            <h3 class="operation-heading"><a name="applicationsApplicationIdKeysKeyTypePut"></a>Update grant types and callback url of an application
+ <br><small>PUT https://apis.wso2.com/api/am/store/v0.11/applications/{applicationId}/keys/{keyType}</small></h3>
             <p class="marked"></p>
 
-            <p class="marked">This operation can be used to retrieve a list of tags that are already added to APIs.
-
-`X-WSO2-Tenant` header can be used to retrive tags that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user&#39;s tenant associated with the access token will be used.
-
-**NOTE:**
-* This operation does not require an Authorization header by default. But in order to see a restricted API&#39;s tags, you need to provide Authorization header.
+            <p class="marked">This operation can be used to update grant types and callback url of an application. (Consumer Key and Consumer Secret are ignored) Upon succesfull you will retrieve the updated key details as the response.
 </p>
 
             <h4 class="section-heading">OAuth 2.0 Scope</h4>
             
+                <code>apim:subscribe</code><span class="label label-primary" data-toggle="tooltip" title="This resource is secured with an OAuth 2.0 scope. You need to provide an access token which has 'apim:subscribe' scope using Authorization header. Please see 'Getting Started' section for more information." style="margin-left: 10px">i</span>
             
-                <p>Not required</p>
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#request-tagsGet">
+            <div class="pointer" data-toggle="collapse" data-target="#request-applicationsApplicationIdKeysKeyTypePut">
                 <h4 class="section-heading">
                     Request
                     
@@ -32,12 +27,23 @@
             </div>
 
             
-                <div id="request-tagsGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/tags
+                <div id="request-applicationsApplicationIdKeysKeyTypePut"class="pre collapse in"><code class="json">PUT https://localhost:9443/api/am/store/v0.11/applications/896658a0-b4ee-4535-bbfa-806c894a4015/keys/SANDBOX
+Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
+{
+   &quot;supportedGrantTypes&quot;: [
+     &quot;refresh_token&quot;,
+     &quot;urn:ietf:params:oauth:grant-type:saml2-bearer&quot;,
+     &quot;password&quot;,
+     &quot;client_credentials&quot;,
+     &quot;iwa:ntlm&quot;
+   ],
+   &quot;callbackUrl&quot;: &quot;http://sample/com/callback&quot;
+ }
 </code></div>
             
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#response-tagsGet">
+            <div class="pointer" data-toggle="collapse" data-target="#response-applicationsApplicationIdKeysKeyTypePut">
                 <h4 class="section-heading">
                     Response
                     
@@ -46,34 +52,29 @@
                 </h4>
             </div>
             
-                <div id="response-tagsGet" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
+                <div id="response-applicationsApplicationIdKeysKeyTypePut" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
 Content-Type: application/json
 
-{
-   &quot;previous&quot;: &quot;&quot;,
-   &quot;list&quot;:    [
-            {
-         &quot;weight&quot;: 1,
-         &quot;name&quot;: &quot;mobile&quot;
-      },
-            {
-         &quot;weight&quot;: 1,
-         &quot;name&quot;: &quot;multimedia&quot;
-      },
-            {
-         &quot;weight&quot;: 1,
-         &quot;name&quot;: &quot;phone&quot;
-      }
-   ],
-   &quot;count&quot;: 3,
-   &quot;next&quot;: &quot;&quot;
-}</code></div>
+ {
+      &quot;consumerKey&quot;: &quot;QwEtRHd4NJkcFuRUfAT5af8XEEoa&quot;,
+      &quot;consumerSecret&quot;: &quot;7Fairfeu321ENjOR9w2xgJl3i70a&quot;,
+       &quot;supportedGrantTypes&quot;: [
+        &quot;refresh_token&quot;,
+        &quot;urn:ietf:params:oauth:grant-type:saml2-bearer&quot;,
+        &quot;password&quot;,
+        &quot;client_credentials&quot;,
+        &quot;iwa:ntlm&quot;
+      ],
+      &quot;callbackUrl&quot;: &quot;http://sample/com/callback&quot;,
+      &quot;keyState&quot;: &quot;COMPLETED&quot;,
+      &quot;keyType&quot;: &quot;PRODUCTION&quot;}
+</code></div>
             
             
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl &quot;https://localhost:9443/api/am/store/v0.11/tags&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X PUT -d @data.json &quot;https://localhost:9443/api/am/store/v0.11/applications/c30f3a6e-ffa4-4ae7-afce-224d1f820524/keys/SANDBOX&quot;</code></div>
             
             
 
@@ -99,83 +100,20 @@ Content-Type: application/json
                     <tr>
                         <td class="parameter">
                             
-                            <span class="param-in">Query </span>
                             
-                            
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>limit</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Maximum size of resource array to return.
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                Integer
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked">25</p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            <span class="param-in">Query </span>
-                            
+                            <span class="param-in">Path </span>
                             
                             
                         </td>
                         <td class="param-name">
-                            <p>offset</p>
+                            <p>applicationId</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">Starting point within the complete list of items qualified.
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                Integer
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked">0</p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>X-WSO2-Tenant</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">For cross-tenant invocations, this is used to specify the tenant domain, where the resource need to be
-  retirieved from.
+                            <p class="param-description marked">Application Identifier consisting of the UUID of the Application.
 </p>
                             
                         </td>
@@ -194,20 +132,27 @@ Content-Type: application/json
                         <td class="parameter">
                             
                             
+                            <span class="param-in">Path </span>
                             
-                            <span class="param-in">Header </span>
                             
                         </td>
                         <td class="param-name">
-                            <p>Accept</p>
+                            <p>keyType</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">Media types acceptable for the response. Default is application/json.
+                            <p class="param-description marked">**Application Key Type** standing for the type of the keys (i.e. Production or Sandbox).
 </p>
+                            
+                                <p><b>Accepted values: </b></p>
+
+<code>PRODUCTION</code>
+
+<code>SANDBOX</code>
+
                             
                         </td>
                         <td>
@@ -217,7 +162,7 @@ Content-Type: application/json
                             </span>
                         </td>
                         <td>
-                            <p class="marked">application/json</p>
+                            <p class="marked"></p>
                         </td>
                     </tr>
                 
@@ -226,25 +171,26 @@ Content-Type: application/json
                             
                             
                             
-                            <span class="param-in">Header </span>
                             
+                            <span class="param-in">Body </span>
                         </td>
                         <td class="param-name">
-                            <p>If-None-Match</p>
+                            <p>body</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">Validator for conditional requests; based on the ETag of the formerly retrieved
-variant of the resource.
+                            <p class="param-description marked">Grant types/Callback URL update request object
 </p>
                             
                         </td>
                         <td>
                             <span class="param-type">
-                                String
+                                ApplicationKey
+                                
+                                    (<a href="#!/models#ApplicationKey">ApplicationKey</a>)
                                 
                             </span>
                         </td>
@@ -274,11 +220,11 @@ variant of the resource.
                 
                     <tr>
                         <td class="parameter"><p class="marked">200</p></td>
-                        <td class="parameter"><p class="marked">OK.\nTag list is returned.\n</p></td>
+                        <td class="parameter"><p class="marked">Ok.\nGrant types or/and callback url is/are updated.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
-                                    <a href="#!/models#TagList">TagList</a>
+                                    <a href="#!/models#ApplicationKey">ApplicationKey</a>
                                 
                                 
                             </span>
@@ -286,21 +232,8 @@ variant of the resource.
                     </tr>
                 
                     <tr>
-                        <td class="parameter"><p class="marked">304</p></td>
-                        <td class="parameter"><p class="marked">Not Modified.\nEmpty body because the client has already the latest version of the requested resource (Will be supported in future).\n</p></td>
-                        <td class="parameter">
-                            <span class="parameter">
-                                
-                                
-                                    
-                                
-                            </span>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter"><p class="marked">404</p></td>
-                        <td class="parameter"><p class="marked">Not Found. Requested API does not exist.\n</p></td>
+                        <td class="parameter"><p class="marked">400</p></td>
+                        <td class="parameter"><p class="marked">Bad Request.\nInvalid request or validation error\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
@@ -312,8 +245,21 @@ variant of the resource.
                     </tr>
                 
                     <tr>
-                        <td class="parameter"><p class="marked">406</p></td>
-                        <td class="parameter"><p class="marked">Not Acceptable. The requested media type is not supported\n</p></td>
+                        <td class="parameter"><p class="marked">404</p></td>
+                        <td class="parameter"><p class="marked">Not Found.\nThe resource to be updated does not exist.\n</p></td>
+                        <td class="parameter">
+                            <span class="parameter">
+                                
+                                    <a href="#!/models#Error">Error</a>
+                                
+                                
+                            </span>
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td class="parameter"><p class="marked">412</p></td>
+                        <td class="parameter"><p class="marked">Precondition Failed.\nThe request has not been performed because one of the preconditions is not met.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 

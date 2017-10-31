@@ -32,7 +32,7 @@
             </div>
 
             
-                <div id="request-apisApiIdGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed
+                <div id="request-apisApiIdGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed
 </code></div>
             
             
@@ -65,8 +65,8 @@ Content-Type: application/json
       &quot;environmentName&quot;: &quot;Production and Sandbox&quot;,
       &quot;environmentType&quot;: &quot;hybrid&quot;,
       &quot;environmentURLs&quot;:       {
-         &quot;http&quot;: &quot;http://10.100.7.77:8280//pizzashack/1.0.0&quot;,
-         &quot;https&quot;: &quot;https://10.100.7.77:8243//pizzashack/1.0.0&quot;
+         &quot;http&quot;: &quot;http://localhost:8280//pizzashack/1.0.0&quot;,
+         &quot;https&quot;: &quot;https://localhost:8243//pizzashack/1.0.0&quot;
       }
    }],
    &quot;transport&quot;:    [
@@ -87,7 +87,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl https://127.0.0.1:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed</code></div>
+                <div class="pre"><code class="bash">curl https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed</code></div>
             
             
 
@@ -373,7 +373,7 @@ formerly retrieved variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-apisApiIdSwaggerGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/swagger
+                <div id="request-apisApiIdSwaggerGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/swagger
 </code></div>
             
             
@@ -414,7 +414,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl https://127.0.0.1:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/swagger</code></div>
+                <div class="pre"><code class="bash">curl https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/swagger</code></div>
             
             
 
@@ -699,7 +699,7 @@ formerly retrieved variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-apisApiIdThumbnailGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/store/v0.11/apis/e93fb282-b456-48fc-8981-003fb89086ae/thumbnail
+                <div id="request-apisApiIdThumbnailGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/apis/e93fb282-b456-48fc-8981-003fb89086ae/thumbnail
 </code></div>
             
             
@@ -722,7 +722,7 @@ Content-Type: image/jpeg
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl https://127.0.0.1:9443/api/am/store/v0.11/apis/e93fb282-b456-48fc-8981-003fb89086ae/thumbnail &gt; image.jpg</code></div>
+                <div class="pre"><code class="bash">curl https://localhost:9443/api/am/store/v0.11/apis/e93fb282-b456-48fc-8981-003fb89086ae/thumbnail &gt; image.jpg</code></div>
             
             
 
@@ -985,11 +985,6 @@ formerly retrieved variant of the resource (Will be supported in future).
             <p class="marked"></p>
 
             <p class="marked">This operation can be used to generate SDK for an API by providing the id of the API along with the preferred language.
-
-`X-WSO2-Tenant` header can be used to retrive the generated SDK of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user&#39;s tenant associated with the access token will be used.
-
-**NOTE:**
-* This operation does not require an Authorization header by default. But in order to generate a restricted API&#39;s SDK, you need to provide Authorization header.
 </p>
 
             <h4 class="section-heading">OAuth 2.0 Scope</h4>
@@ -1008,7 +1003,8 @@ formerly retrieved variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-apisGenerateSdkPost"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/store/v0.11/apis/generate-sdk
+                <div id="request-apisGenerateSdkPost"class="pre collapse in"><code class="json">POST https://localhost:9443/api/am/store/v0.11/apis/generate-sdk
+Authorization: Bearer 2e29904b-f3b0-366e-ba13-b469abedd88e
 </code></div>
             
             
@@ -1032,7 +1028,7 @@ Content-Type: application/zip
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl https://127.0.0.1:9443/api/am/store/v0.11/apis/generate-sdk</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer 2e29904b-f3b0-366e-ba13-b469abedd88e&quot; -X POST &#39;https://localhost:9443/api/am/store/v0.11/apis/generate-sdk?apiId=5721d128-76d0-4cb9-b300-2bd9578beddb&amp;language=java&#39; &gt; PizzaAPI_Java_SDK.zip</code></div>
             
             
 
