@@ -1,19 +1,20 @@
 /*
- *  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- */
+*  Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+*  WSO2 Inc. licenses this file to you under the Apache License,
+*  Version 2.0 (the "License"); you may not use this file except
+*  in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
 
 package org.wso2.carbon.apimgt.rest.api.store.utils;
 
@@ -28,11 +29,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.Application;
-import org.wso2.carbon.apimgt.api.model.Scope;
-import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
-import org.wso2.carbon.apimgt.api.model.Subscriber;
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
@@ -41,6 +38,7 @@ import org.wso2.carbon.apimgt.keymgt.stub.useradmin.APIKeyMgtException;
 import org.wso2.carbon.apimgt.keymgt.stub.useradmin.MultiTenantUserAdminServiceStub;
 import org.wso2.carbon.apimgt.rest.api.store.dto.ScopeListDTO;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -53,9 +51,16 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-@RunWith(PowerMockRunner.class) @PrepareForTest({ ServiceReferenceHolder.class, MultiTenantUserAdminServiceStub.class,
+import static org.junit.Assert.assertEquals;
+import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
+
+/**
+ * This is a test case for RestAPIStoreUtils.
+ */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ CarbonContext.class, ServiceReferenceHolder.class, MultiTenantUserAdminServiceStub.class,
         CarbonUtils.class, Caching.class, RestApiUtil.class })
-public class RestAPIStoreUtilsTestCase {
+public class RestAPIStoreUtilsTest {
     private final String ADMIN = "admin";
     private Application application;
     private Set<SubscribedAPI> subscriptions;
@@ -83,7 +88,7 @@ public class RestAPIStoreUtilsTestCase {
         Mockito.doReturn(ADMIN).when(apiManagerConfiguration).getFirstProperty(APIConstants.KEYMANAGER_SERVERURL);
         Mockito.doReturn(ADMIN).when(apiManagerConfiguration).getFirstProperty(APIConstants.KEY_MANAGER_USERNAME);
         Mockito.doReturn(ADMIN).when(apiManagerConfiguration).getFirstProperty(APIConstants.KEY_MANAGER_PASSWORD);
-        Mockito.doReturn("true").when(apiManagerConfiguration).getFirstProperty(APIConstants.STORE_CACHE_ENABLED);
+        Mockito.doReturn("true").when(apiManagerConfiguration).getFirstProperty(APIConstants.SCOPE_CACHE_ENABLED);
 
         // Creating mock of MutiTenantUserAdminServiceStub.
         multiTenantUserAdminServiceStub = Mockito.mock(MultiTenantUserAdminServiceStub.class);
@@ -236,4 +241,45 @@ public class RestAPIStoreUtilsTestCase {
         return scopeSet;
     }
 
+    @Test
+    public void isUserAccessAllowedForApplication() {
+        Application application = new Application(2);
+        application.getSubscriber().setName("admin");
+        System.setProperty(CARBON_HOME, "");
+        CarbonContext carbonContext = Mockito.mock(CarbonContext.class);
+        PowerMockito.mockStatic(CarbonContext.class);
+
+        PowerMockito.when(CarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        Mockito.when(carbonContext.getUsername()).thenReturn("admin");
+        assertEquals(true, RestAPIStoreUtils.isUserAccessAllowedForApplication(application));
+    }
+
+    @Test
+    public void isUserAccessAllowedForApplicationForDifferentUsername() {
+        Application application = new Application(2);
+        application.getSubscriber().setName("Admin");
+        System.setProperty(CARBON_HOME, "");
+        CarbonContext carbonContext = Mockito.mock(CarbonContext.class);
+        PowerMockito.mockStatic(CarbonContext.class);
+
+        PowerMockito.when(CarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        Mockito.when(carbonContext.getUsername()).thenReturn("admin");
+
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_FORCE_CI_COMPARISIONS))
+                .thenReturn("true");
+
+        assertEquals(true, RestAPIStoreUtils.isUserAccessAllowedForApplication(application));
+    }
 }
