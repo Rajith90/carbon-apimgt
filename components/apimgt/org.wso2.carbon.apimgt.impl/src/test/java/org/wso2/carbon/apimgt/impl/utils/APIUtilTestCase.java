@@ -20,6 +20,7 @@
 
 package org.wso2.carbon.apimgt.impl.utils;
 
+import com.google.gson.Gson;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,11 +32,20 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
+import org.wso2.carbon.registry.core.config.Mount;
 import org.wso2.carbon.registry.core.config.RegistryContext;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -53,6 +63,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.Matchers.eq;
 
@@ -61,19 +77,29 @@ import static org.mockito.Matchers.eq;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LogFactory.class, ServiceReferenceHolder.class, RegistryUtils.class, DocumentBuilderFactory.class,
-        APIManagerComponent.class})
+        APIManagerComponent.class, PrivilegedCarbonContext.class, ApiMgtDAO.class, ServerConfiguration.class})
 public class APIUtilTestCase {
     private RegistryContext registryContext;
     private UserRegistry registry;
     private RegistryService registryService;
+    private APIManagerConfigurationService apiMgtConfigurationService;
+    private APIManagerConfiguration apiManagerConfiguration;
+    private Environment environment;
+    private PrivilegedCarbonContext privilegedCarbonContext;
+    private ServerConfiguration serverConfiguration;
+
     private Resource resource;
     private int tenantId = 1;
+    private String tenantDomain = "abc.com";
 
     @Before
     public void setup() throws org.wso2.carbon.registry.core.exceptions.RegistryException, UserStoreException {
         System.setProperty("carbon.home", "");
         ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
         registryService = Mockito.mock(RegistryService.class);
+        apiMgtConfigurationService = Mockito.mock(APIManagerConfigurationService.class);
+        apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        environment = Mockito.mock(Environment.class);
         registry = Mockito.mock(UserRegistry.class);
         UserRegistry superTenantRegistry = Mockito.mock(UserRegistry.class);
         resource = Mockito.mock(Resource.class);
@@ -83,9 +109,17 @@ public class APIUtilTestCase {
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         PowerMockito.mockStatic(APIManagerComponent.class);
         PowerMockito.mockStatic(RegistryUtils.class);
+        PowerMockito.mockStatic(ServerConfiguration.class);
         Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
         Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiMgtConfigurationService);
+        Mockito.when(apiMgtConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(environment.getName()).thenReturn("prod");
+        Map<String, Environment> environmentMap = new HashMap<String, Environment>();
+        environmentMap.put("prod", environment);
+        Mockito.when(apiManagerConfiguration.getApiGatewayEnvironments()).thenReturn(environmentMap);
         Mockito.when(registryService.getGovernanceSystemRegistry(eq(1))).thenReturn(registry);
+        Mockito.when(registryService.getGovernanceSystemRegistry()).thenReturn(registry);
         Mockito.when(registryService.getGovernanceSystemRegistry(eq(-1234))).thenReturn(superTenantRegistry);
         Mockito.when(registry.newResource()).thenReturn(resource);
         Mockito.when(superTenantRegistry.newResource()).thenReturn(resource);
@@ -105,6 +139,14 @@ public class APIUtilTestCase {
         org.wso2.carbon.user.api.AuthorizationManager authManager
                 = Mockito.mock(org.wso2.carbon.user.api.AuthorizationManager.class);
         Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authManager);
+
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        serverConfiguration = Mockito.mock(ServerConfiguration.class);
+
+        PowerMockito.when(ServerConfiguration.getInstance()).thenReturn(serverConfiguration);
+        Mockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
     }
 
     @Test
@@ -228,10 +270,248 @@ public class APIUtilTestCase {
                 "        \"RoleName\": \"subscriber\",\n" +
                 "        \"IsExternalRole\": \"true\"\n" +
                 "        \"CreateOnTenantLoad\": true\n" +
-                "      }\n" +
+                "       }\n" +
                 "    }\n" +
                 "}";
         Mockito.when(resource.getContent()).thenReturn(signupConfig.getBytes(Charset.forName("UTF-8")));
         Assert.assertTrue(APIUtil.isSubscriberRoleCreationEnabled(tenantId));
+    }
+
+    @Test
+    public void testGetMountedPath() {
+
+        Mount mount = Mockito.mock(Mount.class);
+        String path = "_system";
+        String targetPath = "_system/apimgt";
+        Mockito.when(mount.getPath()).thenReturn(path);
+        Mockito.when(mount.getTargetPath()).thenReturn(targetPath);
+        List<Mount> mounts = new ArrayList<Mount>(1);
+        mounts.add(mount);
+        Mockito.when(registryContext.getMounts()).thenReturn(mounts);
+        Assert.assertEquals(targetPath, APIUtil.getMountedPath(registryContext, path));
+
+    }
+
+    @Test
+    public void testGetDomainMappings() throws APIManagementException, RegistryException {
+
+        String appType = "xyz";
+        String customurl_abcdotcom = "{\n" +
+                "  \"xyz\": {\n" +
+                "    \"customUrlEnabled\": \"true\",\n" +
+                "  }\n" +
+                "}";
+        Mockito.when(registry.resourceExists("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(false);
+
+        //when resource does not exists in registry it wll return empty map
+        Assert.assertEquals(0, APIUtil.getDomainMappings(tenantDomain, appType).size());
+
+        //when resource exists in the regstry
+        Mockito.when(registry.resourceExists("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(true);
+        Mockito.when(registry.get("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(resource);
+
+        Mockito.when(resource.getContent()).thenReturn(customurl_abcdotcom.getBytes(Charset.forName("UTF-8")));
+        Assert.assertEquals(1, (APIUtil.getDomainMappings(tenantDomain, appType).size()));
+
+    }
+
+    @Test
+    public void testGetDomainMappingsParserException() throws RegistryException {
+
+        String appType = "xyz";
+        Mockito.when(registry.resourceExists("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(true);
+        Mockito.when(registry.get("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(resource);
+        //test parser exception
+        String customurl_abcdotcom = "\n" +
+                "  \"xyz\": {\n" +
+                "    \"customUrlEnabled\": \"true\",\n" +
+                "  }\n" +
+                "}";
+        Mockito.when(resource.getContent()).thenReturn(customurl_abcdotcom.getBytes(Charset.forName("UTF-8")));
+
+        try {
+            APIUtil.getDomainMappings(tenantDomain, appType);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Malformed JSON found in the gateway tenant domain mappings"));
+        }
+    }
+
+    @Test
+    public void testGetDomainMappingsClassCastException() throws RegistryException {
+
+        String appType = "xyz";
+        Mockito.when(registry.resourceExists("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(true);
+        Mockito.when(registry.get("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(resource);
+        //test parser exception
+        String customurl_abcdotcom = "{\n" +
+                "  \"xyz\": \"\n" +
+                "\t\tabc\n" +
+                "\t\"\n" +
+                "}";
+        Mockito.when(resource.getContent()).thenReturn(customurl_abcdotcom.getBytes(Charset.forName("UTF-8")));
+
+        try {
+            APIUtil.getDomainMappings(tenantDomain, appType);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Invalid JSON found in the gateway tenant domain mappings"));
+        }
+    }
+
+    @Test
+    public void testGetDomainMappingsRegistryException() throws RegistryException {
+
+        String appType = "xyz";
+        Mockito.when(registry.resourceExists("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenReturn(true);
+        Mockito.when(registry.get("/customurl/api-cloud/abc.com/urlMapping/abc.com")).thenThrow(new RegistryException(""));
+        //test parser exception
+        String customurl_abcdotcom = "{\n" +
+                "  \"xyz\": {\n" +
+                "    \"customUrlEnabled\": \"true\",\n" +
+                "  }\n" +
+                "}";
+        Mockito.when(resource.getContent()).thenReturn(customurl_abcdotcom.getBytes(Charset.forName("UTF-8")));
+
+        try {
+            APIUtil.getDomainMappings(tenantDomain, appType);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error while retrieving gateway domain mappings from registry"));
+        }
+    }
+
+    @Test
+    public void testGetDocumentInvalidResourcePath() {
+        String userName = "admin";
+        String resourceUrl = "/_system/config/apimgt";
+        try {
+            APIUtil.getDocument(userName, resourceUrl, tenantDomain);
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Invalid resource Path"));
+        }
+    }
+
+    @Test
+    public void testGetDocumentResourceNotExists() throws RegistryException, APIManagementException {
+        String userName = "admin";
+        String resourceUrl = "/_system/governance/apimgt";
+        Mockito.when(registryService.getGovernanceUserRegistry("admin", tenantId)).thenReturn(registry);
+        Mockito.when(privilegedCarbonContext.getTenantId()).thenReturn(tenantId);
+
+        APIUtil.getDocument(userName, resourceUrl, tenantDomain);
+    }
+
+    @Test
+    public void testGetDocumentResourceExists() throws RegistryException, APIManagementException {
+        String userName = "admin";
+        String resourceUrl = "/_system/governance/apimgt";
+        Mockito.when(registryService.getGovernanceUserRegistry("admin", tenantId)).thenReturn(registry);
+        Mockito.when(privilegedCarbonContext.getTenantId()).thenReturn(tenantId);
+        Mockito.when(registry.resourceExists("/apimgt")).thenReturn(true);
+        Mockito.when(registry.get("/apimgt")).thenReturn(resource);
+        InputStream inputStream = Mockito.mock(InputStream.class);
+        Mockito.when(resource.getContentStream()).thenReturn(inputStream);
+        Mockito.when(resource.getPath()).thenReturn("aaa/bbb");
+        Mockito.when(resource.getMediaType()).thenReturn("application/json");
+
+        Assert.assertEquals(3, APIUtil.getDocument(userName, resourceUrl, tenantDomain).size());
+    }
+
+    @Test
+    public void testGetEnvironmentsOfAPI() {
+        String userName = "admin";
+        String resourceUrl = "admin";
+        API api = Mockito.mock(API.class);
+        Set<String> apiEnvs = new HashSet<String>();
+        apiEnvs.add("prod");
+        Mockito.when(api.getEnvironments()).thenReturn(apiEnvs);
+        Assert.assertEquals(1, APIUtil.getEnvironmentsOfAPI(api).size());
+
+        //
+
+    }
+
+    @Test
+    public void testDoesApplicationExist() {
+        String name = "abc";
+        Application application = Mockito.mock(Application.class);
+        Mockito.when(application.getName()).thenReturn(name);
+        Application[] applications = new Application[]{application};
+
+        Assert.assertTrue(APIUtil.doesApplicationExist(applications, name));
+
+        //when application does not exist
+        Assert.assertFalse(APIUtil.doesApplicationExist(applications, "xyz"));
+    }
+
+    @Test
+    public void testGetGroupingExtractorImplementation() {
+        String name = "abc";
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_GROUP_EXTRACTOR_IMPLEMENTATION))
+                .thenReturn("");
+        Assert.assertEquals("", APIUtil.getGroupingExtractorImplementation());
+    }
+
+    @Test
+    public void testUpdatePermissionCache() throws UserStoreException {
+        String useNname = "admin";
+        APIUtil.updatePermissionCache(useNname);
+    }
+
+    @Test(expected = APIManagementException.class)
+    public void testIsApplicationExistException() throws APIManagementException {
+        APIUtil.isApplicationExist("subscriber", "xyz", "engineering");
+    }
+
+    @Test
+    public void testIsApplicationExist() throws APIManagementException {
+        String subscriber = "subscriber";
+        String applicationName = "xyz";
+        String groupID = "engineering";
+
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        Mockito.when(apiMgtDAO.isApplicationExist(subscriber, applicationName, groupID)).thenReturn(true);
+
+        APIUtil.isApplicationExist(subscriber, applicationName, groupID);
+    }
+
+    @Test
+    public void testGetHostAddressLocal() throws APIManagementException {
+        // when API_MANAGER_HOSTNAME property is not set local address has to be selected
+        Assert.assertNotNull(APIUtil.getHostAddress());
+    }
+
+//    @Test
+    public void testGetHostAddress() throws APIManagementException {
+        String hostAddress = "192.168.0.100:5002";
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.API_MANAGER_HOSTNAME)).thenReturn(hostAddress);
+        // when API_MANAGER_HOSTNAME property is set
+        Assert.assertEquals(hostAddress, APIUtil.getHostAddress());
+    }
+
+    @Test
+    public void testIsStringArray() throws APIManagementException {
+        String[] strArray = new String[]{"a", "b"};
+        Assert.assertTrue(APIUtil.isStringArray(strArray));
+    }
+
+    @Test
+    public void testAppendDomainWithUser() throws APIManagementException {
+        String useNname = "admin";
+        String useNnameWithDomain = "admin@" + tenantDomain;
+
+        Assert.assertEquals(useNnameWithDomain, APIUtil.appendDomainWithUser(useNname, tenantDomain));
+
+        //when email username enabled
+        useNname = "isharac@wso2.com";
+        Assert.assertEquals(useNname, APIUtil.appendDomainWithUser(useNname, tenantDomain));
+    }
+
+    @Test
+    public void testConvertToString() throws APIManagementException {
+        String jsonObject = "{\"abc\" : \"xyz\"}";
+        Gson gson = new Gson();
+        String actual = gson.toJson(jsonObject);
+        Assert.assertEquals(actual, APIUtil.convertToString(jsonObject));
     }
 }
