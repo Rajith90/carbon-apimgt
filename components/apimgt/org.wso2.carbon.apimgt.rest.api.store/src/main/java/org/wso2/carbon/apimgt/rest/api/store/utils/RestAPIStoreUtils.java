@@ -97,7 +97,7 @@ public class RestAPIStoreUtils {
         try {
             multiTenantUserAdminServiceStub = new MultiTenantUserAdminServiceStub(null,
                     keyManagerUrl + MULTI_TENANT_USER_ADMIN_SERVICE);
-            CarbonUtils.setBasicAccessSecurityHeaders(keyManagerAdminUserName, Arrays.toString(keyManagerAdminPassword),
+            CarbonUtils.setBasicAccessSecurityHeaders(keyManagerAdminUserName, keyManagerPasswordString,
                     true, multiTenantUserAdminServiceStub._getServiceClient());
         } catch (AxisFault axisFault) {
             log.error("Error while initializing multiTenantUserTenantAdminStub", axisFault);
@@ -549,7 +549,7 @@ public class RestAPIStoreUtils {
                 multiTenantUserAdminServiceStub = new MultiTenantUserAdminServiceStub(null,
                         keyManagerUrl + MULTI_TENANT_USER_ADMIN_SERVICE);
                 CarbonUtils.setBasicAccessSecurityHeaders(keyManagerAdminUserName,
-                        Arrays.toString(keyManagerAdminPassword), true,
+                        new String(keyManagerAdminPassword), true,
                         multiTenantUserAdminServiceStub._getServiceClient());
             } catch (AxisFault axisFault) {
                 throw new APIManagementException(
