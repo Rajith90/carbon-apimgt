@@ -124,6 +124,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.carbon.utils.NetworkUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -132,6 +133,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
@@ -160,7 +162,8 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         APIUtil.class, KeyManagerHolder.class, SubscriberKeyMgtClient.class, ApplicationManagementServiceClient
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
         RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
-        APIManagerComponent.class, TenantAxisUtils.class, IOUtils.class })
+        APIManagerComponent.class, TenantAxisUtils.class, IOUtils.class, NetworkUtils.class,
+        ServerConfiguration.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -3702,6 +3705,171 @@ public class APIUtilTest {
         //permission check disabled scenario
         Assert.assertTrue(APIUtil.checkPermissionQuietly("john", "create"));
         Assert.assertFalse(APIUtil.checkPermissionQuietly(null, "create"));
+    }
+
+    @Test
+    public void testIsWhiteListedScope() {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito
+                .mock(APIManagerConfigurationService.class);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService())
+                .thenReturn(apiManagerConfigurationService);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getProperty(APIConstants.WHITELISTED_SCOPES)).thenReturn(null);
+        Assert.assertTrue(APIUtil.isWhiteListedScope(APIConstants.OPEN_ID_SCOPE_NAME));
+        Assert.assertTrue(APIUtil.isWhiteListedScope("device_"));
+
+        Assert.assertFalse(APIUtil.isWhiteListedScope("apim_view"));
+        Assert.assertFalse(APIUtil.isWhiteListedScope("apim_create"));
+
+    }
+
+    @Test
+    public void testGetServerURL() throws SocketException, APIManagementException {
+        String hostName = "wso2.apim.com";
+        PowerMockito.mockStatic(ServerConfiguration.class);
+        ServerConfiguration serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        PowerMockito.when(ServerConfiguration.getInstance()).thenReturn(serverConfiguration);
+        PowerMockito.mockStatic(NetworkUtils.class);
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.HOST_NAME)).thenReturn(null, null, hostName);
+        PowerMockito.when(NetworkUtils.getLocalHostname()).thenThrow(SocketException.class).thenReturn(hostName);
+        try {
+            APIUtil.getServerURL();
+            Assert.fail("Socket exception not thrown for the error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("Error while trying to read hostname"));
+        }
+        PowerMockito.mockStatic(CarbonUtils.class);
+        String mgtTransport = "http";
+        PowerMockito.when(CarbonUtils.getManagementTransport()).thenReturn(mgtTransport);
+        AxisConfiguration axisConfiguration = Mockito.mock(AxisConfiguration.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ConfigurationContextService configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(configurationContextService);
+        Mockito.when(configurationContextService.getServerConfigContext()).thenReturn(configurationContext);
+        Mockito.when(configurationContext.getAxisConfiguration()).thenReturn(axisConfiguration);
+        PowerMockito.when(CarbonUtils.getTransportProxyPort(axisConfiguration, mgtTransport)).thenReturn(0);
+        PowerMockito.when(CarbonUtils.getTransportPort(axisConfiguration, mgtTransport)).thenReturn(9443);
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PROXY_CONTEXT_PATH)).thenReturn("/wso2", "wso2");
+        String serverUrl = mgtTransport + "://" + hostName + ":9443/wso2";
+        Assert.assertEquals(serverUrl, APIUtil.getServerURL());
+        Assert.assertEquals(serverUrl, APIUtil.getServerURL());
+
+    }
+
+    @Test
+    public void testGetTenantRESTAPIScopesConfig() throws Exception {
+        String tenantConf = "{\n" + "  \"EnableMonetization\" : false,\n" + "  \"IsUnlimitedTierPaid\" : false,\n"
+                + "  \"ExtensionHandlerPosition\": \"bottom\",\n" + "  \"RESTAPIScopes\": {\n" + "    \"Scope\": [\n"
+                + "      {\n" + "        \"Name\": \"apim:api_publish\",\n"
+                + "        \"Roles\": \"admin,Internal/publisher\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:api_create\",\n" + "        \"Roles\": \"admin,Internal/creator\"\n"
+                + "      },\n" + "      {\n" + "        \"Name\": \"apim:api_view\",\n"
+                + "        \"Roles\": \"admin,Internal/publisher,Internal/creator\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:subscribe\",\n" + "        \"Roles\": \"admin,Internal/subscriber\"\n"
+                + "      },\n" + "      {\n" + "        \"Name\": \"apim:tier_view\",\n"
+                + "        \"Roles\": \"admin,Internal/publisher,Internal/creator\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:tier_manage\",\n" + "        \"Roles\": \"admin\"\n" + "      },\n"
+                + "      {\n" + "        \"Name\": \"apim:bl_view\",\n" + "        \"Roles\": \"admin\"\n"
+                + "      },\n" + "      {\n" + "        \"Name\": \"apim:bl_manage\",\n"
+                + "        \"Roles\": \"admin\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:subscription_view\",\n" + "        \"Roles\": \"admin,Internal/creator\"\n"
+                + "      },\n" + "      {\n" + "        \"Name\": \"apim:subscription_block\",\n"
+                + "        \"Roles\": \"admin,Internal/creator\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:mediation_policy_view\",\n" + "        \"Roles\": \"admin\"\n"
+                + "      },\n" + "      {\n" + "        \"Name\": \"apim:mediation_policy_create\",\n"
+                + "        \"Roles\": \"admin\"\n" + "      },\n" + "      {\n"
+                + "        \"Name\": \"apim:api_workflow\",\n" + "        \"Roles\": \"admin\"\n" + "      }\n"
+                + "    ]\n" + "  },\n" + "  \"NotificationsEnabled\":\"false\",\n" + "  \"Notifications\":[{\n"
+                + "    \"Type\":\"new_api_version\",\n" + "    \"Notifiers\" :[{\n"
+                + "      \"Class\":\"org.wso2.carbon.apimgt.impl.notification.NewAPIVersionEmailNotifier\",\n"
+                + "      \"ClaimsRetrieverImplClass\":\"org.wso2.carbon.apimgt.impl.token.DefaultClaimsRetriever\",\n"
+                + "      \"Title\": \"Version $2 of $1 Released\",\n"
+                + "      \"Template\": \" <html> <body> <h3 style=\\\"color:Black;\\\">We’re happy to announce the "
+                + "arrival of the next major version $2 of $1 API which is now available in Our API Store."
+                + "</h3><a href=\\\"https://localhost:9443/store\\\">"
+                + "Click here to Visit WSO2 API Store</a></body></html>\"\n" + "    }]\n" + "  }\n" + "  ],\n"
+                + "  \"DefaultRoles\" : {\n" + "    \"PublisherRole\" : {\n" + "      \"CreateOnTenantLoad\" : true,\n"
+                + "      \"RoleName\" : \"Internal/publisher\"\n" + "    },\n" + "    \"CreatorRole\" : {\n"
+                + "      \"CreateOnTenantLoad\" : true,\n" + "      \"RoleName\" : \"Internal/creator\"\n" + "    },\n"
+                + "    \"SubscriberRole\" : {\n" + "      \"CreateOnTenantLoad\" : true\n" + "    }\n" + "  }\n" + "}";
+
+        String tenantDomain = "abc.com";
+        APIMRegistryServiceImpl apimRegistryService = Mockito.mock(APIMRegistryServiceImpl.class);
+        PowerMockito.whenNew(APIMRegistryServiceImpl.class).withAnyArguments().thenReturn(apimRegistryService);
+        Mockito.when(apimRegistryService
+                .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION))
+                .thenThrow(UserStoreException.class).thenThrow(RegistryException.class).thenReturn(tenantConf);
+        try {
+            APIUtil.getTenantRESTAPIScopesConfig(tenantDomain);
+            Assert.fail("UserStore exception not thrown for the error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(
+                    e.getMessage().contains("UserStoreException thrown when getting API tenant config from registry"));
+        }
+        try {
+            APIUtil.getTenantRESTAPIScopesConfig(tenantDomain);
+            Assert.fail("Registry exception not thrown for the error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(
+                    e.getMessage().contains("RegistryException thrown when getting API tenant config from registry"));
+        }
+        Assert.assertEquals(1, APIUtil.getTenantRESTAPIScopesConfig(tenantDomain).size());
+
+        tenantConf = "{\n" + "  \"EnableMonetization\" : false,\n" + "  \"IsUnlimitedTierPaid\" : false,\n"
+                + "  \"ExtensionHandlerPosition\": \"bottom\",\n" + "  \"NotificationsEnabled\":\"false\",\n"
+                + "  \"Notifications\":[{\n" + "    \"Type\":\"new_api_version\",\n" + "    \"Notifiers\" :[{\n"
+                + "      \"Class\":\"org.wso2.carbon.apimgt.impl.notification.NewAPIVersionEmailNotifier\",\n"
+                + "      \"ClaimsRetrieverImplClass\":\"org.wso2.carbon.apimgt.impl.token.DefaultClaimsRetriever\",\n"
+                + "      \"Title\": \"Version $2 of $1 Released\",\n"
+                + "      \"Template\": \" <html> <body> <h3 style=\\\"color:Black;\\\">We’re happy to announce."
+                + "</h3><a href=\\\"https://localhost:9443/store\\\">"
+                + "Click here to Visit WSO2 API Store</a></body></html>\"\n" + "    }]\n" + "  }\n" + "  ],\n"
+                + "  \"DefaultRoles\" : {\n" + "    \"PublisherRole\" : {\n" + "      \"CreateOnTenantLoad\" : true,\n"
+                + "      \"RoleName\" : \"Internal/publisher\"\n" + "    },\n" + "    \"CreatorRole\" : {\n"
+                + "      \"CreateOnTenantLoad\" : true,\n" + "      \"RoleName\" : \"Internal/creator\"\n" + "    },\n"
+                + "    \"SubscriberRole\" : {\n" + "      \"CreateOnTenantLoad\" : true\n" + "    }\n" + "  }\n" + "}";
+
+        Mockito.when(apimRegistryService
+                .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION))
+                .thenReturn(tenantConf);
+
+        try {
+            APIUtil.getTenantRESTAPIScopesConfig(tenantDomain);
+            Assert.fail("APIM exception not thrown for the error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(e.getMessage().contains("RESTAPIScopes config does not exist for tenant"));
+        }
+
+        tenantConf = "{\n" + "  \"EnableMonetization\" : false,\n" + "  \"IsUnlimitedTierPaid\" : false,\n"
+                + "  \"ExtensionHandlerPosition\": \"bottom\",\n" + "  \"NotificationsEnabled\":\"false\",\n"
+                + "  \"Notifications\":[{\n" + "    \"Type\":\"new_api_version\",\n" + "    \"Notifiers\" :[{\n"
+                + "      \"Class\":\"org.wso2.carbon.apimgt.impl.notification.NewAPIVersionEmailNotifier\",\n"
+                + "      \"ClaimsRetrieverImplClass\":\"org.wso2.carbon.apimgt.impl.token.DefaultClaimsRetriever\",\n"
+                + "      \"Title\": \"Version $2 of $1 Released\",\n"
+                + "      \"Template\": \" <html> <body> <h3 style=\\\"color:Black;\\\">We’re happy to announce."
+                + "</h3><a href=\\\"https://localhost:9443/store\\\">"
+                + "Click here to Visit WSO2 API Store</a></body></html>\"\n" + "    }]\n" + "  }\n" + "  ],\n"
+                + "  \"DefaultRoles\" : {\n" + "    \"PublisherRole\" : {\n" + "      \"CreateOnTenantLoad\" : true,\n"
+                + "      \"RoleName\" : \"Internal/publisher\"\n" + "    },\n" + "    \"CreatorRole\" : {\n"
+                + "      \"CreateOnTenantLoad\" : true,\n" + "      \"RoleName\" : \"Internal/creator\"\n" + "    },\n"
+                + "    \"SubscriberRole\" : {\n" + "      \"CreateOnTenantLoad\" : true\n" + "    }\n" + "  }\n";
+
+        Mockito.when(apimRegistryService
+                .getConfigRegistryResourceContent(tenantDomain, APIConstants.API_TENANT_CONF_LOCATION))
+                .thenReturn(tenantConf);
+
+        try {
+            APIUtil.getTenantRESTAPIScopesConfig(tenantDomain);
+            Assert.fail("Parse exception not thrown for the error scenario");
+        } catch (APIManagementException e) {
+            Assert.assertTrue(
+                    e.getMessage().contains("ParseException thrown when passing API tenant config from registry"));
+        }
     }
 
 }
