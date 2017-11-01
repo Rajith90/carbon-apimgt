@@ -3205,9 +3205,9 @@ public final class APIUtil {
      */
     private static boolean isRoleCreationEnabled (JSONObject roleConfig) {
         boolean roleCreationEnabled = false;
-        if (roleConfig != null && roleConfig.get(
-                APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD) != null && (Boolean) (roleConfig.get(
-                APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD))) {
+        if (roleConfig != null
+                && roleConfig.get(APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD) != null
+                && (Boolean) (roleConfig.get(APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD))) {
             roleCreationEnabled = true;
         }
         return roleCreationEnabled;
