@@ -633,9 +633,6 @@ public class APIUtilTestCase {
     @Test
     public void testGetFullLifeCycleData() throws XMLStreamException, RegistryException {
 
-//        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
-//        Mockito.when(throttleProperties.isEnabledSubscriptionLevelSpikeArrest()).thenReturn(true);
-//        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
         Assert.assertNull(new APIUtil().getFullLifeCycleData(registry));
 
         Mockito.when(registry.resourceExists("/repository/components/org.wso2.carbon.governance/lifecycles/APILifeCycle"))
