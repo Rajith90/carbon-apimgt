@@ -21,6 +21,8 @@
 package org.wso2.carbon.apimgt.impl.utils;
 
 import com.google.gson.Gson;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,11 +36,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.Application;
+import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
+import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.base.ServerConfiguration;
@@ -57,8 +61,11 @@ import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.carbon.utils.CarbonUtils;
+import org.wso2.carbon.utils.ConfigurationContextService;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.stream.XMLStreamException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,11 +80,12 @@ import java.util.Set;
 import static org.mockito.Matchers.eq;
 
 /**
- * Test class for APIUtil lines 2924 - 3161.
+ * Test class for APIUtil lines 2924 - 3161, 4964- 5292, 6576- 6648.
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LogFactory.class, ServiceReferenceHolder.class, RegistryUtils.class, DocumentBuilderFactory.class,
-        APIManagerComponent.class, PrivilegedCarbonContext.class, ApiMgtDAO.class, ServerConfiguration.class})
+        APIManagerComponent.class, PrivilegedCarbonContext.class, ApiMgtDAO.class, ServerConfiguration.class,
+        CarbonUtils.class})
 public class APIUtilTestCase {
     private RegistryContext registryContext;
     private UserRegistry registry;
@@ -87,6 +95,9 @@ public class APIUtilTestCase {
     private Environment environment;
     private PrivilegedCarbonContext privilegedCarbonContext;
     private ServerConfiguration serverConfiguration;
+    private ConfigurationContextService configurationContextService;
+    private AxisConfiguration axisConfiguration;
+    private ApiMgtDAO apiMgtDAO;
 
     private Resource resource;
     private int tenantId = 1;
@@ -104,16 +115,23 @@ public class APIUtilTestCase {
         UserRegistry superTenantRegistry = Mockito.mock(UserRegistry.class);
         resource = Mockito.mock(Resource.class);
         registryContext = Mockito.mock(RegistryContext.class);
+        configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        axisConfiguration = Mockito.mock(AxisConfiguration.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
         TenantIndexingLoader tenantIndexingLoader = Mockito.mock(TenantIndexingLoader.class);
         TenantRegistryLoader tenantRegistryLoader = Mockito.mock(TenantRegistryLoader.class);
         PowerMockito.mockStatic(ServiceReferenceHolder.class);
         PowerMockito.mockStatic(APIManagerComponent.class);
         PowerMockito.mockStatic(RegistryUtils.class);
         PowerMockito.mockStatic(ServerConfiguration.class);
+        PowerMockito.mockStatic(CarbonUtils.class);
         Mockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
         Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(registryService);
         Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn(apiMgtConfigurationService);
+        Mockito.when(serviceReferenceHolder.getContextService()).thenReturn(configurationContextService);
         Mockito.when(apiMgtConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(configurationContextService.getServerConfigContext()).thenReturn(configurationContext);
+        Mockito.when(configurationContext.getAxisConfiguration()).thenReturn(axisConfiguration);
         Mockito.when(environment.getName()).thenReturn("prod");
         Map<String, Environment> environmentMap = new HashMap<String, Environment>();
         environmentMap.put("prod", environment);
@@ -146,6 +164,7 @@ public class APIUtilTestCase {
 
         PowerMockito.when(ServerConfiguration.getInstance()).thenReturn(serverConfiguration);
         Mockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
 
     }
 
@@ -458,7 +477,10 @@ public class APIUtilTestCase {
 
     @Test(expected = APIManagementException.class)
     public void testIsApplicationExistException() throws APIManagementException {
-        APIUtil.isApplicationExist("subscriber", "xyz", "engineering");
+        String subscriber = "subscriber";
+        String applicationName = "xyz";
+        String groupID = "engineering";
+        APIUtil.isApplicationExist(subscriber, applicationName, groupID);
     }
 
     @Test
@@ -468,8 +490,11 @@ public class APIUtilTestCase {
         String groupID = "engineering";
 
         PowerMockito.mockStatic(ApiMgtDAO.class);
-        ApiMgtDAO apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        Assert.assertFalse(APIUtil.isApplicationExist("subscriber", "xyz", "engineering"));
+
+
         Mockito.when(apiMgtDAO.isApplicationExist(subscriber, applicationName, groupID)).thenReturn(true);
 
         APIUtil.isApplicationExist(subscriber, applicationName, groupID);
@@ -481,7 +506,7 @@ public class APIUtilTestCase {
         Assert.assertNotNull(APIUtil.getHostAddress());
     }
 
-//    @Test
+    //    @Test
     public void testGetHostAddress() throws APIManagementException {
         String hostAddress = "192.168.0.100:5002";
         Mockito.when(serverConfiguration.getFirstProperty(APIConstants.API_MANAGER_HOSTNAME)).thenReturn(hostAddress);
@@ -513,5 +538,111 @@ public class APIUtilTestCase {
         Gson gson = new Gson();
         String actual = gson.toJson(jsonObject);
         Assert.assertEquals(actual, APIUtil.convertToString(jsonObject));
+    }
+
+    @Test
+    public void testGetServerURL() throws APIManagementException {
+
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PROXY_CONTEXT_PATH)).thenReturn("/abc");
+        PowerMockito.when(CarbonUtils.getManagementTransport()).thenReturn("https");
+        PowerMockito.when(CarbonUtils.getTransportProxyPort(axisConfiguration, "https")).thenReturn(-1);
+        PowerMockito.when(CarbonUtils.getTransportProxyPort(axisConfiguration, "https")).thenReturn(9443);
+
+        Assert.assertNotNull(APIUtil.getServerURL());
+
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.HOST_NAME)).thenReturn("192.168.0.100");
+        Assert.assertEquals("https://192.168.0.100:9443/abc", APIUtil.getServerURL());
+
+    }
+
+    @Test
+    public void testGetAPIProviderFromRESTAPI() {
+
+        //apiversion does not contain "--" . Hence, returning null
+        Assert.assertNull(APIUtil.getAPIProviderFromRESTAPI("1.0", ""));
+
+        String apiVersion = "admin-AT-1.0--";
+        Assert.assertEquals("admin@1.0@abc.com", APIUtil.getAPIProviderFromRESTAPI(apiVersion, tenantDomain));
+
+    }
+
+    @Test
+    public void testIsAllowCredentials() {
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_CREDENTIALS))
+                .thenReturn("true");
+        Assert.assertTrue(APIUtil.isAllowCredentials());
+
+    }
+
+    @Test
+    public void testIsCORSEnabled() {
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.CORS_CONFIGURATION_ENABLED))
+                .thenReturn("true");
+        Assert.assertTrue(APIUtil.isCORSEnabled());
+
+    }
+
+    @Test
+    public void testGetAllAlertTypeByStakeHolder() throws APIManagementException {
+
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        HashMap<Integer, String> map = new HashMap<Integer, String>(0);
+         Mockito.when(apiMgtDAO.getAllAlertTypesByStakeHolder("")).thenReturn(map);
+        Assert.assertEquals(0, APIUtil.getAllAlertTypeByStakeHolder("").size());
+
+    }
+
+    @Test
+    public void testGetSavedAlertTypesIdsByUserNameAndStakeHolder() throws APIManagementException {
+
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        List<Integer> list = new ArrayList<Integer>(0);
+        Mockito.when(apiMgtDAO.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")).thenReturn(list);
+        Assert.assertEquals(0,APIUtil.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")
+                .size());
+
+    }
+
+    @Test
+    public void testRetrieveSavedEmailList() throws APIManagementException {
+
+        PowerMockito.mockStatic(ApiMgtDAO.class);
+        apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
+        PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
+        List<String> list = new ArrayList<String>(0);
+        Mockito.when(apiMgtDAO.retrieveSavedEmailList("", "")).thenReturn(list);
+        Assert.assertEquals(0, APIUtil.retrieveSavedEmailList("", "").size());
+
+    }
+
+    @Test
+    public void testIsEnabledSubscriptionSpikeArrest() {
+
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        Mockito.when(throttleProperties.isEnabledSubscriptionLevelSpikeArrest()).thenReturn(true);
+        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+        Assert.assertTrue(APIUtil.isEnabledSubscriptionSpikeArrest());
+
+    }
+
+    @Test
+    public void testGetFullLifeCycleData() throws XMLStreamException, RegistryException {
+
+//        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+//        Mockito.when(throttleProperties.isEnabledSubscriptionLevelSpikeArrest()).thenReturn(true);
+//        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+        Assert.assertNull(new APIUtil().getFullLifeCycleData(registry));
+
+        Mockito.when(registry.resourceExists("/repository/components/org.wso2.carbon.governance/lifecycles/APILifeCycle"))
+                .thenReturn(true);
+        Mockito.when(registry.get("/repository/components/org.wso2.carbon.governance/lifecycles/APILifeCycle"))
+                .thenReturn(resource);
+        Assert.assertNull(new APIUtil().getFullLifeCycleData(registry));
+
     }
 }
