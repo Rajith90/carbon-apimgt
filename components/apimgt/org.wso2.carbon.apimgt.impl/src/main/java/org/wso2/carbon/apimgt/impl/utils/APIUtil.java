@@ -3205,9 +3205,9 @@ public final class APIUtil {
      */
     private static boolean isRoleCreationEnabled (JSONObject roleConfig) {
         boolean roleCreationEnabled = false;
-        if (roleConfig != null && roleConfig.get(
-                APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD) != null && (Boolean) (roleConfig.get(
-                APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD))) {
+        if (roleConfig != null
+                && roleConfig.get(APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD) != null
+                && (Boolean) (roleConfig.get(APIConstants.API_TENANT_CONF_DEFAULT_ROLES_CREATE_ON_TENANT_LOAD))) {
             roleCreationEnabled = true;
         }
         return roleCreationEnabled;
@@ -3512,52 +3512,7 @@ public final class APIUtil {
         }
     }
 
-    public void setupSelfRegistration(APIManagerConfiguration config, int tenantId) throws APIManagementException {
-        boolean enabled = Boolean.parseBoolean(config.getFirstProperty(APIConstants.SELF_SIGN_UP_ENABLED));
-        if (!enabled) {
-            return;
-        }
-        // Create the subscriber role as an internal role
-        String role = UserCoreConstants.INTERNAL_DOMAIN + CarbonConstants.DOMAIN_SEPARATOR
-                + config.getFirstProperty(APIConstants.SELF_SIGN_UP_ROLE);
-        if ((UserCoreConstants.INTERNAL_DOMAIN + CarbonConstants.DOMAIN_SEPARATOR).equals(role)) {
-            // Required parameter missing - Throw an exception and interrupt startup
-            throw new APIManagementException("Required subscriber role parameter missing "
-                    + "in the self sign up configuration");
-        }
-
-        try {
-            RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
-            UserRealm realm;
-            org.wso2.carbon.user.api.UserRealm tenantRealm;
-            UserStoreManager manager;
-
-            if (tenantId < 0) {
-                realm = realmService.getBootstrapRealm();
-                manager = realm.getUserStoreManager();
-            } else {
-                tenantRealm = realmService.getTenantUserRealm(tenantId);
-                manager = tenantRealm.getUserStoreManager();
-            }
-            if (!manager.isExistingRole(role)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Creating subscriber role: " + role);
-                }
-                Permission[] subscriberPermissions = new Permission[]{
-                        new Permission("/permission/admin/login", UserMgtConstants.EXECUTE_ACTION),
-                        new Permission(APIConstants.Permissions.API_SUBSCRIBE, UserMgtConstants.EXECUTE_ACTION)};
-                String tenantAdminName = ServiceReferenceHolder.getInstance().getRealmService()
-                        .getTenantUserRealm(tenantId).getRealmConfiguration().getAdminUserName();
-                String[] userList = new String[]{tenantAdminName};
-                manager.addRole(role, userList, subscriberPermissions);
-            }
-        } catch (UserStoreException e) {
-            throw new APIManagementException("Error while creating subscriber role: " + role + " - "
-                    + "Self registration might not function properly.", e);
-        }
-    }
-
-    public static String removeAnySymbolFromUriTempate(String uriTemplate) {
+    public static String removeAnySymbolFromUriTemplate(String uriTemplate) {
         if (uriTemplate != null) {
             int anySymbolIndex = uriTemplate.indexOf("/*");
             if (anySymbolIndex != -1) {
@@ -3654,7 +3609,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
@@ -3699,7 +3654,7 @@ public final class APIUtil {
                     }
                 }
             } catch (UserStoreException e) {
-                handleException("UserStoreException thrown when tenant-config.json", e);
+                handleException("UserStoreException thrown when getting tenant-config.json", e);
             } catch (RegistryException e) {
                 handleException("RegistryException thrown when getting tenant-config.json", e);
             } catch (ParseException e) {
@@ -3909,7 +3864,7 @@ public final class APIUtil {
         for (URITemplate template : uriTemplates) {
             List<Operation> ops;
             List<Parameter> parameters;
-            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTempate(template.getUriTemplate());
+            String path = urlPrefix + APIUtil.removeAnySymbolFromUriTemplate(template.getUriTemplate());
             /* path exists in uriTemplateDefinitions */
             if (uriTemplateDefinitions.get(path) != null) {
                 ops = uriTemplateDefinitions.get(path);
