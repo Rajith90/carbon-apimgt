@@ -21,6 +21,9 @@ package org.wso2.carbon.apimgt.impl;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axis2.clustering.ClusteringAgent;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,6 +74,7 @@ import org.wso2.carbon.apimgt.api.model.policy.RequestCountLimit;
 import org.wso2.carbon.apimgt.api.model.policy.SubscriptionPolicy;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.definitions.APIDefinitionFromSwagger20;
+import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowProperties;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
@@ -88,6 +92,7 @@ import org.wso2.carbon.governance.api.common.dataobjects.GovernanceArtifact;
 import org.wso2.carbon.governance.api.exception.GovernanceException;
 import org.wso2.carbon.governance.api.generic.GenericArtifactManager;
 import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifact;
+import org.wso2.carbon.governance.api.generic.dataobjects.GenericArtifactImpl;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.governance.custom.lifecycles.checklist.beans.LifecycleBean;
 import org.wso2.carbon.governance.custom.lifecycles.checklist.util.CheckListItem;
@@ -112,6 +117,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.IOException;
@@ -865,6 +871,209 @@ public class APIProviderImplTest {
         } catch(APIManagementException e) {
             assertEquals("Advanced Policy: 1111 was not found.", e.getMessage());
         }
+    }
+
+    @Test
+    public void testGetApplicationPolicy() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        PowerMockito.when(APIUtil.getTenantId("testUser")).thenReturn(1111);
+        ApplicationPolicy applicationPolicy = Mockito.mock(ApplicationPolicy.class);
+        Mockito.when(apimgtDAO.getApplicationPolicy("testPolicy", 1111)).
+                thenReturn(applicationPolicy);
+        assertNotNull(apiProvider.getApplicationPolicy("testUser", "testPolicy"));
+    }
+
+    @Test
+    public void testGetApplicationPolicyByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        ApplicationPolicy applicationPolicy = Mockito.mock(ApplicationPolicy.class);
+        Mockito.when(apimgtDAO.getApplicationPolicyByUUID("1111")).thenReturn(applicationPolicy, null);
+        apiProvider.getApplicationPolicyByUUID("1111");
+        try {
+            assertNotNull(apiProvider.getApplicationPolicyByUUID("1111"));
+        } catch(APIManagementException e) {
+            assertEquals("Application Policy: 1111 was not found.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetSubscriptionPolicy() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        PowerMockito.when(APIUtil.getTenantId("testUser")).thenReturn(1111);
+        SubscriptionPolicy subscriptionPolicy = Mockito.mock(SubscriptionPolicy.class);
+        Mockito.when(apimgtDAO.getSubscriptionPolicy("testPolicy", 1111)).
+                thenReturn(subscriptionPolicy);
+        assertNotNull(apiProvider.getSubscriptionPolicy("testUser", "testPolicy"));
+    }
+
+    @Test
+    public void testGetSubscriptionPolicyByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        SubscriptionPolicy subscriptionPolicy = Mockito.mock(SubscriptionPolicy.class);
+        Mockito.when(apimgtDAO.getSubscriptionPolicyByUUID("1111")).thenReturn(subscriptionPolicy, null);
+        apiProvider.getSubscriptionPolicyByUUID("1111");
+        try {
+            assertNotNull(apiProvider.getSubscriptionPolicyByUUID("1111"));
+        } catch(APIManagementException e) {
+            assertEquals("Subscription Policy: 1111 was not found.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetGlobalPolicy() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        GlobalPolicy globalPolicy = Mockito.mock(GlobalPolicy.class);
+        Mockito.when(apimgtDAO.getGlobalPolicy("testName")).
+                thenReturn(globalPolicy);
+        assertNotNull(apiProvider.getGlobalPolicy("testName"));
+    }
+
+    @Test
+    public void testGetGlobalPolicyByUUID() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        GlobalPolicy globalPolicy = Mockito.mock(GlobalPolicy.class);
+        Mockito.when(apimgtDAO.getGlobalPolicyByUUID("1111")).thenReturn(globalPolicy, null);
+        apiProvider.getGlobalPolicyByUUID("1111");
+        try {
+            assertNotNull(apiProvider.getGlobalPolicyByUUID("1111"));
+        } catch(APIManagementException e) {
+            assertEquals("Global Policy: 1111 was not found.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testSearchAPIsByDoc() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Map<Documentation, API> apiMap = new HashMap<Documentation, API>();
+        PowerMockito.when(APIUtil.searchAPIsByDoc(apiProvider.registry, apiProvider.tenantId,
+                apiProvider.username, "testTerm", APIConstants.PUBLISHER_CLIENT)).thenReturn(apiMap);
+        assertEquals(apiMap, apiProvider.searchAPIsByDoc("testTerm", "testType"));
+    }
+
+    @Test
+    public void testCallStatUpdateService() throws APIManagementException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        ConfigurationContextService configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        AxisConfiguration axisConfiguration = Mockito.mock(AxisConfiguration.class);
+        ClusteringAgent clusteringAgent = Mockito.mock(ClusteringAgent.class);
+
+        Map<String, Environment> map = new HashMap<String, Environment>();
+        Environment environment = new Environment();
+        map.put("env", environment);
+
+        APIManagerConfigurationService apiManagerConfigurationService =
+                Mockito.mock(APIManagerConfigurationService.class);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.when(ServiceReferenceHolder.getContextService()).thenReturn(configurationContextService);
+        Mockito.when(configurationContextService.getServerConfigContext()).thenReturn(configurationContext);
+        Mockito.when(configurationContext.getAxisConfiguration()).thenReturn(axisConfiguration);
+        Mockito.when(axisConfiguration.getClusteringAgent()).thenReturn(clusteringAgent);
+        ServiceReferenceHolder sh = PowerMockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(sh);
+        Mockito.when(sh.getAPIManagerConfigurationService()).thenReturn(apiManagerConfigurationService);
+        Mockito.when(apiManagerConfigurationService.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(apiManagerConfiguration.getApiGatewayEnvironments()).thenReturn(map);
+
+        apiProvider.callStatUpdateService("testUrl", "testUser",
+                "testPassword", true);
+    }
+
+    @Test
+    public void testRemoveTier() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Tier tier = new Tier("testTier");
+        tier.setDescription("testDescription");
+        tier.setTierPlan("testPlan");
+
+        Map<String, Tier> tierMap = new HashMap<String, Tier>();
+        tierMap.put("tier", tier);
+        PowerMockito.when(APIUtil.getAllTiers()).thenReturn(tierMap);
+        Resource resource = new ResourceImpl();
+        Mockito.when(apiProvider.registry.newResource()).thenReturn(resource);
+
+        PowerMockito.when(APIUtil.getArtifactManager(apiProvider.registry, APIConstants.API_KEY)).
+                thenReturn(artifactManager);
+        GenericArtifact genericArtifact1 = new GenericArtifactImpl(new QName("local"), "artifact1");
+        GenericArtifact genericArtifact2 = new GenericArtifactImpl(new QName("local"), "artifact2");
+        GenericArtifact[] genericArtifacts = new GenericArtifact[] { genericArtifact1, genericArtifact2 };
+        Mockito.when(artifactManager.findGovernanceArtifacts(Mockito.anyString()))
+                .thenReturn(null, genericArtifacts);
+        apiProvider.removeTier(tier);
+        try {
+            apiProvider.removeTier(tier);
+        } catch (APIManagementException e) {
+            assertEquals("Unable to remove this tier. Tier in use", e.getMessage());
+        }
+        Mockito.verify(apiProvider.registry);
+    }
+
+
+    @Test
+    public void testRemoveDocumentation() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        PowerMockito.when(APIUtil.getAPIDocPath(apiId) + "testDoc").thenReturn("testPath");
+        Resource resource = Mockito.mock(Resource.class);
+        Mockito.when(apiProvider.registry.get("testPathtestDoc")).thenReturn(resource);
+        Mockito.when(resource.getUUID()).thenReturn("1111");
+        PowerMockito.when(APIUtil.getArtifactManager(apiProvider.registry,APIConstants.DOCUMENTATION_KEY)).
+                thenReturn(artifactManager);
+        GenericArtifact genericArtifact = Mockito.mock(GenericArtifact.class);
+        Mockito.when(artifactManager.getGenericArtifact("1111")).thenReturn(genericArtifact);
+        Mockito.when(genericArtifact.getAttribute(APIConstants.DOC_FILE_PATH)).thenReturn("testDocPath");
+        Association association = Mockito.mock(Association.class);
+        Association[] associations = new Association[]{association};
+        Mockito.when(apiProvider.registry.getAssociations("testPathtestDoc", APIConstants.DOCUMENTATION_KEY)).
+                thenReturn(associations);
+        apiProvider.removeDocumentation(apiId, "testDoc", "testType");
+        Mockito.verify(apiProvider.registry);
+    }
+
+    @Test
+    public void testRemoveDocumentation1() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        PowerMockito.when(APIUtil.getArtifactManager(apiProvider.registry, APIConstants.DOCUMENTATION_KEY)).
+                thenReturn(artifactManager);
+        GenericArtifact artifact = Mockito.mock(GenericArtifact.class);
+        Mockito.when(artifactManager.getGenericArtifact("testId")).thenReturn(artifact);
+        Mockito.when(artifact.getPath()).thenReturn("docPath");
+        Mockito.when(artifact.getAttribute(APIConstants.DOC_FILE_PATH)).thenReturn("docFilePath");
+        Association association = Mockito.mock(Association.class);
+        Association[] associations = new Association[]{association};
+        Mockito.when(apiProvider.registry.getAssociations("docPath", APIConstants.DOCUMENTATION_KEY)).
+                thenReturn(associations);
+        apiProvider.removeDocumentation(apiId, "testId");
+        Mockito.verify(apiProvider.registry);
+    }
+
+    @Test
+    public void testCopyAllDocumentation() throws APIManagementException, RegistryException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        PowerMockito.when(APIUtil.getAPIDocPath(apiId)).thenReturn("oldVersion");
+        Resource resource = new ResourceImpl();
+        Mockito.when(apiProvider.registry.get("oldVersion")).thenReturn(resource);
+        apiProvider.copyAllDocumentation(apiId, "testVersion");
+        Mockito.verify(apiProvider.registry);
+    }
+
+    @Test
+    public void testDeleteWorkflowTask() throws APIManagementException, WorkflowException {
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        APIIdentifier apiId = new APIIdentifier("admin", "API1", "1.0.1");
+        Mockito.when(apimgtDAO.getAPIID(apiId, null)).thenReturn(1111);
+        WorkflowExecutorFactory wfe = PowerMockito.mock(WorkflowExecutorFactory.class);
+        Mockito.when(WorkflowExecutorFactory.getInstance()).thenReturn(wfe);
+        WorkflowExecutor apiStateChangeWFExecutor = Mockito.mock(WorkflowExecutor.class);
+        Mockito.when(wfe.getWorkflowExecutor(WorkflowConstants.WF_TYPE_AM_API_STATE)).
+                thenReturn(apiStateChangeWFExecutor);
+        WorkflowDTO workflowDTO = Mockito.mock(WorkflowDTO.class);
+        Mockito.when(apimgtDAO.retrieveWorkflowFromInternalReference(Integer.toString(1111),
+                WorkflowConstants.WF_TYPE_AM_API_STATE)).thenReturn(workflowDTO);
+        apiProvider.deleteWorkflowTask(apiId);
+        Mockito.verify(apimgtDAO, Mockito.times(1)).getAPIID(apiId, null);
     }
 
     @Test
