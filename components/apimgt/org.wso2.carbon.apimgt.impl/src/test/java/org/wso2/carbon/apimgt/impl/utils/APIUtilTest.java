@@ -55,6 +55,7 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIStatus;
+import org.wso2.carbon.apimgt.api.model.APIStore;
 import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.DocumentationType;
@@ -150,6 +151,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import javax.cache.Cache;
+import javax.cache.CacheBuilder;
+import javax.cache.CacheConfiguration;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
@@ -163,7 +170,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
         RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
         APIManagerComponent.class, TenantAxisUtils.class, IOUtils.class, NetworkUtils.class,
-        ServerConfiguration.class })
+        ServerConfiguration.class, Caching.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -3869,6 +3876,140 @@ public class APIUtilTest {
         } catch (APIManagementException e) {
             Assert.assertTrue(
                     e.getMessage().contains("ParseException thrown when passing API tenant config from registry"));
+        }
+    }
+
+    public void testGetExternalAPIStoresByTenantID() {
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        APIStore apiStore = new APIStore();
+        apiStore.setName("Store1");
+        apiStore.setDisplayName("API Store 1");
+        Set<APIStore> externalAPIStores = new HashSet<APIStore>();
+        externalAPIStores.add(apiStore);
+        Mockito.when(apiManagerConfiguration.getExternalAPIStores()).thenReturn(externalAPIStores);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+        try {
+            Assert.assertNotNull(APIUtil.getExternalAPIStores(-1234));
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected exception occurred while retrieving API Stores");
+        }
+    }
+
+    @Test
+    public void testGetExternalAPIStoresByGivenAPIStores(){
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        APIStore apiStore = new APIStore();
+        apiStore.setName("Store1");
+        apiStore.setDisplayName("API Store 1");
+        Set<APIStore> externalAPIStores = new HashSet<APIStore>();
+        externalAPIStores.add(apiStore);
+        Set<APIStore> inputAPIStores = new HashSet<APIStore>();
+        APIStore inputAPIStore1 = new APIStore();
+        inputAPIStore1.setName("Store1");
+        inputAPIStore1.setDisplayName("API Store 1");
+        APIStore inputAPIStore2 = new APIStore();
+        inputAPIStore2.setName("Store2");
+        inputAPIStore2.setDisplayName("API Store 2");
+        inputAPIStores.add(inputAPIStore1);
+        inputAPIStores.add(inputAPIStore2);
+        Mockito.when(apiManagerConfiguration.getExternalAPIStores()).thenReturn(externalAPIStores);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+        try {
+            Set<APIStore> apiStores = APIUtil.getExternalAPIStores(inputAPIStores, -1234);
+            Assert.assertNotNull(apiStores);
+            Assert.assertEquals(apiStores.size(), 1);
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected exception occurred while retrieving API Stores");
+        }
+    }
+
+    @Test
+    public void testIsAPIsPublishToExternalAPIStores() {
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        APIManagerConfigurationService apiManagerConfigurationService = new APIManagerConfigurationServiceImpl
+                (apiManagerConfiguration);
+        APIStore apiStore = new APIStore();
+        apiStore.setName("Store1");
+        apiStore.setDisplayName("API Store 1");
+        Set<APIStore> externalAPIStores = new HashSet<APIStore>();
+        externalAPIStores.add(apiStore);
+        Mockito.when(apiManagerConfiguration.getExternalAPIStores()).thenReturn(externalAPIStores);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfigurationService()).thenReturn
+                (apiManagerConfigurationService);
+        try {
+            Assert.assertTrue(APIUtil.isAPIsPublishToExternalAPIStores(-1234));
+        } catch (APIManagementException e) {
+            Assert.fail("Unexpected exception occurred while checking for available external API stores");
+        }
+    }
+
+    @Test
+    public void testGetAPIContextCache(){
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_CONTEXT_CACHE_MANAGER)).thenReturn
+                (cacheManager);
+        Cache cache = Mockito.mock(Cache.class);
+        PowerMockito.when(cacheManager.getCache(APIConstants.API_CONTEXT_CACHE)).thenReturn(cache);
+        CacheManager contextCacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(cache.getCacheManager()).thenReturn(contextCacheManager);
+        CacheBuilder cacheBuilder = Mockito.mock(CacheBuilder.class);
+        PowerMockito.when(contextCacheManager.<String, Boolean>createCacheBuilder(APIConstants.API_CONTEXT_CACHE_MANAGER))
+                .thenReturn(cacheBuilder);
+        PowerMockito.when(cacheBuilder.build()).thenReturn(cache);
+        PowerMockito.when(cacheBuilder.setExpiry(CacheConfiguration.ExpiryType.MODIFIED,
+                new CacheConfiguration.Duration(TimeUnit.DAYS, APIConstants.API_CONTEXT_CACHE_EXPIRY_TIME_IN_DAYS)))
+                .thenReturn(cacheBuilder);
+        PowerMockito.when(cacheBuilder.setStoreByValue(false)).thenReturn(cacheBuilder);
+
+        //When cache context cache is not initialized
+        Assert.assertNotNull(APIUtil.getAPIContextCache());
+
+        //When context cache is already initialized
+        Assert.assertNotNull(APIUtil.getAPIContextCache());
+    }
+
+    @Test
+    public void testGetActiveTenantDomains() {
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+
+        //When active tenants are not available
+        try {
+            Mockito.when(tenantManager.getAllTenants()).thenReturn(null);
+            Assert.assertTrue(APIUtil.getActiveTenantDomains().isEmpty());
+        } catch (UserStoreException e) {
+            Assert.fail("Unexpected exception occurred while retrieving active tenant domains");
+        }
+
+        //When active tenants are available
+        try {
+            Tenant activeTenant = new Tenant();
+            activeTenant.setDomain("wso2.com");
+            activeTenant.setActive(true);
+            Tenant inActiveTenant = new Tenant();
+            inActiveTenant.setDomain("hr.com");
+            inActiveTenant.setActive(false);
+            Tenant[] tenants = {inActiveTenant, activeTenant};
+            Mockito.when(tenantManager.getAllTenants()).thenReturn(tenants);
+            Set<String> activeTenantDomains = APIUtil.getActiveTenantDomains();
+            Assert.assertEquals(activeTenantDomains.size(), 2);
+            Assert.assertTrue(activeTenantDomains.contains("wso2.com"));
+            Assert.assertTrue(activeTenantDomains.contains("carbon.super"));
+        } catch (UserStoreException e) {
+            Assert.fail("Unexpected exception occurred while retrieving active tenant domains");
         }
     }
 
