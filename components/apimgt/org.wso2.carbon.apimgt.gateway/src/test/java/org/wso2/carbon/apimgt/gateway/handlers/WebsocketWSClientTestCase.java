@@ -53,7 +53,7 @@ public class WebsocketWSClientTestCase {
         PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
         Mockito.when(serviceReferenceHolder.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_URL))
-                .thenReturn("http://localhost:8083");
+                .thenReturn("http://localhost:18083");
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_USERNAME))
                 .thenReturn("username");
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_PASSWORD))
@@ -88,7 +88,7 @@ public class WebsocketWSClientTestCase {
 
             // username = null
             Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_URL))
-                    .thenReturn("http://localhost:8083");
+                    .thenReturn("http://localhost:18083");
             Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_USERNAME)).thenReturn(null);
             WebsocketWSClient websocketWSClient1 = new WebsocketWSClient();
             fail("Expected APISecurityConstants.API_AUTH_GENERAL_ERROR is not thrown when username = null");

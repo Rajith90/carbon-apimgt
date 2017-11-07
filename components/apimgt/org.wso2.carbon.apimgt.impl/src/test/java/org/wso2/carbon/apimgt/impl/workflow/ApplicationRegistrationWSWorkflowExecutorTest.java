@@ -64,7 +64,7 @@ public class ApplicationRegistrationWSWorkflowExecutorTest {
     private KeyManager keyManager;
     private String adminUsername = "admin";
     private String adminPassword = "admin";
-    private String callBaclURL = "http://localhost:8090/playground2.0/oauth2client";
+    private String callBaclURL = "http://localhost:18090/playground2.0/oauth2client";
 
 
     @Before
