@@ -4013,4 +4013,99 @@ public class APIUtilTest {
         }
     }
 
+    @Test
+    public void testGetTierFromCacheWhenContainsKey() throws Exception {
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+        PrivilegedCarbonContext.startTenantFlow();
+        PrivilegedCarbonContext.getThreadLocalCarbonContext()
+                .setTenantDomain(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantId(MultitenantConstants.SUPER_TENANT_ID);
+
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Cache cache = Mockito.mock(Cache.class);
+        Mockito.when(cache.containsKey("Gold")).thenReturn(true);
+        Map<String, Tier> stringTierMap = new HashMap<String, Tier>();
+        stringTierMap.put("Gold", new Tier("Gold"));
+        Mockito.when(cache.get("Gold")).thenReturn(stringTierMap);
+        Mockito.when(cacheManager.getCache(APIConstants.TIERS_CACHE)).thenReturn(cache);
+        Tier result = APIUtil.getTierFromCache("Gold",MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        Assert.assertNotNull(result);
+    }
+
+
+    @Test
+    public void testGetTierFromCacheWhenNotContainsKey() throws Exception {
+        System.setProperty("carbon.home", "");
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        PowerMockito.when(privilegedCarbonContext.getTenantId()).thenReturn(0); // tenantId = 0 case
+
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Cache cache = Mockito.mock(Cache.class);
+        Mockito.when(cache.containsKey("Gold")).thenReturn(false);
+        Mockito.when(cacheManager.getCache(APIConstants.TIERS_CACHE)).thenReturn(cache);
+
+        PowerMockito.stub(PowerMockito.method(APIUtil.class, "isAdvanceThrottlingEnabled")).toReturn(false); //Advance Throttling disabled
+        Map<String, Tier> stringTierMap = new HashMap<String, Tier>();
+        stringTierMap.put("Gold", new Tier("Gold"));
+        PowerMockito.stub(PowerMockito.method(APIUtil.class,"getTiers")).toReturn(stringTierMap); // do not call real implementation
+        Tier result = APIUtil.getTierFromCache("Gold",MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        Assert.assertNotNull(result);
+
+        PowerMockito.when(privilegedCarbonContext.getTenantId()).thenReturn(5443); // tenantId != 0 case
+        PowerMockito.stub(PowerMockito.method(APIUtil.class,"getTiers", int.class)).toReturn(stringTierMap);
+        Tier result2 = APIUtil.getTierFromCache("Gold",MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        Assert.assertNotNull(result2);
+    }
+
+    @Test
+    public void testGetTierFromCacheWhenThrottlingDisabled() throws Exception {
+        System.setProperty("carbon.home", "");
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        PowerMockito.when(privilegedCarbonContext.getTenantId()).thenReturn(0); // tenantId = 0 case
+
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Cache cache = Mockito.mock(Cache.class);
+        Mockito.when(cache.containsKey("Gold")).thenReturn(false);
+        Mockito.when(cacheManager.getCache(APIConstants.TIERS_CACHE)).thenReturn(cache);
+
+        PowerMockito.stub(PowerMockito.method(APIUtil.class, "isAdvanceThrottlingEnabled")).toReturn(true); //Advance Throttling enabled
+        Map<String, Tier> stringTierMap = new HashMap<String, Tier>();
+        stringTierMap.put("Gold", new Tier("Gold"));
+        PowerMockito.stub(PowerMockito.method(APIUtil.class,"getAdvancedSubsriptionTiers")).toReturn(stringTierMap); // do not call real implementation
+        Tier result = APIUtil.getTierFromCache("Gold",MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        Assert.assertNotNull(result);
+
+        PowerMockito.when(privilegedCarbonContext.getTenantId()).thenReturn(5443); // tenantId != 0 case
+        PowerMockito.stub(PowerMockito.method(APIUtil.class,"getAdvancedSubsriptionTiers", int.class)).toReturn(stringTierMap);
+        Tier result2 = APIUtil.getTierFromCache("Gold",MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+
+        Assert.assertNotNull(result2);
+    }
+
+    @Test
+    public void testClearTiersCache() {
+        System.setProperty("carbon.home", "");
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+
+        PowerMockito.mockStatic(Caching.class);
+        CacheManager cacheManager = Mockito.mock(CacheManager.class);
+        PowerMockito.when(Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)).thenReturn(cacheManager);
+        Cache cache = Mockito.mock(Cache.class);
+        Mockito.when(cacheManager.getCache(APIConstants.TIERS_CACHE)).thenReturn(cache);
+        APIUtil.clearTiersCache(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+        Mockito.verify(cacheManager, Mockito.times(1)).getCache(APIConstants.TIERS_CACHE);
+    }
+
 }
