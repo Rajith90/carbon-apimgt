@@ -648,12 +648,10 @@ public class APIUtilTestCase {
 
     @Test
     public void testIsStoreForumEnabled() {
-
         Assert.assertTrue(APIUtil.isStoreForumEnabled());
 
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_FORUM_ENABLED)).thenReturn("false");
         Assert.assertFalse(APIUtil.isStoreForumEnabled());
-
     }
 
     @Test
