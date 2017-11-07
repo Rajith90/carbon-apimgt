@@ -27,6 +27,8 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.util.threadpool.ThreadFactory;
 import org.apache.axis2.util.threadpool.ThreadPool;
@@ -87,6 +89,7 @@ import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.keymgt.client.SubscriberKeyMgtClient;
 import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.commons.stub.loggeduserinfo.LoggedUserInfo;
 import org.wso2.carbon.core.commons.stub.loggeduserinfo.LoggedUserInfoAdminStub;
@@ -138,6 +141,9 @@ import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -170,7 +176,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_
         .class, OAuthAdminClient.class, ApiMgtDAO.class, AXIOMUtil.class, OAuthServerConfiguration.class,
         RegistryUtils.class, RegistryAuthorizationManager.class, RegistryContext.class, PrivilegedCarbonContext.class,
         APIManagerComponent.class, TenantAxisUtils.class, IOUtils.class, NetworkUtils.class,
-        ServerConfiguration.class, Caching.class })
+        ServerConfiguration.class, Caching.class, KeyStore.class , CarbonContext.class })
 @PowerMockIgnore("javax.net.ssl.*")
 public class APIUtilTest {
 
@@ -4002,7 +4008,7 @@ public class APIUtilTest {
             Tenant inActiveTenant = new Tenant();
             inActiveTenant.setDomain("hr.com");
             inActiveTenant.setActive(false);
-            Tenant[] tenants = {inActiveTenant, activeTenant};
+            Tenant[] tenants = { inActiveTenant, activeTenant };
             Mockito.when(tenantManager.getAllTenants()).thenReturn(tenants);
             Set<String> activeTenantDomains = APIUtil.getActiveTenantDomains();
             Assert.assertEquals(activeTenantDomains.size(), 2);
@@ -4106,6 +4112,114 @@ public class APIUtilTest {
         Mockito.when(cacheManager.getCache(APIConstants.TIERS_CACHE)).thenReturn(cache);
         APIUtil.clearTiersCache(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
         Mockito.verify(cacheManager, Mockito.times(1)).getCache(APIConstants.TIERS_CACHE);
+    }
+
+    @Test
+    public void testCreateSocketFactory() throws Exception {
+        SSLSocketFactory socketFactory = Mockito.mock(SSLSocketFactory.class);
+        PowerMockito.mockStatic(SSLSocketFactory.class);
+        Mockito.when(SSLSocketFactory.getSocketFactory()).thenReturn(socketFactory);
+
+        AxisConfiguration axisConfiguration = Mockito.mock(AxisConfiguration.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ConfigurationContextService configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(configurationContextService);
+        Mockito.when(configurationContextService.getServerConfigContext()).thenReturn(configurationContext);
+        Mockito.when(configurationContext.getAxisConfiguration()).thenReturn(axisConfiguration);
+
+        TransportInDescription transportInDescription = Mockito.mock(TransportInDescription.class);
+        Mockito.when(axisConfiguration.getTransportIn(APIConstants.HTTPS_PROTOCOL)).thenReturn(transportInDescription);
+        org.apache.axis2.description.Parameter parameter = new Parameter("param1",
+                APIConstants.SSL_VERIFY_CLIENT_STATUS_REQUIRE);
+        Mockito.when(transportInDescription.getParameter(APIConstants.SSL_VERIFY_CLIENT)).thenReturn(parameter);
+
+        PowerMockito.mockStatic(CarbonUtils.class);
+        ServerConfiguration serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        PowerMockito.when(CarbonUtils.getServerConfiguration()).thenReturn(serverConfiguration);
+        PowerMockito.when(serverConfiguration.getFirstProperty("Security.KeyStore.Location"))
+                .thenReturn("/security/wso2-carbon.jks");
+        String password = "wso2carbon";
+        PowerMockito.when(serverConfiguration.getFirstProperty("Security.KeyStore.Password")).thenReturn(password);
+        PowerMockito.mockStatic(KeyStore.class);
+        KeyStore keyStore = PowerMockito.mock(KeyStore.class);
+        PowerMockito.when(KeyStore.getInstance("JKS")).thenReturn(keyStore);
+        FileInputStream fileInputStream = Mockito.mock(FileInputStream.class);
+        PowerMockito.whenNew(FileInputStream.class).withAnyArguments().thenReturn(fileInputStream);
+        Mockito.doThrow(IOException.class).when(keyStore).load(fileInputStream, password.toCharArray());
+        Assert.assertNotNull(APIUtil.getHttpClient(9443, "https"));
+        Mockito.doThrow(NoSuchAlgorithmException.class).when(keyStore).load(fileInputStream, password.toCharArray());
+        Assert.assertNotNull(APIUtil.getHttpClient(9443, "https"));
+        Mockito.doThrow(CertificateException.class).when(keyStore).load(fileInputStream, password.toCharArray());
+        Assert.assertNotNull(APIUtil.getHttpClient(9443, "https"));
+        Mockito.doNothing().when(keyStore).load(fileInputStream, password.toCharArray());
+        PowerMockito.whenNew(SSLSocketFactory.class).withAnyArguments().thenReturn(socketFactory);
+        Assert.assertNotNull(APIUtil.getHttpClient(9443, "https"));
+
+    }
+
+    @Test
+    public void testGetRegistryResourcePathForUI() {
+        String tenantDomain = "abc.com";
+        String result = APIUtil
+                .getRegistryResourcePathForUI(APIConstants.RegistryResourceTypesForUI.TAG_THUMBNAIL, tenantDomain,
+                        "/test");
+        Assert.assertNotNull(result);
+        Assert.assertEquals("/t/abc.com/registry/resource/_system/governance/test", result);
+        result = APIUtil
+                .getRegistryResourcePathForUI(APIConstants.RegistryResourceTypesForUI.TAG_THUMBNAIL, "carbon.super",
+                        "/test");
+        Assert.assertNotNull(result);
+        Assert.assertEquals("/registry/resource/_system/governance/test", result);
+    }
+
+    @Test
+    public void testGetRegistryResourceHTTPPermlink() throws RegistryException {
+        ConfigurationContextService configurationContextService = Mockito.mock(ConfigurationContextService.class);
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        PowerMockito.when(ServiceReferenceHolder.getContextService()).thenReturn(configurationContextService);
+        PowerMockito.mockStatic(CarbonUtils.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        Mockito.when(configurationContextService.getServerConfigContext()).thenReturn(configurationContext);
+        PowerMockito.when(CarbonUtils.getTransportProxyPort(configurationContext, APIConstants.HTTP_PROTOCOL))
+                .thenReturn(-1);
+        PowerMockito.when(CarbonUtils.getTransportPort(configurationContext, APIConstants.HTTP_PROTOCOL))
+                .thenReturn(-1);
+        PowerMockito.when(CarbonUtils.getTransportProxyPort(configurationContext, APIConstants.HTTPS_PROTOCOL))
+                .thenReturn(-1);
+        PowerMockito.when(CarbonUtils.getTransportPort(configurationContext, APIConstants.HTTPS_PROTOCOL))
+                .thenReturn(9443);
+
+        PowerMockito.mockStatic(ServerConfiguration.class);
+        ServerConfiguration serverConfiguration = Mockito.mock(ServerConfiguration.class);
+        PowerMockito.when(ServerConfiguration.getInstance()).thenReturn(serverConfiguration);
+        Mockito.when(serverConfiguration.getFirstProperty("WebContextRoot")).thenReturn("/");
+        RegistryService registryService = Mockito.mock(RegistryService.class);
+        Mockito.when(serviceReferenceHolder.getRegistryService()).thenReturn(null, registryService);
+        System.setProperty("carbon.home", APIUtilTest.class.getResource("/").getFile());
+
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(privilegedCarbonContext);
+        Mockito.when(privilegedCarbonContext.getTenantDomain(true)).thenReturn("abc.com", "carbon.super");
+
+        String permLink = APIUtil.getRegistryResourceHTTPPermlink("/apimgt/applicationdata");
+        Assert.assertTrue(permLink.contains("/t"));
+
+        PowerMockito.mockStatic(CarbonContext.class);
+        CarbonContext carbonContext = Mockito.mock(CarbonContext.class);
+        PowerMockito.when(CarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        UserRegistry registry = Mockito.mock(UserRegistry.class);
+        Mockito.when(registryService.getRegistry(Mockito.anyString(), Mockito.anyInt())).thenReturn(registry);
+        Mockito.when(registry.getVersions(Mockito.anyString())).thenThrow(RegistryException.class)
+                .thenReturn(new String[] { "vv1;version:" });
+        permLink = APIUtil.getRegistryResourceHTTPPermlink("/apimgt/applicationdata");
+        Assert.assertFalse(permLink.contains("/t"));
+        permLink = APIUtil.getRegistryResourceHTTPPermlink("/apimgt/applicationdata");
+        Assert.assertFalse(permLink.contains("vv1"));
+
     }
 
 }
