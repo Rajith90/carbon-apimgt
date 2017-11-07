@@ -560,7 +560,7 @@
 				<td><a class="param_type" data-path="{{../resource_path}}.parameters[{{@index}}]" data-attr="type" title="type">{{ type }}</a></td>
 				<td><a class="param_required" data-type="select" data-path="{{../resource_path}}.parameters[{{@index}}]" data-attr="required" data-value="{{toString required }}" title="required"></a></td>
 				<td align="center">
-					<a data-path-name="{{path}}" data-path="{{../resource_path}}.parameters[{{@index}}]" data-index="{{@index}}" class="delete_parameter" title="index">
+					<a data-path-name="{{../resource_path_name}}" data-path="{{../resource_path}}.parameters[{{@index}}]" data-index="{{@index}}" class="delete_parameter" title="index">
 						<span class="fw-stack" style="font-size:10px">
 							<i class="fw fw-delete fw-stack-1x"></i>
 							<i class="fw fw-circle-outline fw-stack-2x"></i>
@@ -663,7 +663,7 @@
                 </span>
 	    </a></td>
         </tr>
-        <tr><td colspan="4" class="resource_body" style="display:none" data-path="$.paths.['{{ path }}'].{{@key}}"></td></tr>
+        <tr><td colspan="4" class="resource_body" style="display:none" data-path-name="{{ path }}" data-path="$.paths.['{{ path }}'].{{@key}}"></td></tr>
     {{/each}}
 {{/each}}
 </table>  

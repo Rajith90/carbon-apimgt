@@ -444,21 +444,21 @@ APIDesigner.prototype.init_controllers = function(){
     });
 
     this.container.delegate(".delete_parameter", "click", function (event) {
-        //var elementToDelete =  $(this).parent().parent();
+    	$("#messageModal div.modal-footer").html("");        
         var deleteData = $(this).attr("data-path");
         var i = $(this).attr("data-index");
 
         var deleteDataArray = deleteData.split(".");
-        var operations = deleteDataArray[2];
+        var dataPathName = $(this).attr('data-path-name');
         var operation = deleteDataArray[3];
-        var paramName = API_DESIGNER.api_doc.paths[operations][operation]['parameters'][i]['name'];
+        var paramName = API_DESIGNER.api_doc.paths[dataPathName][operation]['parameters'][i]['name'];
 
         // @todo: param_string
         jagg.message({content: 'Do you want to delete the parameter <strong>' + paramName + '</strong> ?',
             type: 'confirm', title: i18n.t("Delete Parameter"),
             okCallback: function () {
                 API_DESIGNER = APIDesigner();
-                API_DESIGNER.api_doc.paths[operations][operation]['parameters'].splice(i,1);
+                API_DESIGNER.api_doc.paths[dataPathName][operation]['parameters'].splice(i,1);
                 API_DESIGNER.render_resources();
             }});
     });
@@ -683,6 +683,7 @@ APIDesigner.prototype.render_resource = function(container){
     var operation = this.query(container.attr('data-path'));
     var context = jQuery.extend(true, {}, operation[0]);
     context.resource_path = container.attr('data-path');
+    context.resource_path_name = container.attr('data-path-name');
     if (context.resource_path.match(/post/i) || context.resource_path.match(/put/i)) {
         isBodyRequired = true;
     }
