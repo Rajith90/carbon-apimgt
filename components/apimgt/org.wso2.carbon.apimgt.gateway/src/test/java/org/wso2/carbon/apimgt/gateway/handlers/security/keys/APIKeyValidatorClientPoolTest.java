@@ -16,7 +16,7 @@ public class APIKeyValidatorClientPoolTest {
         Mockito.when(apiManagerConfiguration.getFirstProperty("APIKeyValidator.ConnectionPool.InitIdleCapacity"))
                 .thenReturn("5");
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_URL)).thenReturn
-                ("https://localhost:" + 8082 + "/services/");
+                ("https://localhost:" + 18082 + "/services/");
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_USERNAME)).thenReturn
                 ("admin");
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_PASSWORD)).thenReturn
