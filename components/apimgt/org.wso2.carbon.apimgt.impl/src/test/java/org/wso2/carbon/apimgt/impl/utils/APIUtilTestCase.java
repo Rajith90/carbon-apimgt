@@ -36,8 +36,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.Application;
-import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerAnalyticsConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
@@ -46,6 +46,8 @@ import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.caching.impl.Util;
+import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
@@ -85,7 +87,7 @@ import static org.mockito.Matchers.eq;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LogFactory.class, ServiceReferenceHolder.class, RegistryUtils.class, DocumentBuilderFactory.class,
         APIManagerComponent.class, PrivilegedCarbonContext.class, ApiMgtDAO.class, ServerConfiguration.class,
-        CarbonUtils.class})
+        CarbonUtils.class, Util.class, CarbonContext.class/*, Caching.class*/})
 public class APIUtilTestCase {
     private RegistryContext registryContext;
     private UserRegistry registry;
@@ -158,6 +160,7 @@ public class APIUtilTestCase {
                 = Mockito.mock(org.wso2.carbon.user.api.AuthorizationManager.class);
         Mockito.when(userRealm.getAuthorizationManager()).thenReturn(authManager);
 
+        PowerMockito.mockStatic(CarbonContext.class);
         PowerMockito.mockStatic(PrivilegedCarbonContext.class);
         privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
         serverConfiguration = Mockito.mock(ServerConfiguration.class);
@@ -590,7 +593,7 @@ public class APIUtilTestCase {
         apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
         HashMap<Integer, String> map = new HashMap<Integer, String>(0);
-         Mockito.when(apiMgtDAO.getAllAlertTypesByStakeHolder("")).thenReturn(map);
+        Mockito.when(apiMgtDAO.getAllAlertTypesByStakeHolder("")).thenReturn(map);
         Assert.assertEquals(0, APIUtil.getAllAlertTypeByStakeHolder("").size());
 
     }
@@ -603,7 +606,7 @@ public class APIUtilTestCase {
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
         List<Integer> list = new ArrayList<Integer>(0);
         Mockito.when(apiMgtDAO.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")).thenReturn(list);
-        Assert.assertEquals(0,APIUtil.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")
+        Assert.assertEquals(0, APIUtil.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")
                 .size());
 
     }
@@ -641,5 +644,107 @@ public class APIUtilTestCase {
                 .thenReturn(resource);
         Assert.assertNull(new APIUtil().getFullLifeCycleData(registry));
 
+    }
+
+    @Test
+    public void testIsStoreForumEnabled() {
+        Assert.assertTrue(APIUtil.isStoreForumEnabled());
+
+        Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_STORE_FORUM_ENABLED)).thenReturn("false");
+        Assert.assertFalse(APIUtil.isStoreForumEnabled());
+    }
+
+    @Test
+    public void testLogAuditMessage() {
+        APIUtil.logAuditMessage("entityType", "entityInfo", "action", "performedBy");
+    }
+
+    @Test
+    public void testGetPortOffset() {
+        //when port offset is not set
+        Assert.assertEquals(0, APIUtil.getPortOffset());
+
+        //test NumberFormatexception
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PORT_OFFSET_CONFIG)).thenReturn("a");
+        System.setProperty(APIConstants.PORT_OFFSET_SYSTEM_VAR, "a");
+        Assert.assertEquals(0, APIUtil.getPortOffset());
+
+        //when port offset is set to 1
+        Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PORT_OFFSET_CONFIG)).thenReturn("1");
+        System.setProperty(APIConstants.PORT_OFFSET_SYSTEM_VAR, "1");
+
+        Assert.assertEquals(1, APIUtil.getPortOffset());
+    }
+
+    @Test
+    public void testIsQueryParamDataPublishingEnabled() {
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        Mockito.when(throttleProperties.isEnableQueryParamConditions()).thenReturn(true);
+        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+
+        Assert.assertTrue(APIUtil.isQueryParamDataPublishingEnabled());
+    }
+
+    @Test
+    public void testIsHeaderDataPublishingEnabled() {
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        Mockito.when(throttleProperties.isEnableHeaderConditions()).thenReturn(true);
+        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+
+        Assert.assertTrue(APIUtil.isHeaderDataPublishingEnabled());
+    }
+
+    @Test
+    public void testIsJwtTokenPublishingEnabled() {
+        ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
+        Mockito.when(throttleProperties.isEnableJwtConditions()).thenReturn(true);
+        Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
+
+        Assert.assertTrue(APIUtil.isJwtTokenPublishingEnabled());
+    }
+
+    @Test
+    public void testGetAnalyticsServerURL() {
+        APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration =
+                Mockito.mock(APIManagerAnalyticsConfiguration.class);
+        Mockito.when(apiMgtConfigurationService.getAPIAnalyticsConfiguration())
+                .thenReturn(apiManagerAnalyticsConfiguration);
+        Mockito.when(apiManagerAnalyticsConfiguration.getDasServerUrl())
+                .thenReturn("das_server_url");
+        Assert.assertEquals("das_server_url", APIUtil.getAnalyticsServerURL());
+    }
+
+    @Test
+    public void testGetAnalyticsServerUserName() {
+        APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration =
+                Mockito.mock(APIManagerAnalyticsConfiguration.class);
+        Mockito.when(apiMgtConfigurationService.getAPIAnalyticsConfiguration())
+                .thenReturn(apiManagerAnalyticsConfiguration);
+        Mockito.when(apiManagerAnalyticsConfiguration.getDasReceiverServerUser())
+                .thenReturn("das_receiver_usr");
+        Assert.assertEquals("das_receiver_usr", APIUtil.getAnalyticsServerUserName());
+    }
+
+    @Test
+    public void testGetAnalyticsServerPassword() {
+        APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration =
+                Mockito.mock(APIManagerAnalyticsConfiguration.class);
+        Mockito.when(apiMgtConfigurationService.getAPIAnalyticsConfiguration())
+                .thenReturn(apiManagerAnalyticsConfiguration);
+        Mockito.when(apiManagerAnalyticsConfiguration.getDasReceiverServerPassword())
+                .thenReturn("das_receiver_pw");
+        Assert.assertEquals("das_receiver_pw", APIUtil.getAnalyticsServerPassword());
+    }
+
+    @Test
+    public void getCache() throws Exception {
+        long defaultCacheTimeout = 54000;
+        PowerMockito.mockStatic(Util.class);
+        PowerMockito.mockStatic(CarbonContext.class);
+        CarbonContext carbonContext = Mockito.mock(CarbonContext.class);
+        PowerMockito.when(CarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        Mockito.when(carbonContext.getTenantDomain()).thenReturn(tenantDomain);
+        PowerMockito.when(Util.getTenantDomain()).thenReturn(tenantDomain);
+        Assert.assertEquals("name", APIUtil.getCache("managerName", "name", defaultCacheTimeout, defaultCacheTimeout).getName());
     }
 }
