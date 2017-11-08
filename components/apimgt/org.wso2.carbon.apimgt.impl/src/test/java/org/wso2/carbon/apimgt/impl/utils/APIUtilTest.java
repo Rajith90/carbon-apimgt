@@ -1496,6 +1496,65 @@ public class APIUtilTest {
     }
 
     @Test
+    public void testGetAPIExceptions() throws RegistryException, APIManagementException, UserStoreException {
+        API expectedAPI = getUniqueAPI();
+
+        final String provider = expectedAPI.getId().getProviderName();
+        final String tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        GovernanceArtifact artifact = Mockito.mock(GovernanceArtifact.class);
+        Registry registry = Mockito.mock(Registry.class);
+        Resource resource = Mockito.mock(Resource.class);
+        ApiMgtDAO apiMgtDAO = TestUtils.getApiMgtDAO();
+        String artifactPath = "";
+        PowerMockito.mockStatic(GovernanceUtils.class);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        Mockito.when(GovernanceUtils.getArtifactPath(registry, "")).thenReturn(artifactPath);
+        Mockito.when(apiMgtDAO.getAPIID(Mockito.any(APIIdentifier.class), eq((Connection) null))).thenReturn(123);
+        Mockito.when(artifact.getId()).thenReturn("");
+        Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_PROVIDER)).thenReturn(provider);
+        Mockito.when(registry.get(artifactPath)).thenReturn(resource);
+        Mockito.when(resource.getLastModified()).thenReturn(new Date());
+        Mockito.when(MultitenantUtils.getTenantDomain(provider)).
+                thenReturn(tenantDomain);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+
+        //Test UserStoreException
+        Mockito.when(tenantManager.getTenantId(tenantDomain)).thenThrow(new UserStoreException("Failed to get User " +
+                "Realm of API Provider"));
+        try {
+            APIUtil.getAPI(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get User Realm of API Provider");
+        }
+
+        //Test RegistryException
+        Mockito.when(registry.get(Mockito.anyString())).thenThrow(new RegistryException("Failed to get LastAccess " +
+                "time or Rating"));
+        try {
+            APIUtil.getAPI(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get LastAccess time or Rating");
+        }
+
+        //Test GovernanceException
+        Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_PROVIDER)).thenThrow(new GovernanceException
+                ("Failed to get API for artifact"));
+        try {
+            APIUtil.getAPI(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get API for artifact ");
+
+        }
+    }
+
+    @Test
     public void testGetAPIForPublishing() throws Exception {
         API expectedAPI = getUniqueAPI();
 
@@ -1563,6 +1622,65 @@ public class APIUtilTest {
         API api = APIUtil.getAPIForPublishing(artifact, registry);
 
         Assert.assertNotNull(api);
+    }
+
+    @Test
+    public void testGetAPIForPublishingExceptions() throws RegistryException, UserStoreException, APIManagementException {
+        API expectedAPI = getUniqueAPI();
+
+        final String provider = expectedAPI.getId().getProviderName();
+        final String tenantDomain = org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        GovernanceArtifact artifact = Mockito.mock(GovernanceArtifact.class);
+        Registry registry = Mockito.mock(Registry.class);
+        Resource resource = Mockito.mock(Resource.class);
+        ApiMgtDAO apiMgtDAO = TestUtils.getApiMgtDAO();
+        String artifactPath = "";
+        PowerMockito.mockStatic(GovernanceUtils.class);
+        PowerMockito.mockStatic(MultitenantUtils.class);
+        Mockito.when(GovernanceUtils.getArtifactPath(registry, "")).thenReturn(artifactPath);
+        Mockito.when(apiMgtDAO.getAPIID(Mockito.any(APIIdentifier.class), eq((Connection) null))).thenReturn(123);
+        Mockito.when(artifact.getId()).thenReturn("");
+        Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_PROVIDER)).thenReturn(provider);
+        Mockito.when(registry.get(artifactPath)).thenReturn(resource);
+        Mockito.when(resource.getLastModified()).thenReturn(new Date());
+        Mockito.when(MultitenantUtils.getTenantDomain(provider)).
+                thenReturn(tenantDomain);
+        RealmService realmService = Mockito.mock(RealmService.class);
+        TenantManager tenantManager = Mockito.mock(TenantManager.class);
+        ServiceReferenceHolder serviceReferenceHolder = TestUtils.getServiceReferenceHolder();
+        Mockito.when(serviceReferenceHolder.getRealmService()).thenReturn(realmService);
+        Mockito.when(realmService.getTenantManager()).thenReturn(tenantManager);
+
+        //Test UserStoreException
+        Mockito.when(tenantManager.getTenantId(tenantDomain)).thenThrow(new UserStoreException("Failed to get User " +
+                "Realm of API Provider"));
+        try {
+            APIUtil.getAPIForPublishing(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get User Realm of API Provider");
+        }
+
+        //Test RegistryException
+        Mockito.when(registry.get(Mockito.anyString())).thenThrow(new RegistryException("Failed to get LastAccess " +
+                "time or Rating"));
+        try {
+            APIUtil.getAPIForPublishing(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get LastAccess time or Rating");
+        }
+
+        //Test GovernanceException
+        Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_PROVIDER)).thenThrow(new GovernanceException
+                ("Failed to get API for artifact"));
+        try {
+            APIUtil.getAPIForPublishing(artifact, registry);
+            Assert.fail("Expected APIManagementException not thrown");
+
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get API for artifact ");
+        }
     }
 
     @Test
@@ -1754,6 +1872,20 @@ public class APIUtilTest {
         Assert.assertNotNull(api);
     }finally {
             PrivilegedCarbonContext.endTenantFlow();
+        }
+    }
+
+    @Test
+    public void testGetAPIWithArtifactExceptions() throws GovernanceException {
+        GovernanceArtifact artifact = Mockito.mock(GovernanceArtifact.class);
+        Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_PROVIDER)).thenThrow(new GovernanceException
+                ("Failed to get API for artifact"));
+        try {
+            APIUtil.getAPI(artifact);
+            Assert.fail("Expected APIManagementException not thrown");
+        } catch (APIManagementException e) {
+            Assert.assertEquals(e.getMessage(), "Failed to get API from artifact ");
+
         }
     }
 
