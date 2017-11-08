@@ -132,6 +132,13 @@ import org.wso2.carbon.utils.NetworkUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.cache.Cache;
+import javax.cache.CacheBuilder;
+import javax.cache.CacheConfiguration;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -158,13 +165,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import javax.cache.Cache;
-import javax.cache.CacheBuilder;
-import javax.cache.CacheConfiguration;
-import javax.cache.CacheManager;
-import javax.cache.Caching;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
