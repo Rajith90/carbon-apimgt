@@ -11,10 +11,10 @@
             <p class="marked">This operation can be used to retrieve a list of subscriptions of the user associated with the provided access token. This operation is capable of
 
 1. Retrieving applications which are subscibed to a specific API.
-`GET https://127.0.0.1:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed`
+`GET https://localhost:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed`
 
 2. Retrieving APIs which are subscribed by a specific application.
-`GET https://127.0.0.1:9443/api/am/store/v0.11/subscriptions?applicationId=c43a325c-260b-4302-81cb-768eafaa3aed`
+`GET https://localhost:9443/api/am/store/v0.11/subscriptions?applicationId=c43a325c-260b-4302-81cb-768eafaa3aed`
 
 **IMPORTANT:**
 * It is mandatory to provide either **apiId** or **applicationId**.
@@ -36,7 +36,7 @@
             </div>
 
             
-                <div id="request-subscriptionsGet"class="pre collapse in"><code class="json">GET https://127.0.0.1:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed
+                <div id="request-subscriptionsGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed
 Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
@@ -80,7 +80,7 @@ Content-Type: application/json
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; &quot;https://127.0.0.1:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; &quot;https://localhost:9443/api/am/store/v0.11/subscriptions?apiId=c43a325c-260b-4302-81cb-768eafaa3aed&quot;</code></div>
             
             
 

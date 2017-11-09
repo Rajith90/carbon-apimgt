@@ -1,6 +1,7 @@
 <div class="main-content">
+    
 
-        <h2>AdvancedThrottlePolicy</h2>
+        <h2>ExtendedSubscription</h2>
             <table class="table table-hover">
                 <colgroup>
                     <col style="width: 10%;"/>
@@ -19,84 +20,82 @@
                 </tr>
                 </thead>
                 <tbody>
+                
                     <tr>
                         <td class="parameter">
-                            <p>policyId</p>
+                            <p>subscriptionId</p>
                             <p class="param-required">
                                 
                                 optional
                             </p>
                         </td>
-                        <td class="parameter"><p class="marked">Id of policy</p></td>
+                        <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
+                            
                                 <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked">0c6439fd-9b16-3c2e-be6e-1086e0b9aa93</p></td>
+                        <td class="parameter"> <p class="marked">01234567-0123-0123-0123-012345678901</p></td>
                     </tr>
+                
                     <tr>
                         <td class="parameter">
-                            <p>policyName</p>
+                            <p>applicationId</p>
                             <p class="param-required">
                                 required
                                 
                             </p>
                         </td>
-                        <td class="parameter"><p class="marked">Name of policy</p></td>
+                        <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
+                            
                                 <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked">Policy1</p></td>
+                        <td class="parameter"> <p class="marked">01234567-0123-0123-0123-012345678901</p></td>
                     </tr>
+                
                     <tr>
                         <td class="parameter">
-                            <p>displayName</p>
+                            <p>apiIdentifier</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
-                        <td class="parameter"><p class="marked">Display name of the policy</p></td>
+                        <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
+                            
                                 <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked"></p></td>
+                        <td class="parameter"> <p class="marked">01234567-0123-0123-0123-012345678901</p></td>
                     </tr>
+                
                     <tr>
                         <td class="parameter">
-                            <p>description</p>
+                            <p>tier</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
-                        <td class="parameter"><p class="marked">Description of the policy</p></td>
+                        <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
+                            
                                 <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked"></p></td>
+                        <td class="parameter"> <p class="marked">Unlimited</p></td>
                     </tr>
+                
                     <tr>
                         <td class="parameter">
-                            <p>isDeployed</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td class="parameter"><p class="marked">Indicates whether the policy is deployed successfully or not.</p></td>
-                        <td class="parameter">
-                                <a href="#!/models#boolean">boolean</a>
-                        </td>
-                        <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked"></p></td>
-                    </tr>
-                    <tr>
-                        <td class="parameter">
-                            <p>defaultLimit</p>
+                            <p>status</p>
                             <p class="param-required">
                                 
                                 optional
@@ -104,14 +103,17 @@
                         </td>
                         <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
-                                <a href="#!/models#ThrottleLimit">ThrottleLimit</a>
+                            
+                                <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked"></p></td>
+                        <td class="parameter"> <p class="marked">UNBLOCKED</p></td>
                     </tr>
+                
                     <tr>
                         <td class="parameter">
-                            <p>conditionalGroups</p>
+                            <p>workflowId</p>
                             <p class="param-required">
                                 
                                 optional
@@ -119,11 +121,15 @@
                         </td>
                         <td class="parameter"><p class="marked"></p></td>
                         <td class="parameter">
-                                <a href="#!/models#array">array</a>
+                            
+                                <a href="#!/models#string">string</a>
+                            
                         </td>
                         <td class="parameter"> <p class="marked">null</p></td>
-                        <td class="parameter"> <p class="marked"></p></td>
+                        <td class="parameter"> <p class="marked">01234567-0123-0123-0123-012345678901</p></td>
                     </tr>
+                
                 </tbody>
             </table>
+    
 </div>

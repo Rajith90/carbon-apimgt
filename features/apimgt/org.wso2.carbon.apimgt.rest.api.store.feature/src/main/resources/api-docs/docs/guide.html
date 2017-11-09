@@ -24,8 +24,8 @@
         large-scale deployments right away.
     </p>
 
-    <p> The REST API is implemented based on REST best practices and specifications as a CXF REST web application running on WSO2 API
-        Manager. API development is started with a swagger specification with a contract-first approach. 
+    <p> The REST API is implemented based on REST best practices and specifications as a CXF REST web application running on WSO2 API Manager.
+        API development is started with a swagger specification with a contract-first approach.
         Please see <a href="https://raw.githubusercontent.com/wso2/carbon-apimgt/v6.1.66/components/apimgt/org.wso2.carbon.apimgt.rest.api.store/src/main/resources/store-api.yaml">full swagger definition</a> which is written using swagger 2.0.
         This can be also retrieved from the Web app itself using the URL
         <code>https://&lt;host-name[:port]&gt;/api/am/store/v0.11/swagger.json</code>
@@ -43,7 +43,7 @@
         example is shown below,
     </p>
 
-    <div class="pre"><code class="bash">curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d @payload.json http://localhost:9763/client-registration/v0.11/register</code></div>
+    <div class="pre"><code class="bash">curl -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d @payload.json https://localhost:9443/client-registration/v0.11/register</code></div>
     <br/>
 
     <p>
@@ -93,7 +93,7 @@
         </b>
     </p>
 
-    <div class="pre"><code class="bash">curl -k -d "grant_type=password&username=admin&password=admin&<b>scope=apim:subscribe</b>" -H "Authorization: Basic SGZFbDFqSlBkZzV0YnRyeGhBd3liTjA1UUdvYTpsNmMwYW9MY1dSM2Z3ZXpIaGM3WG9HT2h0NUFh" https://127.0.0.1:8243/token</code></div>
+    <div class="pre"><code class="bash">curl -k -d "grant_type=password&username=admin&password=admin&<b>scope=apim:subscribe</b>" -H "Authorization: Basic SGZFbDFqSlBkZzV0YnRyeGhBd3liTjA1UUdvYTpsNmMwYW9MY1dSM2Z3ZXpIaGM3WG9HT2h0NUFh" https://localhost:8243/token</code></div>
     <br/>
 
     <p>

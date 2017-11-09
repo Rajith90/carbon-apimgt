@@ -1,37 +1,23 @@
 <div class="main-content">
-    <h1><a name="Document (Individual)"></a>Document (Individual)</h1>
+    <h1><a name="Application Keys"></a>Application Keys</h1>
 
     
         
             <hr/>
-            <h3 class="operation-heading"><a name="apisApiIdDocumentsDocumentIdContentGet"></a>Get the content of an API document
- <br><small>GET https://apis.wso2.com/api/am/store/v0.11/apis/{apiId}/documents/{documentId}/content</small></h3>
+            <h3 class="operation-heading"><a name="applicationsApplicationIdKeysKeyTypeGet"></a>Get key details of a given type
+ <br><small>GET https://apis.wso2.com/api/am/store/v0.11/applications/{applicationId}/keys/{keyType}</small></h3>
             <p class="marked"></p>
 
-            <p class="marked">This operation can be used to retrive the content of an API&#39;s document.
-
-The document can be of 3 types. In each cases responses are different.
-
-1. **Inline type**:
-   The content of the document will be retrieved in `text/plain` content type
-2. **FILE type**: 
-   The file will be downloaded with the related content type (eg. `application/pdf`)
-3. **URL type**:
-    The client will recieve the URL of the document as the Location header with the response with - `303 See Other`
-
-`X-WSO2-Tenant` header can be used to retrive the content of a document of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user&#39;s tenant associated with the access token will be used.
-
-**NOTE:**
-* This operation does not require an Authorization header by default. But in order to see a restricted API&#39;s document content, you need to provide Authorization header.        
+            <p class="marked">This operation can be used to retrieve key details of an individual application specifying the key type in the URI.
 </p>
 
             <h4 class="section-heading">OAuth 2.0 Scope</h4>
             
+                <code>apim:subscribe</code><span class="label label-primary" data-toggle="tooltip" title="This resource is secured with an OAuth 2.0 scope. You need to provide an access token which has 'apim:subscribe' scope using Authorization header. Please see 'Getting Started' section for more information." style="margin-left: 10px">i</span>
             
-                <p>Not required</p>
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#request-apisApiIdDocumentsDocumentIdContentGet">
+            <div class="pointer" data-toggle="collapse" data-target="#request-applicationsApplicationIdKeysKeyTypeGet">
                 <h4 class="section-heading">
                     Request
                     
@@ -41,12 +27,13 @@ The document can be of 3 types. In each cases responses are different.
             </div>
 
             
-                <div id="request-apisApiIdDocumentsDocumentIdContentGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/apis/890a4f4d-09eb-4877-a323-57f6ce2ed79b/documents/0bcb7f05-599d-4e1a-adce-5cb89bfe58d5/content
+                <div id="request-applicationsApplicationIdKeysKeyTypeGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/applications/896658a0-b4ee-4535-bbfa-806c894a4015/keys/PRODUCTION
+Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
 </code></div>
             
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#response-apisApiIdDocumentsDocumentIdContentGet">
+            <div class="pointer" data-toggle="collapse" data-target="#response-applicationsApplicationIdKeysKeyTypeGet">
                 <h4 class="section-heading">
                     Response
                     
@@ -55,27 +42,29 @@ The document can be of 3 types. In each cases responses are different.
                 </h4>
             </div>
             
-                <div id="response-apisApiIdDocumentsDocumentIdContentGet" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
-Content-Disposition: attachment; filename=&quot;sample.pdf&quot;
-Content-Type: application/octet-stream
-Content-Length: 7802
+                <div id="response-applicationsApplicationIdKeysKeyTypeGet" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
+Content-Type: application/json
 
-%PDF-1.4
-%äüöß
-2 0 obj
-&lt;&lt;/Length 3 0 R/Filter/FlateDecode&gt;&gt;
-stream
-..
-&gt;&gt;
-startxref
-7279
-%%EOF</code></div>
+ {
+      &quot;consumerKey&quot;: &quot;QwEtRHd4NJkcFuRUfAT5af8XEEoa&quot;,
+      &quot;consumerSecret&quot;: &quot;7Fairfeu321ENjOR9w2xgJl3i70a&quot;,
+       &quot;supportedGrantTypes&quot;: [
+        &quot;refresh_token&quot;,
+        &quot;urn:ietf:params:oauth:grant-type:saml2-bearer&quot;,
+        &quot;password&quot;,
+        &quot;client_credentials&quot;,
+        &quot;iwa:ntlm&quot;
+      ],
+      &quot;callbackUrl&quot;: &quot;http://sample/com/callback&quot;,
+      &quot;keyState&quot;: &quot;COMPLETED&quot;,
+      &quot;keyType&quot;: &quot;PRODUCTION&quot;}
+</code></div>
             
             
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl &quot;https://localhost:9443/api/am/store/v0.11/apis/890a4f4d-09eb-4877-a323-57f6ce2ed79b/documents/0bcb7f05-599d-4e1a-adce-5cb89bfe58d5/content&quot; &gt; sample.pdf</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; &quot;https://localhost:9443/api/am/store/v0.11/applications/896658a0-b4ee-4535-bbfa-806c894a4015/keys/PRODUCTION&quot;</code></div>
             
             
 
@@ -107,16 +96,14 @@ startxref
                             
                         </td>
                         <td class="param-name">
-                            <p>apiId</p>
+                            <p>applicationId</p>
                             <p class="param-required">
                                 required
                                 
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">**API ID** consisting of the **UUID** of the API. Using the **UUID** in the API call is recommended.
-The combination of the provider of the API, name of the API and the version is also accepted as a valid API ID.
-Should be formatted as **provider-name-version**.
+                            <p class="param-description marked">Application Identifier consisting of the UUID of the Application.
 </p>
                             
                         </td>
@@ -140,15 +127,22 @@ Should be formatted as **provider-name-version**.
                             
                         </td>
                         <td class="param-name">
-                            <p>documentId</p>
+                            <p>keyType</p>
                             <p class="param-required">
                                 required
                                 
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">Document Identifier
+                            <p class="param-description marked">**Application Key Type** standing for the type of the keys (i.e. Production or Sandbox).
 </p>
+                            
+                                <p><b>Accepted values: </b></p>
+
+<code>PRODUCTION</code>
+
+<code>SANDBOX</code>
+
                             
                         </td>
                         <td>
@@ -165,21 +159,20 @@ Should be formatted as **provider-name-version**.
                     <tr>
                         <td class="parameter">
                             
+                            <span class="param-in">Query </span>
                             
                             
-                            <span class="param-in">Header </span>
                             
                         </td>
                         <td class="param-name">
-                            <p>X-WSO2-Tenant</p>
+                            <p>groupId</p>
                             <p class="param-required">
                                 
                                 optional
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">For cross-tenant invocations, this is used to specify the tenant domain, where the resource need to be
-  retirieved from.
+                            <p class="param-description marked">Application Group Id
 </p>
                             
                         </td>
@@ -225,70 +218,6 @@ Should be formatted as **provider-name-version**.
                         </td>
                     </tr>
                 
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>If-None-Match</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Validator for conditional requests; based on the ETag of the formerly retrieved
-variant of the resource.
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                String
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked"></p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>If-Modified-Since</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Validator for conditional requests; based on Last Modified header of the
-formerly retrieved variant of the resource (Will be supported in future). 
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                String
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked"></p>
-                        </td>
-                    </tr>
-                
             </table>
 
             <h4 class="section-heading">Responses</h4>
@@ -310,38 +239,12 @@ formerly retrieved variant of the resource (Will be supported in future).
                 
                     <tr>
                         <td class="parameter"><p class="marked">200</p></td>
-                        <td class="parameter"><p class="marked">OK.\nFile or inline content returned.\n</p></td>
+                        <td class="parameter"><p class="marked">OK.\nApplication key details returned.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
+                                    <a href="#!/models#ApplicationKey">ApplicationKey</a>
                                 
-                                    
-                                
-                            </span>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter"><p class="marked">303</p></td>
-                        <td class="parameter"><p class="marked">See Other.\nSource can be retrived from the URL specified at the Location header.\n</p></td>
-                        <td class="parameter">
-                            <span class="parameter">
-                                
-                                
-                                    
-                                
-                            </span>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter"><p class="marked">304</p></td>
-                        <td class="parameter"><p class="marked">Not Modified.\nEmpty body because the client has already the latest version of the requested resource.\n</p></td>
-                        <td class="parameter">
-                            <span class="parameter">
-                                
-                                
-                                    
                                 
                             </span>
                         </td>
@@ -349,7 +252,7 @@ formerly retrieved variant of the resource (Will be supported in future).
                 
                     <tr>
                         <td class="parameter"><p class="marked">404</p></td>
-                        <td class="parameter"><p class="marked">Not Found.\nRequested Document does not exist.\n</p></td>
+                        <td class="parameter"><p class="marked">Not Found.\nRequested application does not exist.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
@@ -377,25 +280,20 @@ formerly retrieved variant of the resource (Will be supported in future).
             </table>
         
             <hr/>
-            <h3 class="operation-heading"><a name="apisApiIdDocumentsDocumentIdGet"></a>Get a document of an API
- <br><small>GET https://apis.wso2.com/api/am/store/v0.11/apis/{apiId}/documents/{documentId}</small></h3>
+            <h3 class="operation-heading"><a name="applicationsApplicationIdKeysKeyTypePut"></a>Update grant types and callback url of an application
+ <br><small>PUT https://apis.wso2.com/api/am/store/v0.11/applications/{applicationId}/keys/{keyType}</small></h3>
             <p class="marked"></p>
 
-            <p class="marked">This operation can be used to retrieve a particular document&#39;s metadata associated with an API.
-
-`X-WSO2-Tenant` header can be used to retrive a document of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user&#39;s tenant associated with the access token will be used.
-
-**NOTE:**
-* This operation does not require an Authorization header by default. But in order to see a restricted API&#39;s document, you need to provide Authorization header.        
+            <p class="marked">This operation can be used to update grant types and callback url of an application. (Consumer Key and Consumer Secret are ignored) Upon succesfull you will retrieve the updated key details as the response.
 </p>
 
             <h4 class="section-heading">OAuth 2.0 Scope</h4>
             
+                <code>apim:subscribe</code><span class="label label-primary" data-toggle="tooltip" title="This resource is secured with an OAuth 2.0 scope. You need to provide an access token which has 'apim:subscribe' scope using Authorization header. Please see 'Getting Started' section for more information." style="margin-left: 10px">i</span>
             
-                <p>Not required</p>
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#request-apisApiIdDocumentsDocumentIdGet">
+            <div class="pointer" data-toggle="collapse" data-target="#request-applicationsApplicationIdKeysKeyTypePut">
                 <h4 class="section-heading">
                     Request
                     
@@ -405,12 +303,23 @@ formerly retrieved variant of the resource (Will be supported in future).
             </div>
 
             
-                <div id="request-apisApiIdDocumentsDocumentIdGet"class="pre collapse in"><code class="json">GET https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/documents/850a4f34-db2c-4d23-9d85-3f95fbfb082c
+                <div id="request-applicationsApplicationIdKeysKeyTypePut"class="pre collapse in"><code class="json">PUT https://localhost:9443/api/am/store/v0.11/applications/896658a0-b4ee-4535-bbfa-806c894a4015/keys/SANDBOX
+Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8
+{
+   &quot;supportedGrantTypes&quot;: [
+     &quot;refresh_token&quot;,
+     &quot;urn:ietf:params:oauth:grant-type:saml2-bearer&quot;,
+     &quot;password&quot;,
+     &quot;client_credentials&quot;,
+     &quot;iwa:ntlm&quot;
+   ],
+   &quot;callbackUrl&quot;: &quot;http://sample/com/callback&quot;
+ }
 </code></div>
             
             
 
-            <div class="pointer" data-toggle="collapse" data-target="#response-apisApiIdDocumentsDocumentIdGet">
+            <div class="pointer" data-toggle="collapse" data-target="#response-applicationsApplicationIdKeysKeyTypePut">
                 <h4 class="section-heading">
                     Response
                     
@@ -419,24 +328,29 @@ formerly retrieved variant of the resource (Will be supported in future).
                 </h4>
             </div>
             
-                <div id="response-apisApiIdDocumentsDocumentIdGet" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
+                <div id="response-applicationsApplicationIdKeysKeyTypePut" class="pre collapse in"><code class="json">HTTP/1.1 200 OK
 Content-Type: application/json
 
-{
-   &quot;sourceType&quot;: &quot;INLINE&quot;,
-   &quot;sourceUrl&quot;: null,
-   &quot;otherTypeName&quot;: null,
-   &quot;documentId&quot;: &quot;850a4f34-db2c-4d23-9d85-3f95fbfb082c&quot;,
-   &quot;summary&quot;: &quot;This is a sample documentation for v1.0.0&quot;,
-   &quot;name&quot;: &quot;PhoneVerification API Documentation&quot;,
-   &quot;type&quot;: &quot;HOWTO&quot;
-}</code></div>
+ {
+      &quot;consumerKey&quot;: &quot;QwEtRHd4NJkcFuRUfAT5af8XEEoa&quot;,
+      &quot;consumerSecret&quot;: &quot;7Fairfeu321ENjOR9w2xgJl3i70a&quot;,
+       &quot;supportedGrantTypes&quot;: [
+        &quot;refresh_token&quot;,
+        &quot;urn:ietf:params:oauth:grant-type:saml2-bearer&quot;,
+        &quot;password&quot;,
+        &quot;client_credentials&quot;,
+        &quot;iwa:ntlm&quot;
+      ],
+      &quot;callbackUrl&quot;: &quot;http://sample/com/callback&quot;,
+      &quot;keyState&quot;: &quot;COMPLETED&quot;,
+      &quot;keyType&quot;: &quot;PRODUCTION&quot;}
+</code></div>
             
             
 
             <h4 class="section-heading">Sample CURL</h4>
             
-                <div class="pre"><code class="bash">curl &quot;https://localhost:9443/api/am/store/v0.11/apis/c43a325c-260b-4302-81cb-768eafaa3aed/documents/850a4f34-db2c-4d23-9d85-3f95fbfb082c&quot;</code></div>
+                <div class="pre"><code class="bash">curl -k -H &quot;Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8&quot; -H &quot;Content-Type: application/json&quot; -X PUT -d @data.json &quot;https://localhost:9443/api/am/store/v0.11/applications/c30f3a6e-ffa4-4ae7-afce-224d1f820524/keys/SANDBOX&quot;</code></div>
             
             
 
@@ -468,16 +382,14 @@ Content-Type: application/json
                             
                         </td>
                         <td class="param-name">
-                            <p>apiId</p>
+                            <p>applicationId</p>
                             <p class="param-required">
                                 required
                                 
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">**API ID** consisting of the **UUID** of the API. Using the **UUID** in the API call is recommended.
-The combination of the provider of the API, name of the API and the version is also accepted as a valid API ID.
-Should be formatted as **provider-name-version**.
+                            <p class="param-description marked">Application Identifier consisting of the UUID of the Application.
 </p>
                             
                         </td>
@@ -501,15 +413,22 @@ Should be formatted as **provider-name-version**.
                             
                         </td>
                         <td class="param-name">
-                            <p>documentId</p>
+                            <p>keyType</p>
                             <p class="param-required">
                                 required
                                 
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">Document Identifier
+                            <p class="param-description marked">**Application Key Type** standing for the type of the keys (i.e. Production or Sandbox).
 </p>
+                            
+                                <p><b>Accepted values: </b></p>
+
+<code>PRODUCTION</code>
+
+<code>SANDBOX</code>
+
                             
                         </td>
                         <td>
@@ -528,120 +447,26 @@ Should be formatted as **provider-name-version**.
                             
                             
                             
-                            <span class="param-in">Header </span>
                             
+                            <span class="param-in">Body </span>
                         </td>
                         <td class="param-name">
-                            <p>X-WSO2-Tenant</p>
+                            <p>body</p>
                             <p class="param-required">
+                                required
                                 
-                                optional
                             </p>
                         </td>
                         <td>
-                            <p class="param-description marked">For cross-tenant invocations, this is used to specify the tenant domain, where the resource need to be
-  retirieved from.
+                            <p class="param-description marked">Grant types/Callback URL update request object
 </p>
                             
                         </td>
                         <td>
                             <span class="param-type">
-                                String
+                                ApplicationKey
                                 
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked"></p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>Accept</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Media types acceptable for the response. Default is application/json.
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                String
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked">application/json</p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>If-None-Match</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Validator for conditional requests; based on the ETag of the formerly retrieved
-variant of the resource.
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                String
-                                
-                            </span>
-                        </td>
-                        <td>
-                            <p class="marked"></p>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter">
-                            
-                            
-                            
-                            <span class="param-in">Header </span>
-                            
-                        </td>
-                        <td class="param-name">
-                            <p>If-Modified-Since</p>
-                            <p class="param-required">
-                                
-                                optional
-                            </p>
-                        </td>
-                        <td>
-                            <p class="param-description marked">Validator for conditional requests; based on Last Modified header of the
-formerly retrieved variant of the resource (Will be supported in future). 
-</p>
-                            
-                        </td>
-                        <td>
-                            <span class="param-type">
-                                String
+                                    (<a href="#!/models#ApplicationKey">ApplicationKey</a>)
                                 
                             </span>
                         </td>
@@ -671,11 +496,11 @@ formerly retrieved variant of the resource (Will be supported in future).
                 
                     <tr>
                         <td class="parameter"><p class="marked">200</p></td>
-                        <td class="parameter"><p class="marked">OK.\nDocument returned.\n</p></td>
+                        <td class="parameter"><p class="marked">Ok.\nGrant types or/and callback url is/are updated.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
-                                    <a href="#!/models#Document">Document</a>
+                                    <a href="#!/models#ApplicationKey">ApplicationKey</a>
                                 
                                 
                             </span>
@@ -683,21 +508,8 @@ formerly retrieved variant of the resource (Will be supported in future).
                     </tr>
                 
                     <tr>
-                        <td class="parameter"><p class="marked">304</p></td>
-                        <td class="parameter"><p class="marked">Not Modified.\nEmpty body because the client has already the latest version of the requested resource.\n</p></td>
-                        <td class="parameter">
-                            <span class="parameter">
-                                
-                                
-                                    
-                                
-                            </span>
-                        </td>
-                    </tr>
-                
-                    <tr>
-                        <td class="parameter"><p class="marked">404</p></td>
-                        <td class="parameter"><p class="marked">Not Found.\nRequested Document does not exist.\n</p></td>
+                        <td class="parameter"><p class="marked">400</p></td>
+                        <td class="parameter"><p class="marked">Bad Request.\nInvalid request or validation error\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
@@ -709,8 +521,21 @@ formerly retrieved variant of the resource (Will be supported in future).
                     </tr>
                 
                     <tr>
-                        <td class="parameter"><p class="marked">406</p></td>
-                        <td class="parameter"><p class="marked">Not Acceptable.\nThe requested media type is not supported\n</p></td>
+                        <td class="parameter"><p class="marked">404</p></td>
+                        <td class="parameter"><p class="marked">Not Found.\nThe resource to be updated does not exist.\n</p></td>
+                        <td class="parameter">
+                            <span class="parameter">
+                                
+                                    <a href="#!/models#Error">Error</a>
+                                
+                                
+                            </span>
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td class="parameter"><p class="marked">412</p></td>
+                        <td class="parameter"><p class="marked">Precondition Failed.\nThe request has not been performed because one of the preconditions is not met.\n</p></td>
                         <td class="parameter">
                             <span class="parameter">
                                 
