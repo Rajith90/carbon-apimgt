@@ -820,7 +820,7 @@ public class JMSTaskManager {
                 connection = sharedConnection;
                 setConnected(true);
                 if (log.isDebugEnabled()) {
-                    log.info("New sharedConnection Assigned to connection");
+                    log.info("New shared connection assigned");
                 }
             }
             // else: Connection is shared and is already referenced by this.connection
