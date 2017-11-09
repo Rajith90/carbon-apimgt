@@ -820,7 +820,7 @@ public class JMSTaskManager {
                 connection = sharedConnection;
                 setConnected(true);
                 if (log.isDebugEnabled()) {
-                    log.info("New shared connection assigned");
+                    log.debug("New shared connection assigned");
                 }
             }
             // else: Connection is shared and is already referenced by this.connection
@@ -976,7 +976,6 @@ public class JMSTaskManager {
             } catch (Exception e) {
                 // Caching generic exception to create new connection for every exception
                 // Make connection and sharedConnection values to null in order to use newly created connection.
-                log.error("Error occurred due to " + e.getMessage());
                 connection = null;
                 sharedConnection = null;
                 handleException("Error creating JMS session for : " + jmsConsumerName, e);
