@@ -4620,8 +4620,12 @@ public class APIStoreHostObject extends ScriptableObject {
         return myn;
 
     }
-
-    private static String verifyWhitelistedHostname(String hostName) throws APIManagementException {
+    /*
+    *  This method checks whether the hostname is a valid whitelisted host name
+    *  @param hostName hostname to be validated
+    *  @return valid hostname (if the validation fail, it will return valid default host name in the configuration)
+    * */
+    private static String verifyWhitelistedHostname(String hostName) {
         if (hostName != null) {  // Fix for Host Header Injection vulnarability
             if (hostName.equalsIgnoreCase(CarbonUtils.getServerConfiguration().getFirstProperty("HostName"))
                     || hostName.equalsIgnoreCase(System.getProperty("carbon.local.ip"))) {
