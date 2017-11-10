@@ -527,7 +527,6 @@ public class APIUtilTestCase {
     public void testAppendDomainWithUser() throws APIManagementException {
         String useNname = "admin";
         String useNnameWithDomain = "admin@" + tenantDomain;
-
         Assert.assertEquals(useNnameWithDomain, APIUtil.appendDomainWithUser(useNname, tenantDomain));
 
         //when email username enabled
@@ -545,28 +544,23 @@ public class APIUtilTestCase {
 
     @Test
     public void testGetServerURL() throws APIManagementException {
-
         Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PROXY_CONTEXT_PATH)).thenReturn("/abc");
         PowerMockito.when(CarbonUtils.getManagementTransport()).thenReturn("https");
         PowerMockito.when(CarbonUtils.getTransportProxyPort(axisConfiguration, "https")).thenReturn(-1);
         PowerMockito.when(CarbonUtils.getTransportProxyPort(axisConfiguration, "https")).thenReturn(9443);
-
         Assert.assertNotNull(APIUtil.getServerURL());
 
         Mockito.when(serverConfiguration.getFirstProperty(APIConstants.HOST_NAME)).thenReturn("192.168.0.100");
         Assert.assertEquals("https://192.168.0.100:9443/abc", APIUtil.getServerURL());
-
     }
 
     @Test
     public void testGetAPIProviderFromRESTAPI() {
-
         //apiversion does not contain "--" . Hence, returning null
         Assert.assertNull(APIUtil.getAPIProviderFromRESTAPI("1.0", ""));
 
         String apiVersion = "admin-AT-1.0--";
         Assert.assertEquals("admin@1.0@abc.com", APIUtil.getAPIProviderFromRESTAPI(apiVersion, tenantDomain));
-
     }
 
     @Test
@@ -575,7 +569,6 @@ public class APIUtilTestCase {
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.CORS_CONFIGURATION_ACCESS_CTL_ALLOW_CREDENTIALS))
                 .thenReturn("true");
         Assert.assertTrue(APIUtil.isAllowCredentials());
-
     }
 
     @Test
@@ -583,24 +576,20 @@ public class APIUtilTestCase {
         Mockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.CORS_CONFIGURATION_ENABLED))
                 .thenReturn("true");
         Assert.assertTrue(APIUtil.isCORSEnabled());
-
     }
 
     @Test
     public void testGetAllAlertTypeByStakeHolder() throws APIManagementException {
-
         PowerMockito.mockStatic(ApiMgtDAO.class);
         apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
         HashMap<Integer, String> map = new HashMap<Integer, String>(0);
         Mockito.when(apiMgtDAO.getAllAlertTypesByStakeHolder("")).thenReturn(map);
         Assert.assertEquals(0, APIUtil.getAllAlertTypeByStakeHolder("").size());
-
     }
 
     @Test
     public void testGetSavedAlertTypesIdsByUserNameAndStakeHolder() throws APIManagementException {
-
         PowerMockito.mockStatic(ApiMgtDAO.class);
         apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
@@ -608,29 +597,24 @@ public class APIUtilTestCase {
         Mockito.when(apiMgtDAO.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")).thenReturn(list);
         Assert.assertEquals(0, APIUtil.getSavedAlertTypesIdsByUserNameAndStakeHolder("", "")
                 .size());
-
     }
 
     @Test
     public void testRetrieveSavedEmailList() throws APIManagementException {
-
         PowerMockito.mockStatic(ApiMgtDAO.class);
         apiMgtDAO = Mockito.mock(ApiMgtDAO.class);
         PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
         List<String> list = new ArrayList<String>(0);
         Mockito.when(apiMgtDAO.retrieveSavedEmailList("", "")).thenReturn(list);
         Assert.assertEquals(0, APIUtil.retrieveSavedEmailList("", "").size());
-
     }
 
     @Test
     public void testIsEnabledSubscriptionSpikeArrest() {
-
         ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
         Mockito.when(throttleProperties.isEnabledSubscriptionLevelSpikeArrest()).thenReturn(true);
         Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
         Assert.assertTrue(APIUtil.isEnabledSubscriptionSpikeArrest());
-
     }
 
     @Test
@@ -672,7 +656,6 @@ public class APIUtilTestCase {
         //when port offset is set to 1
         Mockito.when(serverConfiguration.getFirstProperty(APIConstants.PORT_OFFSET_CONFIG)).thenReturn("1");
         System.setProperty(APIConstants.PORT_OFFSET_SYSTEM_VAR, "1");
-
         Assert.assertEquals(1, APIUtil.getPortOffset());
     }
 
@@ -681,7 +664,6 @@ public class APIUtilTestCase {
         ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
         Mockito.when(throttleProperties.isEnableQueryParamConditions()).thenReturn(true);
         Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
-
         Assert.assertTrue(APIUtil.isQueryParamDataPublishingEnabled());
     }
 
@@ -690,7 +672,6 @@ public class APIUtilTestCase {
         ThrottleProperties throttleProperties = Mockito.mock(ThrottleProperties.class);
         Mockito.when(throttleProperties.isEnableHeaderConditions()).thenReturn(true);
         Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
-
         Assert.assertTrue(APIUtil.isHeaderDataPublishingEnabled());
     }
 
