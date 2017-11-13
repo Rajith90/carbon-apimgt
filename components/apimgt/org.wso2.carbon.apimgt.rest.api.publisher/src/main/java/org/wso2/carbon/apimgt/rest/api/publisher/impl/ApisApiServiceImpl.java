@@ -54,6 +54,7 @@ import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.rest.api.publisher.ApisApiService;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIListDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIListPaginationDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.DocumentDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.DocumentListDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.FileInfoDTO;
@@ -140,9 +141,20 @@ public class ApisApiServiceImpl extends ApisApiService {
                     offset, limit, false);
             Set<API> apis = (Set<API>) result.get("apis");
             allMatchedApis.addAll(apis);
-
             apiListDTO = APIMappingUtil.fromAPIListToDTO(allMatchedApis, offset, limit);
             APIMappingUtil.setPaginationParams(apiListDTO, query, offset, limit, allMatchedApis.size());
+
+            //Add pagination section in the response
+            Object totalLength = result.get("length");
+            Integer length = 0;
+            if(totalLength != null) {
+                length = (Integer) totalLength;
+            }
+            APIListPaginationDTO paginationDTO = new APIListPaginationDTO();
+            paginationDTO.setOffset(offset);
+            paginationDTO.setLimit(limit);
+            paginationDTO.setTotal(length);
+            apiListDTO.setPagination(paginationDTO);
             return Response.ok().entity(apiListDTO).build();
         } catch (APIManagementException e) {
             String errorMessage = "Error while retrieving APIs";
