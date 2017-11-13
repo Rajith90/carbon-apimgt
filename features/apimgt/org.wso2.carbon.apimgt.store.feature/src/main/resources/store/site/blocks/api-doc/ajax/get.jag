@@ -281,7 +281,7 @@ function validateHostName(match, host) {
     var carbonUtils = new CarbonUtils();
     var hostName = carbonUtils.getServerConfiguration().getFirstProperty("HostName");
     var process = require('process');
-    if (match.host.split(":")[0].equals(hostName.split(":")[0]) || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
+    if ((hostName != null && match.host.split(":")[0].equals(hostName.split(":")[0])) || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
        return host;
     } else {
        // Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration.
