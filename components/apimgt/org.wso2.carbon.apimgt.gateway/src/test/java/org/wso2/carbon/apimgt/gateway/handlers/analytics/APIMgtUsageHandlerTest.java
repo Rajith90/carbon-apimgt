@@ -135,7 +135,7 @@ public class APIMgtUsageHandlerTest {
 
     @Test
     public void testHandleRequestKeyTypeAndCorrelationID() throws Exception {
-        APIMgtUsageDataPublisher apiMgtUsageDataPublisher = new TestAPIMgtUsageDataBridgeDataPublisher();
+        TestAPIMgtUsageDataBridgeDataPublisher apiMgtUsageDataPublisher = new TestAPIMgtUsageDataBridgeDataPublisher();
         APIManagerAnalyticsConfiguration apiManagerAnalyticsConfiguration = Mockito
                 .mock(APIManagerAnalyticsConfiguration.class);
         Mockito.when(apiManagerAnalyticsConfiguration.isBuildMsg()).thenReturn(false);
@@ -179,13 +179,16 @@ public class APIMgtUsageHandlerTest {
         apiMgtUsageHandlerWrapper.handleRequest(messageContext);
 
         Assert.assertEquals(APIConstants.API_KEY_TYPE_PRODUCTION,
-                TestAPIMgtUsageDataBridgeDataPublisher.requestPublisherDTO.getKeyType());
-        Assert.assertNotNull(TestAPIMgtUsageDataBridgeDataPublisher.requestPublisherDTO.getCorrelationID());
+                apiMgtUsageDataPublisher.getRequestPublisherDTO().getKeyType());
+        Assert.assertNotNull(apiMgtUsageDataPublisher.getRequestPublisherDTO().getCorrelationID());
     }
 }
 
+/**
+ * Custom data publisher class implemented for testing request event data
+ */
 class TestAPIMgtUsageDataBridgeDataPublisher implements APIMgtUsageDataPublisher {
-    static RequestPublisherDTO requestPublisherDTO;
+    private RequestPublisherDTO requestPublisherDTO;
 
     @Override
     public void init() {
@@ -219,5 +222,9 @@ class TestAPIMgtUsageDataBridgeDataPublisher implements APIMgtUsageDataPublisher
     @Override
     public void publishEvent(AlertTypeDTO alertTypeDTO) throws APIManagementException {
 
+    }
+
+    public RequestPublisherDTO getRequestPublisherDTO() {
+        return requestPublisherDTO;
     }
 }
