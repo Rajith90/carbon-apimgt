@@ -44,6 +44,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
@@ -55,6 +56,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class Utils {
 
@@ -256,5 +258,26 @@ public class Utils {
         messageContext.setTo(null);
         axis2MC.removeProperty(Constants.Configuration.CONTENT_TYPE);
         Axis2Sender.sendBack(messageContext);
+    }
+
+    /**
+     * return existing correlation ID in the message context or set new correlation ID to the message context.
+     *
+     * @param messageContext synapse message context
+     * @return correlation ID
+     */
+    public static String getAndSetCorrelationID(MessageContext messageContext) {
+        Object correlationObj = messageContext.getProperty(APIMgtGatewayConstants.AM_CORRELATION_ID);
+        String correlationID;
+        if (correlationObj != null) {
+            correlationID = (String) correlationObj;
+        } else {
+            correlationID = UUID.randomUUID().toString();
+            messageContext.setProperty(APIMgtGatewayConstants.AM_CORRELATION_ID, correlationID);
+            if (log.isDebugEnabled()) {
+                log.debug("Setting correlation ID to message context.");
+            }
+        }
+        return correlationID;
     }
 }

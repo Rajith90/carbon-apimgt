@@ -24,6 +24,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.AbstractHandler;
 import org.apache.synapse.rest.RESTConstants;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
+import org.wso2.carbon.apimgt.gateway.handlers.Utils;
 import org.wso2.carbon.apimgt.gateway.handlers.security.APISecurityUtils;
 import org.wso2.carbon.apimgt.gateway.handlers.security.AuthenticationContext;
 import org.wso2.carbon.apimgt.impl.APIConstants;
@@ -35,6 +36,7 @@ import org.wso2.carbon.apimgt.usage.publisher.dto.RequestPublisherDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -127,6 +129,8 @@ public class APIMgtUsageHandler extends AbstractHandler {
             if (throttleOutProperty instanceof Boolean) {
                 throttleOutHappened = (Boolean) throttleOutProperty;
             }
+            String keyType = (String) mc.getProperty(APIConstants.API_KEY_TYPE);
+            String correlationID = Utils.getAndSetCorrelationID(mc);
             String clientIp = DataPublisherUtil.getClientIp(axis2MsgContext);
             RequestPublisherDTO requestPublisherDTO = new RequestPublisherDTO();
             requestPublisherDTO.setConsumerKey(consumerKey);
@@ -149,6 +153,8 @@ public class APIMgtUsageHandler extends AbstractHandler {
             requestPublisherDTO.setContinuedOnThrottleOut(throttleOutHappened);
             requestPublisherDTO.setClientIp(clientIp);
             requestPublisherDTO.setApplicationOwner(applicationOwner);
+            requestPublisherDTO.setKeyType(keyType);
+            requestPublisherDTO.setCorrelationID(correlationID);
             publisher.publishEvent(requestPublisherDTO);
         } catch (Exception e) {
             log.error("Cannot publish event. " + e.getMessage(), e);
