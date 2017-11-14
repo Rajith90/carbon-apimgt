@@ -248,7 +248,6 @@ if(jagg.isCSRFTokenValid())
             apiData.corsConfiguration=request.getParameter("corsConfiguration","UTF-8");
 
             result = mod.updateAPIImplementation(apiData);
-            result.message = '<script>alert(1)</script>'
             if (result.error==true) {
                 obj = {
                     error:true,
