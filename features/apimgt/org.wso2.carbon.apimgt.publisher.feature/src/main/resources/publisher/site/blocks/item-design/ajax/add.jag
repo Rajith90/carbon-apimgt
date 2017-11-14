@@ -1,6 +1,8 @@
 <%
 include("/jagg/jagg.jag");
 var log = new Log();
+var encode = require('encode');
+encode = new encode.Encode();
 
 function loadSwaggerObj(path)
 {
@@ -224,9 +226,9 @@ if(jagg.isCSRFTokenValid())
                        };
                    print(obj);
                    return;
-                } 
+                }
             }
-            
+
             apiData.implementation_type = request.getParameter("implementation_methods");
             apiData.wsdl = request.getParameter("wsdl");
             apiData.wadl = request.getParameter("wadl");
@@ -246,10 +248,11 @@ if(jagg.isCSRFTokenValid())
             apiData.corsConfiguration=request.getParameter("corsConfiguration","UTF-8");
 
             result = mod.updateAPIImplementation(apiData);
+            result.message = '<script>alert(1)</script>'
             if (result.error==true) {
                 obj = {
                     error:true,
-                    message:result.message,
+                    message:encode.forHtml(result.message),
                     data :apiId,
                 };
             } else {
