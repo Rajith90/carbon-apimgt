@@ -55,6 +55,7 @@ import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
+import org.wso2.carbon.apimgt.api.dto.CertificateMetadataDTO;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -81,12 +82,9 @@ import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerFactory;
 import org.wso2.carbon.apimgt.impl.UserAwareAPIProvider;
-import org.wso2.carbon.apimgt.impl.certificatemgt.ResponseCode;
-import org.wso2.carbon.apimgt.impl.certificatemgt.GatewayCertificateManager;
 import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManager;
 import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManagerImpl;
 import org.wso2.carbon.apimgt.impl.definitions.APIDefinitionFromSwagger20;
-import org.wso2.carbon.apimgt.impl.dto.CertificateMetadataDTO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.TierPermissionDTO;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
@@ -110,6 +108,8 @@ import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.cache.Caching;
+import javax.xml.namespace.QName;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -131,8 +131,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.cache.Caching;
-import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 public class APIProviderHostObject extends ScriptableObject {
@@ -4971,8 +4969,6 @@ public class APIProviderHostObject extends ScriptableObject {
      */
     public static int jsFunction_uploadCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
             throws APIManagementException {
-        ResponseCode responseCode = ResponseCode.INTERNAL_SERVER_ERROR;
-        CertificateManager certificateManager = new CertificateManagerImpl();
         if ((args == null) || (args.length != 4) || !isStringValues(args)) {
             handleException("Invalid number of arguments.");
         }
@@ -4982,26 +4978,8 @@ public class APIProviderHostObject extends ScriptableObject {
         String endpoint = (String) args[2];
         String certificate = (String) args[3];
 
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-        Map<String, List<Environment>> resultMap = new HashMap<String, List<Environment>>();
-        try {
-            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                    .getTenantId(tenantDomain);
-            responseCode = certificateManager
-                    .addCertificateToPublisher(certificate, alias, endpoint, tenantId);
-
-            if (responseCode == ResponseCode.SUCCESS) {
-                //Get the gateway manager and add the certificate to gateways.
-                GatewayCertificateManager gatewayCertificateManager = new GatewayCertificateManager();
-                resultMap = gatewayCertificateManager.addToGateways(certificate, alias);
-            } else {
-                log.error("Adding certificate to the Publisher node is failed. No certificate changes will be " +
-                        "affected.");
-            }
-        } catch (UserStoreException e) {
-            handleException("Error while reading tenant information ", e);
-        }
-        return responseCode.getResponseCode();
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.addCertificate(userName, certificate, alias, endpoint);
     }
 
     /**
@@ -5015,8 +4993,6 @@ public class APIProviderHostObject extends ScriptableObject {
      */
     public static int jsFunction_deleteCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
             throws APIManagementException {
-        ResponseCode responseCode = ResponseCode.INTERNAL_SERVER_ERROR;
-        CertificateManager certificateManager = new CertificateManagerImpl();
         if ((args == null) || (args.length != 3) || !isStringValues(args)) {
             handleException("Invalid number of arguments.");
         }
@@ -5025,76 +5001,21 @@ public class APIProviderHostObject extends ScriptableObject {
         String alias = (String) args[1];
         String endpoint = (String) args[2];
 
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-        Map<String, List<Environment>> resultSet = new HashMap<String, List<Environment>>();
-
-        try {
-            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                    .getTenantId(tenantDomain);
-            responseCode = certificateManager.deleteCertificateFromPublisher(alias, endpoint, tenantId);
-
-            if (responseCode == ResponseCode.SUCCESS) {
-                //Get the gateway manager and remove the certificate from gateways.
-                resultSet = new GatewayCertificateManager().removeFromGateways(alias);
-            } else {
-                log.error("Removing the certificate from Publisher node is failed. No certificate changes will "
-                        + "be affected.");
-            }
-        } catch (UserStoreException e) {
-            handleException("Error while reading tenant information ", e);
-        }
-        return responseCode.getResponseCode();
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.deleteCertificate(userName, alias, endpoint);
     }
-
-    /**
-     * This method is to retrieve certificate metadata for a given endpoint.
-     *
-     * @param cx      Rhino context
-     * @param thisObj Scriptable object
-     * @param args    Passing arguments {username, endpoint}
-     * @param funObj  Function object
-     * @return The certificate metadata object.
-     * */
-    public static NativeObject jsFunction_getCertificate(Context cx, Scriptable thisObj, Object[] args,
-                                                         Function funObj) throws APIManagementException {
-        NativeObject certificateMetaData = new NativeObject();
-        CertificateManager certificateManager = new CertificateManagerImpl();
-        if ((args == null) || (args.length != 2) || !isStringValues(args)) {
-            log.error("Invalid arguments.");
-            return null;
-        }
-
-        String userName = (String) args[0];
-        String endpoint = (String) args[1];
-        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-        try {
-            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                    .getTenantId(tenantDomain);
-            CertificateMetadataDTO certificateMetadata = certificateManager.getCertificate(endpoint, tenantId);
-
-            if (certificateMetadata != null) {
-                //TODO: use constants for alias and endpoint
-                certificateMetaData.put(ALIAS, certificateMetaData, certificateMetadata.getAlias());
-                certificateMetaData.put(END_POINT, certificateMetaData, certificateMetadata.getEndpoint());
-            }
-        } catch (UserStoreException e) {
-            handleException("Error while reading tenant information ", e);
-        }
-        return certificateMetaData;
-    }
-
 
     /**
      * This method is to retrieve all the certificates belongs to the given tenant.
      *
-     * @param cx Rhino context
+     * @param cx      Rhino context
      * @param thisObj Scriptable object
-     * @param args Passing arguments {username}
-     * @param funObj Function object
+     * @param args    Passing arguments {username}
+     * @param funObj  Function object
      * @return A list of uploaded certificate metadata.
      */
-    public static NativeArray jsFunction_getCertificates(Context cx, Scriptable thisObj, Object[] args,
-                                                         Function funObj) throws APIManagementException {
+    public static NativeArray jsFunction_getCertificates(Context cx, Scriptable thisObj, Object[] args, Function funObj)
+            throws APIManagementException {
         NativeArray certificateMetaDataArray = new NativeArray(0);
 
         NativeObject certificateMetaData = new NativeObject();
@@ -5107,24 +5028,19 @@ public class APIProviderHostObject extends ScriptableObject {
         String userName = (String) args[0];
         String endpoint = (String) args[1];
 
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        List<CertificateMetadataDTO> certificates = apiProvider.getCertificates(userName);
         String tenantDomain = MultitenantUtils.getTenantDomain(userName);
-        try {
-            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                    .getTenantId(tenantDomain);
-            List<CertificateMetadataDTO> certificates = certificateManager.getCertificates(tenantId);
-            int i = 0;
+        int i = 0;
 
-            if (certificates.size() > 0) {
-                for (CertificateMetadataDTO certificateMetadata : certificates) {
-                    NativeObject obj = new NativeObject();
-                    obj.put(ALIAS, obj, certificateMetadata.getAlias());
-                    obj.put(END_POINT, obj, certificateMetadata.getEndpoint());
-                    certificateMetaDataArray.put(i, certificateMetaDataArray, obj);
-                    i++;
-                }
+        if (certificates.size() > 0) {
+            for (CertificateMetadataDTO certificateMetadata : certificates) {
+                NativeObject obj = new NativeObject();
+                obj.put(ALIAS, obj, certificateMetadata.getAlias());
+                obj.put(END_POINT, obj, certificateMetadata.getEndpoint());
+                certificateMetaDataArray.put(i, certificateMetaDataArray, obj);
+                i++;
             }
-        } catch (UserStoreException e) {
-            handleException("Error while reading tenant information ", e);
         }
         return certificateMetaDataArray;
     }
@@ -5134,9 +5050,9 @@ public class APIProviderHostObject extends ScriptableObject {
      *
      * @return : True if the configuration is present, false otherwise.
      */
-    public static boolean jsFunction_isConfigured() {
-        CertificateManager certificateManager = new CertificateManagerImpl();
-        return certificateManager.isConfigured();
+    public static boolean jsFunction_isConfigured(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.isConfigured();
     }
 
     /**
