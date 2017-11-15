@@ -34,7 +34,7 @@ var addSubscription = function (api, tier, applicationId, username) {
         // if exception is related to workflows, propagate the workflow related error message to UI
         while (javaException) {
             if (javaException instanceof org.wso2.carbon.apimgt.impl.workflow.WorkflowException) {
-                outputErrorMessage = javaException.message;
+                outputErrorMessage = String(javaException.message);
                 break;
             }
             javaException = javaException.getCause();
