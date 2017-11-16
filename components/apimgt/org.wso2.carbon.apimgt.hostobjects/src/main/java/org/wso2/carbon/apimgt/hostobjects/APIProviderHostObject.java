@@ -4970,7 +4970,7 @@ public class APIProviderHostObject extends ScriptableObject {
     public static int jsFunction_uploadCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
             throws APIManagementException {
         if ((args == null) || (args.length != 4) || !isStringValues(args)) {
-            handleException("Invalid number of arguments.");
+            handleException("Invalid number of arguments. Expected User Name, Alias, Endpoint and Certificate");
         }
 
         String userName = (String) args[0];
@@ -4994,7 +4994,7 @@ public class APIProviderHostObject extends ScriptableObject {
     public static int jsFunction_deleteCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
             throws APIManagementException {
         if ((args == null) || (args.length != 3) || !isStringValues(args)) {
-            handleException("Invalid number of arguments.");
+            handleException("Invalid number of arguments. Expected User Name, Alias and Endpoint.");
         }
 
         String userName = (String) args[0];
@@ -5021,7 +5021,7 @@ public class APIProviderHostObject extends ScriptableObject {
         NativeObject certificateMetaData = new NativeObject();
         CertificateManager certificateManager = new CertificateManagerImpl();
         if ((args == null) || (args.length != 2) || !isStringValues(args)) {
-            log.error("Invalid arguments.");
+            log.error("Invalid arguments. Expected User Name and End Point.");
             return null;
         }
 

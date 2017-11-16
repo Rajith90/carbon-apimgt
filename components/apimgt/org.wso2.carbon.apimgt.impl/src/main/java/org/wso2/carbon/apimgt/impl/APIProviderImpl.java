@@ -5049,7 +5049,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                     .getTenantId(tenantDomain);
             status = certificateManager
-                    .addCertificateToPublisher(certificate, alias, endpoint, tenantId);
+                    .addCertificateToParentNode(certificate, alias, endpoint, tenantId);
 
             if (status == ResponseCode.SUCCESS) {
                 //Get the gateway manager and add the certificate to gateways.
@@ -5060,7 +5060,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         "affected.");
             }
         } catch (UserStoreException e) {
-            throw new APIManagementException("Error while reading tenant information", e);
+            handleException("Error while reading tenant information", e);
         }
         return status.getResponseCode();
     }
@@ -5074,7 +5074,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         try {
             int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                     .getTenantId(tenantDomain);
-            status = certificateManager.deleteCertificateFromPublisher(alias, endpoint, tenantId);
+            status = certificateManager.deleteCertificateFromParentNode(alias, endpoint, tenantId);
 
             if (status == ResponseCode.SUCCESS) {
                 //Get the gateway manager and remove the certificate from gateways.
@@ -5085,7 +5085,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         + "be affected.");
             }
         } catch (UserStoreException e) {
-            throw new APIManagementException("Error while reading tenant information", e);
+            handleException("Error while reading tenant information", e);
         }
         return status.getResponseCode();
     }
@@ -5099,12 +5099,12 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     @Override
     public List<CertificateMetadataDTO> getCertificates(String userName) throws APIManagementException {
         CertificateManager certificateManager = new CertificateManagerImpl();
-        int tenantId;
+        int tenantId = 0;
         try {
             tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                     .getTenantId(tenantDomain);
         } catch (UserStoreException e) {
-            throw new APIManagementException("Error while reading tenant information", e);
+            handleException("Error while reading tenant information", e);
         }
         return certificateManager.getCertificates(tenantId);
     }
