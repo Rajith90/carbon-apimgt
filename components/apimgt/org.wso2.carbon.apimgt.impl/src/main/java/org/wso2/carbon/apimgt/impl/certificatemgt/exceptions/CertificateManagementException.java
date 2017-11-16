@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.apimgt.impl.certificatemgt;
+package org.wso2.carbon.apimgt.impl.certificatemgt.exceptions;
 
 /**
  * This class represents custom exception class for certificate management in api manager.

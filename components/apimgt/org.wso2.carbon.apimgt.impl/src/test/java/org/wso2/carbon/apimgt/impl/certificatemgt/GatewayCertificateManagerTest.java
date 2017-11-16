@@ -37,7 +37,7 @@ import java.util.Map;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({APIGatewayAdminClient.class, ServiceReferenceHolder.class, GatewayCertificateManager.class})
-public class GatewayCertificateManaterTest {
+public class GatewayCertificateManagerTest {
 
     private static final String PROD_1 = "PROD_1";
     private static final String PROD_1_PASSWORD = "wso2123";

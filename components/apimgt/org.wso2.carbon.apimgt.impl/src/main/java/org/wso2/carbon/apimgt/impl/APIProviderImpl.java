@@ -5041,17 +5041,17 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     @Override
     public int addCertificate(String userName, String certificate, String alias, String endpoint)
             throws APIManagementException {
-        ResponseCode responseCode = ResponseCode.INTERNAL_SERVER_ERROR;
+        ResponseCode status = ResponseCode.INTERNAL_SERVER_ERROR;
         CertificateManager certificateManager = new CertificateManagerImpl();
         String tenantDomain = MultitenantUtils.getTenantDomain(userName);
         ;
         try {
             int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                     .getTenantId(tenantDomain);
-            responseCode = certificateManager
+            status = certificateManager
                     .addCertificateToPublisher(certificate, alias, endpoint, tenantId);
 
-            if (responseCode == ResponseCode.SUCCESS) {
+            if (status == ResponseCode.SUCCESS) {
                 //Get the gateway manager and add the certificate to gateways.
                 GatewayCertificateManager gatewayCertificateManager = new GatewayCertificateManager();
                 gatewayCertificateManager.addToGateways(certificate, alias);
@@ -5062,21 +5062,21 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         } catch (UserStoreException e) {
             throw new APIManagementException("Error while reading tenant information", e);
         }
-        return responseCode.getResponseCode();
+        return status.getResponseCode();
     }
 
     @Override
     public int deleteCertificate(String userName, String alias, String endpoint) throws APIManagementException {
-        ResponseCode responseCode = ResponseCode.INTERNAL_SERVER_ERROR;
+        ResponseCode status = ResponseCode.INTERNAL_SERVER_ERROR;
         CertificateManager certificateManager = new CertificateManagerImpl();
         String tenantDomain = MultitenantUtils.getTenantDomain(userName);
 
         try {
             int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                     .getTenantId(tenantDomain);
-            responseCode = certificateManager.deleteCertificateFromPublisher(alias, endpoint, tenantId);
+            status = certificateManager.deleteCertificateFromPublisher(alias, endpoint, tenantId);
 
-            if (responseCode == ResponseCode.SUCCESS) {
+            if (status == ResponseCode.SUCCESS) {
                 //Get the gateway manager and remove the certificate from gateways.
                 GatewayCertificateManager gatewayCertificateManager = new GatewayCertificateManager();
                 gatewayCertificateManager.removeFromGateways(alias);
@@ -5087,7 +5087,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         } catch (UserStoreException e) {
             throw new APIManagementException("Error while reading tenant information", e);
         }
-        return responseCode.getResponseCode();
+        return status.getResponseCode();
     }
 
     @Override

@@ -15,29 +15,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.apimgt.impl.dto;
+package org.wso2.carbon.apimgt.impl.certificatemgt.exceptions;
 
 /**
- * This class represents the certificate information DTO.
- * */
-public class CertificateMetadataDTO {
+ * This represents custom exception class for certificate management in api manager, which will be thrown in
+ * scenarios that certificate alias exists in the data base.
+ */
+public class CertificateAliasExistsException extends Throwable {
 
-    private String alias;
-    private String endpoint;
-
-    public String getAlias() {
-        return alias;
+    public CertificateAliasExistsException(String message) {
+        super(message);
     }
 
-    public void setAlias(String alias) {
-        this.alias = alias;
+    public CertificateAliasExistsException(String message, Throwable e) {
+        super(message, e);
     }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
+    public CertificateAliasExistsException(Throwable e) {
+        super(e);
     }
 }
