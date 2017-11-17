@@ -2392,6 +2392,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      * @throws APIManagementException if failed to create API
      */
     protected void createAPI(API api) throws APIManagementException {
+        validateApiInfo(api);
         GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
 
         //Validate Transports
@@ -2463,6 +2464,37 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 handleException("Error while rolling back the transaction for API: " + api.getId().getApiName(), ex);
             }
         }
+    }
+
+    /**
+     * Validates the name and version of api against illegal characters.
+     *
+     * @param api API info object
+     * @throws APIManagementException
+     */
+    private void validateApiInfo(API api) throws APIManagementException {
+        String apiName = api.getId().getApiName();
+        String apiVersion = api.getId().getVersion();
+        if (containsIllegals(apiName)) {
+            handleException("Name contains one or more illegal characters  " +
+                    "(~ ! @ #  ; % ^ & * + = { } ( ) | &lt; &gt;, \' \" \\ / $ ) . )");
+        }
+        if (containsIllegals(apiVersion)) {
+            handleException("Version contains one or more illegal characters  " +
+                    "(~ ! @ #  ; % ^ & * + = { } ( ) | &lt; &gt;, \' \" \\ / $ ) . )");
+        }
+    }
+
+    /**
+     * Check whether a string contains illegal characters
+     *
+     * @param toExamine string to examine for illegal characters
+     * @return true if found illegal characters, else false
+     */
+    public boolean containsIllegals(String toExamine) {
+        Pattern pattern = Pattern.compile("[~!@#;%^*()+={}|<>\"\',\\[\\]&/$\\\\]");
+        Matcher matcher = pattern.matcher(toExamine);
+        return matcher.find();
     }
 
     /**
