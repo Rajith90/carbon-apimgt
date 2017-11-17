@@ -58,7 +58,7 @@ public class CertificateMgtUtils {
      * @param base64Cert : The base 64 encoded string of the server certificate.
      * @param alias      : The alias for the certificate.
      * @return : ResponseCode which matches the execution result.
-     * 
+     *
      * Response Codes.
      * SUCCESS : If certificate added successfully.
      * INTERNAL_SERVER_ERROR : If any internal error occurred
@@ -94,6 +94,9 @@ public class CertificateMgtUtils {
                     X509Certificate x509Certificate = (X509Certificate) certificate;
                     if (x509Certificate.getNotAfter().getTime() <= System.currentTimeMillis()) {
                         expired = true;
+                        if (log.isDebugEnabled()) {
+                            log.debug("Provided certificate is expired.");
+                        }
                     } else {
                         //If not expired add the certificate to trust store.
                         trustStore.setCertificateEntry(alias, certificate);
@@ -133,14 +136,14 @@ public class CertificateMgtUtils {
      *
      * @param alias : The alias which the certificate should be deleted.
      * @return : ResponseCode based on the execution.
-     * 
+     *
      * Response Codes
      * SUCCESS : If the certificate is deleted successfully.
      * INTERNAL_SERVER_ERROR : If any exception occurred.
      * CERTIFICATE_NOT_FOUND : If the Alias is not found in the key store.
      */
     public ResponseCode removeCertificateFromTrustStore(String alias) {
-        boolean isExists;
+        boolean isExists; //Check for the existence of the certificate in trust store.
         try {
             File trustStoreFile = new File(TRUST_STORE);
             localTrustStoreStream = new FileInputStream(trustStoreFile);
@@ -152,6 +155,9 @@ public class CertificateMgtUtils {
                 isExists = true;
             } else {
                 isExists = false;
+                if (log.isDebugEnabled()) {
+                    log.debug("Certificate for alias '" + alias + "' not found in the trust store.");
+                }
             }
 
             fileOutputStream = new FileOutputStream(trustStoreFile);
