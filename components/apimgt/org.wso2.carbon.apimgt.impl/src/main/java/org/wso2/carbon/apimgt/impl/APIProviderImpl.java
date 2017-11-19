@@ -2476,12 +2476,12 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         String apiName = api.getId().getApiName();
         String apiVersion = api.getId().getVersion();
         if (containsIllegals(apiName)) {
-            handleException("Name contains one or more illegal characters  " +
-                    "(~ ! @ #  ; % ^ & * + = { } ( ) | &lt; &gt;, \' \" \\ / $ ) . )");
+            handleException("API Name contains one or more illegal characters  " +
+                    "( " + APIConstants.REGEX_ILLEGAL_CHARACTERS_FOR_API_METADATA + " )");
         }
         if (containsIllegals(apiVersion)) {
-            handleException("Version contains one or more illegal characters  " +
-                    "(~ ! @ #  ; % ^ & * + = { } ( ) | &lt; &gt;, \' \" \\ / $ ) . )");
+            handleException("API Version contains one or more illegal characters  " +
+                    "( " + APIConstants.REGEX_ILLEGAL_CHARACTERS_FOR_API_METADATA + " )");
         }
     }
 
@@ -2492,7 +2492,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      * @return true if found illegal characters, else false
      */
     public boolean containsIllegals(String toExamine) {
-        Pattern pattern = Pattern.compile("[~!@#;%^*()+={}|<>\"\',\\[\\]&/$\\\\]");
+        Pattern pattern = Pattern.compile(APIConstants.REGEX_ILLEGAL_CHARACTERS_FOR_API_METADATA);
         Matcher matcher = pattern.matcher(toExamine);
         return matcher.find();
     }
