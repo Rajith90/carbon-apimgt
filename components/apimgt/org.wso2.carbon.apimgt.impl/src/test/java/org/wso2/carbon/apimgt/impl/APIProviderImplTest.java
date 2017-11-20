@@ -1114,8 +1114,7 @@ public class APIProviderImplTest {
             Assert.fail("Exception was expected, but wasn't thrown");
         } catch (APIManagementException e) {
             Assert.assertEquals("Error in adding API :" + api.getId().getApiName(), e.getMessage());
-            Assert.assertEquals("API Name contains one or more illegal characters", e.getCause().getMessage().
-                    substring(0, 48));
+            Assert.assertTrue(e.getCause().getMessage().contains("API Name contains one or more illegal characters"));
         }
     }
 
@@ -1136,8 +1135,7 @@ public class APIProviderImplTest {
             Assert.fail("Exception was expected, but wasn't thrown");
         } catch (APIManagementException e) {
             Assert.assertEquals("Error in adding API :" + api.getId().getApiName(), e.getMessage());
-            Assert.assertEquals("API Version contains one or more illegal characters", e.getCause().getMessage().
-                    substring(0, 51));
+            Assert.assertTrue(e.getCause().getMessage().contains("API Version contains one or more illegal characters"));
         }
     }
     
