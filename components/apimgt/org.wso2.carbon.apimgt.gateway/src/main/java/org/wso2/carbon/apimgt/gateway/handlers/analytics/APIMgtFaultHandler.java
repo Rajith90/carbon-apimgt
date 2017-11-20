@@ -20,7 +20,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.rest.RESTConstants;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
+import org.wso2.carbon.apimgt.gateway.handlers.Utils;
 import org.wso2.carbon.apimgt.gateway.mediators.APIMgtCommonExecutionPublisher;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.usage.publisher.dto.FaultPublisherDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -43,6 +45,8 @@ public class APIMgtFaultHandler extends APIMgtCommonExecutionPublisher {
             }
             long requestTime = Long.parseLong((String) messageContext.getProperty(APIMgtGatewayConstants.
                     REQUEST_START_TIME));
+            String keyType = (String) messageContext.getProperty(APIConstants.API_KEY_TYPE);
+            String correlationID = Utils.getAndSetCorrelationID(messageContext);
 
             FaultPublisherDTO faultPublisherDTO = new FaultPublisherDTO();
             faultPublisherDTO.setConsumerKey((String) messageContext.getProperty(
@@ -85,7 +89,8 @@ public class APIMgtFaultHandler extends APIMgtCommonExecutionPublisher {
             String protocol = (String) messageContext.getProperty(
                     SynapseConstants.TRANSPORT_IN_NAME);
             faultPublisherDTO.setProtocol(protocol);
-
+            faultPublisherDTO.setKeyType(keyType);
+            faultPublisherDTO.setCorrelationID(correlationID);
             publisher.publishEvent(faultPublisherDTO);
 
         } catch (Exception e) {
