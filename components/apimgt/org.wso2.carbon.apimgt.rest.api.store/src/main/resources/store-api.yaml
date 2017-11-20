@@ -1025,8 +1025,7 @@ paths:
           schema:
             $ref: '#/definitions/ApplicationKey'
       tags:
-        - Application (individual)
-        - Application Keys
+        - Application (Individual)
       responses:
         200:
           description: |
