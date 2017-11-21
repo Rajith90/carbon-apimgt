@@ -61,7 +61,6 @@ import java.util.UUID;
 public class Utils {
 
     private static final Log log = LogFactory.getLog(Utils.class);
-    private static APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfiguration();
 
     public static void sendFault(MessageContext messageContext, int status) {
         org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).

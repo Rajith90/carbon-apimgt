@@ -478,64 +478,6 @@ public class ApiMgtDAO {
         return apiKeyInfoDTOs;
     }
 
-    /**
-     * This method is to update the access token
-     *
-     * @param userId     id of the user
-     * @param apiInfoDTO Api info
-     * @param statusEnum Status of the access key
-     * @throws APIManagementException if failed to update the access token
-     */
-    public void changeAccessTokenStatus(String userId, APIInfoDTO apiInfoDTO, String statusEnum)
-            throws APIManagementException {
-        Connection conn = null;
-        PreparedStatement ps = null;
-
-        String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(userId);
-        int tenantId = APIUtil.getTenantId(userId);
-
-        String accessTokenStoreTable = APIConstants.ACCESS_TOKEN_STORE_TABLE;
-        accessTokenStoreTable = getAccessTokenStoreTableNameOfUserId(userId, accessTokenStoreTable);
-
-        String sqlQuery = SQLConstants.CHANGE_ACCESS_TOKEN_STATUS_PREFIX +
-                accessTokenStoreTable + SQLConstants.CHANGE_ACCESS_TOKEN_STATUS_DEFAULT_SUFFIX;
-
-        if (forceCaseInsensitiveComparisons) {
-            sqlQuery = SQLConstants.CHANGE_ACCESS_TOKEN_STATUS_PREFIX +
-                    accessTokenStoreTable + SQLConstants.CHANGE_ACCESS_TOKEN_STATUS_CASE_INSENSITIVE_SUFFIX;
-        }
-
-        try {
-            conn = APIMgtDBUtil.getConnection();
-            conn.setAutoCommit(false);
-
-            ps = conn.prepareStatement(sqlQuery);
-            ps.setString(1, statusEnum);
-            ps.setString(2, tenantAwareUsername);
-            ps.setInt(3, tenantId);
-            ps.setString(4, APIUtil.replaceEmailDomainBack(apiInfoDTO.getProviderId()));
-            ps.setString(5, apiInfoDTO.getApiName());
-            ps.setString(6, apiInfoDTO.getVersion());
-
-            int count = ps.executeUpdate();
-            if (log.isDebugEnabled()) {
-                log.debug("Number of rows being updated : " + count);
-            }
-            conn.commit();
-        } catch (SQLException e) {
-            try {
-                if (conn != null) {
-                    conn.rollback();
-                }
-            } catch (SQLException e1) {
-                log.error("Failed to rollback the changeAccessTokenStatus operation", e1);
-            }
-            handleException("Error while executing SQL", e);
-        } finally {
-            APIMgtDBUtil.closeAllConnections(ps, conn, null);
-        }
-    }
-
 
     public boolean validateSubscriptionDetails(String context, String version, String consumerKey,
                                                APIKeyValidationInfoDTO infoDTO) throws APIManagementException {
