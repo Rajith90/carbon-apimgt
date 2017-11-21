@@ -77,48 +77,6 @@ public class APIKeyMgtProviderService extends AbstractAdmin {
     }
 
     /**
-     * Activate the keys of the set of users subscribed for the given API
-     * @param users Subscribed Users whose keys will be activated
-     * @param apiInfoDTO API Information
-     * @throws APIKeyMgtException Error has occurred when processing updating the key Info from the database.
-     */
-    public void activateAccessTokens(String[] users, APIInfoDTO apiInfoDTO) throws APIKeyMgtException,
-            APIManagementException, IdentityException {
-        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        for (String userId : users) {
-            apiMgtDAO.changeAccessTokenStatus(userId, apiInfoDTO, APIConstants.TokenStatus.ACTIVE);
-        }
-    }
-
-    /**
-     * Block the keys of the set of users subscribed for the given API
-     * @param users Subscribed Users whose keys will be blocked
-     * @param apiInfoDTO API Information
-     * @throws APIKeyMgtException Error has occurred when processing updating the key Info from the database.
-     */
-    public void blockAccessTokens(String[] users, APIInfoDTO apiInfoDTO) throws APIKeyMgtException,
-            APIManagementException, IdentityException {
-        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        for (String userId : users) {
-            apiMgtDAO.changeAccessTokenStatus(userId, apiInfoDTO, APIConstants.TokenStatus.BLOCKED);
-        }
-    }
-
-    /**
-     * Revoke the keys of the set of users subscribed for the given API
-     * @param users Subscribed Users whose keys will be revoked.
-     * @param apiInfoDTO API Information
-     * @throws APIKeyMgtException Error has occurred when processing updating the key Info from the database.
-     */
-    public void revokeAccessTokens(String[] users, APIInfoDTO apiInfoDTO) throws APIKeyMgtException,
-            APIManagementException, IdentityException {
-        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        for (String userId : users) {
-            apiMgtDAO.changeAccessTokenStatus(userId, apiInfoDTO, APIConstants.TokenStatus.REVOKED);
-        }
-    }
-
-    /**
      * Removes passed consumer keys from scope cache
      *
      * @param consumerKeys
