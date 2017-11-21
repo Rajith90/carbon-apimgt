@@ -11,6 +11,8 @@ import org.wso2.carbon.apimgt.gateway.utils.MediationSecurityAdminServiceClient;
 import org.wso2.carbon.apimgt.gateway.utils.RESTAPIAdminClient;
 import org.wso2.carbon.apimgt.gateway.utils.SequenceAdminServiceClient;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManager;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManagerImpl;
 import org.wso2.carbon.rest.api.stub.types.carbon.APIData;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
@@ -445,5 +447,26 @@ public class APIGatewayAdmin extends org.wso2.carbon.core.AbstractAdmin {
             }
         }
         return true;
+    }
+
+    /**
+     * Imports the given certificate to the trust store.
+     *
+     * @param certificate : The client certificate that needs to be added.
+     * @param alias : The alias for the certificate.
+     * */
+    public boolean addCertificate(String certificate, String alias) {
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        return certificateManager.addCertificateToGateway(certificate, alias);
+    }
+
+    /**
+     * Removes the certificate for the given alias from the trust store.
+     *
+     * @param alias : Alias of the certificate that needs to be removed.
+     * */
+    public boolean deleteCertificate(String alias) {
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        return certificateManager.deleteCertificateFromGateway(alias);
     }
 }
