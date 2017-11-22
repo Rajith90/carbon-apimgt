@@ -1165,7 +1165,7 @@ paths:
       description: |
         This operation can be used to get scopes associated with a particular application based on the APIs a user has subscribed to
         
-        **NOTE**: This feature is only available through **WUM updates** released after the 1st of November 2017
+        **NOTE**: This is available only as a WUM update and is effective from 1st November 2017 (2017-11-01).
       parameters:
         - $ref: '#/parameters/applicationId'
         - $ref: '#/parameters/filterByUserRoles'
