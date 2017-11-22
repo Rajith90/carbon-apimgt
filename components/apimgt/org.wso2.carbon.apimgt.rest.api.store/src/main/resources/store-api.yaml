@@ -1022,7 +1022,6 @@ paths:
             $ref: '#/definitions/ApplicationKey'
       tags:
         - Application (Individual)
-        - Application Keys
       responses:
         200:
           description: |
@@ -1121,7 +1120,11 @@ paths:
             The request has not been performed because one of the preconditions is not met (Will be supported in future).
           schema:
             $ref: '#/definitions/Error'
+  
   '/applications/scopes/{applicationId}':
+#-----------------------------------------------------
+# Get scopes associated with a particular application based on subscribed APIs
+#-----------------------------------------------------
     get:
       x-scope: 'apim:subscribe'
       x-wso2-request: |-
@@ -1158,9 +1161,11 @@ paths:
            }]
         }
       summary: |
-        Get scopes associated with a particular application based on subscribed APIs
+        Get scopes associated with an application based on subscribed APIs
       description: |
-        Get scopes associated with a particular application based on subscribed APIs
+        This operation can be used to get scopes associated with a particular application based on the APIs a user has subscribed to
+        
+        **NOTE**: This is available only as a WUM update and is effective from 1st November 2017 (2017-11-01).
       parameters:
         - $ref: '#/parameters/applicationId'
         - $ref: '#/parameters/filterByUserRoles'
