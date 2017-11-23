@@ -174,15 +174,6 @@ public class ApiMgtDAO {
     }
 
     /**
-     * This is an inner class to hold the instance of the ApiMgtDAO.
-     * The reason for writing it like this is to guarantee that only one instance would be created.
-     * ref: Initialization-on-demand holder idiom
-     */
-//    private static class ApiMgtDAOHolder {
-//        private static final ApiMgtDAO INSTANCE = new ApiMgtDAO();
-//    }
-
-    /**
      * Method to get the instance of the ApiMgtDAO.
      *
      * @return {@link ApiMgtDAO} instance
@@ -618,14 +609,6 @@ public class ApiMgtDAO {
 
         try {
             String dbProdName = conn.getMetaData().getDatabaseProductName();
-            /*if("oracle".equalsIgnoreCase(dbProdName.toLowerCase()) || conn.getMetaData().getDriverName().toLowerCase().contains("oracle")){
-                sqlQuery = sqlQuery.replaceAll("\\+", "union all");
-				sqlQuery = sqlQuery.replaceFirst("select", "select sum(c) from ");
-			}else if(dbProdName.toLowerCase().contains("microsoft") && dbProdName.toLowerCase().contains("sql")){
-				sqlQuery = sqlQuery.replaceAll("\\+", "union all");
-				sqlQuery = sqlQuery.replaceFirst("select", "select sum(c) from ");
-				sqlQuery = sqlQuery + " x";
-            }*/
 
             ps = conn.prepareStatement(sqlQuery);
             ps.setString(1, apiPolicy);
@@ -821,7 +804,6 @@ public class ApiMgtDAO {
             String sqlQuery = SQLConstants.ADD_SUBSCRIPTION_SQL;
 
             //Adding data to the AM_SUBSCRIPTION table
-            //ps = conn.prepareStatement(sqlQuery, Statement.RETURN_GENERATED_KEYS);
             preparedStForInsert = conn.prepareStatement(sqlQuery, new String[]{"SUBSCRIPTION_ID"});
             if (conn.getMetaData().getDriverName().contains("PostgreSQL")) {
                 preparedStForInsert = conn.prepareStatement(sqlQuery, new String[]{"subscription_id"});
@@ -4356,6 +4338,7 @@ public class ApiMgtDAO {
         PreparedStatement ps = null;
         try {
             connection = APIMgtDBUtil.getConnection();
+            connection.setAutoCommit(false);
             String deleteRegistrationEntry = SQLConstants.REMOVE_FROM_APPLICATION_REGISTRANTS_SQL;
 
             if (log.isDebugEnabled()) {
@@ -5036,7 +5019,6 @@ public class ApiMgtDAO {
         String query = SQLConstants.ADD_URL_MAPPING_SQL;
         String scopeQuery = SQLConstants.ADD_OAUTH2_RESOURCE_SCOPE_SQL;
         try {
-            //connection = APIMgtDBUtil.getConnection();
             prepStmt = connection.prepareStatement(query);
             scopePrepStmt = connection.prepareStatement(scopeQuery);
 
