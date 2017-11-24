@@ -10,7 +10,7 @@ var login = function () {
                       var requestedPage=getParameterByName("requestedPage");
                       var queryParam;
                       //siteContext is a global variable set in page/base/template.jag with the Publisher site context
-                      if(requestedPage && requestedPage.startsWith(siteContext)){
+                      if (requestedPage && requestedPage.startsWith(siteContext)) {
                           window.location.href = requestedPage;
                       } else {
                         if(currentHref.indexOf("tenant")>-1){queryParam=currentHref;}
