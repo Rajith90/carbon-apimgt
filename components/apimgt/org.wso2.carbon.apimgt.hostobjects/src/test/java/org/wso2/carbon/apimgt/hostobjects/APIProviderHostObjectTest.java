@@ -23,12 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.wso2.carbon.apimgt.api.APIManagementException;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.wso2.carbon.apimgt.impl.APIConstants;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-
 
 import java.io.File;
 
@@ -67,6 +62,7 @@ public class APIProviderHostObjectTest {
     @Test
     public void testMutualSSLEnabledBackend() {
         wireMockRule = new WireMockRule(wireMockConfig()
+                .port(18082)
                 .httpsPort(18081)
                 .needClientAuth(true)
                 .trustStoreType("JKS")
