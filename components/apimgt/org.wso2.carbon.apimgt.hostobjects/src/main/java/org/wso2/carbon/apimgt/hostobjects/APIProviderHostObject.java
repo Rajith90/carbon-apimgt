@@ -45,8 +45,6 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.woden.WSDLFactory;
-import org.apache.woden.WSDLReader;
 import org.jaggeryjs.hostobjects.file.FileHostObject;
 import org.jaggeryjs.scriptengine.exceptions.ScriptException;
 import org.json.simple.JSONArray;
@@ -95,6 +93,7 @@ import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.TierPermissionDTO;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.utils.APIAuthenticationAdminClient;
+import org.wso2.carbon.apimgt.impl.utils.APIMWSDLReader;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIVersionComparator;
 import org.wso2.carbon.apimgt.impl.utils.APIVersionStringComparator;
@@ -114,13 +113,10 @@ import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -4263,44 +4259,8 @@ public class APIProviderHostObject extends ScriptableObject {
     }
 
     private static void validateWsdl(String url) throws Exception {
-
-        //If url is empty or null throw exception
-        if(StringUtils.isEmpty(url)) {
-            handleException("URL is not empty");
-        }
-
-        if(url.startsWith(APIConstants.WSDL_REGISTRY_LOCATION_PREFIX)) {
-            url = APIUtil.getServerURL() + url;
-        }
-
-        URL wsdl = new URL(url);
-        BufferedReader in = new BufferedReader(new InputStreamReader(wsdl.openStream(), Charset.defaultCharset()));
-        String inputLine;
-        boolean isWsdl2 = false;
-        boolean isWsdl10 = false;
-        StringBuilder urlContent = new StringBuilder();
-        try {
-            while ((inputLine = in.readLine()) != null) {
-                String wsdl2NameSpace = "http://www.w3.org/ns/wsdl";
-                String wsdl10NameSpace = "http://schemas.xmlsoap.org/wsdl/";
-                urlContent.append(inputLine);
-                isWsdl2 = urlContent.indexOf(wsdl2NameSpace) > 0;
-                isWsdl10 = urlContent.indexOf(wsdl10NameSpace) > 0;
-            }
-        } finally {
-                in.close();
-        }
-
-        if (isWsdl10) {
-            javax.wsdl.xml.WSDLReader wsdlReader11 = javax.wsdl.factory.WSDLFactory.newInstance().newWSDLReader();
-            wsdlReader11.readWSDL(url);
-        } else if (isWsdl2) {
-            WSDLReader wsdlReader20 = WSDLFactory.newInstance().newWSDLReader();
-            wsdlReader20.readWSDL(url);
-        } else {
-            handleException("URL is not in format of wsdl1/wsdl2");
-        }
-
+        APIMWSDLReader wsdlReader = new APIMWSDLReader(url);
+        wsdlReader.validateBaseURI();
     }
 
     private static String getWebContextRoot(String postfixUrl) {
