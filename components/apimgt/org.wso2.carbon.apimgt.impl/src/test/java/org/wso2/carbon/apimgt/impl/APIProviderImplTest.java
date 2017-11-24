@@ -3397,17 +3397,18 @@ public class APIProviderImplTest {
         PowerMockito.when(realmService.getTenantManager()).thenReturn(tm);
         PowerMockito.when(tm.getTenantId("carbon.super")).thenReturn(-1234);
         
-        GenericArtifact genericArtifact1 = Mockito.mock(GenericArtifact.class);
-        GenericArtifact genericArtifact2 = Mockito.mock(GenericArtifact.class);
+        final GenericArtifact genericArtifact1 = Mockito.mock(GenericArtifact.class);
+        final GenericArtifact genericArtifact2 = Mockito.mock(GenericArtifact.class);
         
         Mockito.when(APIUtil.getAPI(genericArtifact1)).thenReturn(api1);
         Mockito.when(APIUtil.getAPI(genericArtifact2)).thenReturn(api2);
         
         GenericArtifact[] genericArtifacts = {genericArtifact1, genericArtifact2};
         GenericArtifact[] genericArtifacts1 = {};
-        
-        Mockito.when(artifactManager.findGenericArtifacts(Matchers.anyMap())).thenReturn(genericArtifacts, 
-                genericArtifacts1);
+
+        PowerMockito.when(GovernanceUtils.findGovernanceArtifacts(Mockito.anyMap(), Mockito.any(Registry.class),
+                Mockito.anyString())).thenReturn(new ArrayList<GovernanceArtifact>(){{add(genericArtifact1); add
+                (genericArtifact2);}}, new ArrayList<GovernanceArtifact>());
         
         Map<String, Object> result = apiProvider.getAllPaginatedAPIs("carbon.super", 0, 10);
         
@@ -3424,7 +3425,8 @@ public class APIProviderImplTest {
         Assert.assertEquals(0, apiList1.size());
         
         //Registry Exception while retrieving artifacts
-        Mockito.when(artifactManager.findGenericArtifacts(Matchers.anyMap())).thenThrow(RegistryException.class);
+        PowerMockito.when(GovernanceUtils.findGovernanceArtifacts(Mockito.anyMap(), Mockito.any(Registry.class),
+                Mockito.anyString())).thenThrow(RegistryException.class);
         try {
             apiProvider.getAllPaginatedAPIs("carbon.super", 0, 10);
         } catch(APIManagementException e) {

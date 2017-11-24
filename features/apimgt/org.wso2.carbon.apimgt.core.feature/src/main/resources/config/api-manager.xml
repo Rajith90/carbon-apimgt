@@ -329,6 +329,8 @@
         <!--EnableAPIDocVisibilityLevels>true</EnableAPIDocVisibilityLevels-->
         <!-- Uncomment this to limit the number of APIs in api the API Publisher -->
         <!--APIsPerPage>30</APIsPerPage-->
+        <!-- This property need to be enabled to enable the publisher access control support -->
+        <EnableAccessControl>true</EnableAccessControl>
     </APIPublisher>
 
     <!-- Status observers can be registered against the API Publisher to listen for

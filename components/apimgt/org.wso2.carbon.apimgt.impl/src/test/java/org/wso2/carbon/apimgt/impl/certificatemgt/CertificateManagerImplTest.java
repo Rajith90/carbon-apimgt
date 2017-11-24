@@ -218,13 +218,13 @@ public class CertificateManagerImplTest {
         Assert.assertTrue(result);
     }
 
-    @Test
+   /* @Test
     public void testAddToGatewayCertificateExistsInTrustStore() {
         PowerMockito.stub(PowerMockito.method(CertificateMgtUtils.class, "addCertificateToTrustStore"))
                 .toReturn(ResponseCode.ALIAS_EXISTS_IN_TRUST_STORE);
         boolean result = certificateManager.addCertificateToGateway(BASE64_ENCODED_CERT, ALIAS);
         Assert.assertTrue(result);
-    }
+    }*/
 
     @Test
     public void testAddToGatewayInternalServerError() throws NoSuchFieldException, IllegalAccessException {
