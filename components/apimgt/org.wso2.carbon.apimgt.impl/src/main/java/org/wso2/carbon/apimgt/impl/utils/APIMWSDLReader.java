@@ -267,7 +267,7 @@ public class APIMWSDLReader {
 
 		} catch (Exception e) {
 			String msg = " Error occurs when updating WSDL ";
-			log.error(msg);
+			log.error(msg, e);
 			throw new APIManagementException(msg, e);
 		}
 	}
