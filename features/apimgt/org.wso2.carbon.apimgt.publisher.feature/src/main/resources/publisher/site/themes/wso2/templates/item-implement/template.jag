@@ -1,5 +1,6 @@
 <% jagg.template("item-implement", function(inputs, outputs, jagg) { %>
-<% 
+<%
+    var CryptoUtil = Packages.org.wso2.carbon.core.util.CryptoUtil;
     var api = outputs.api;
     var permitted=outputs.isPermitted;
     var isCreatePermitted=outputs.isCreatePermitted;
@@ -10,6 +11,8 @@
     var storeUrl = jagg.module("manager").getAPIStoreURL().url;
     var apiStatus = api.status;
     var isWSAPI = api.type.toUpperCase() == "WS";
+    var isConfigured = outputs.isConfigured;
+    var certificates = JSON.stringify(outputs.certificates);
 
     var MultitenantUtils = Packages.org.wso2.carbon.utils.multitenancy.MultitenantUtils;
     var tenantDomain = MultitenantUtils.getTenantDomain(jagg.getUser().username);
@@ -55,7 +58,7 @@
 		</h2>
 	</div>
     <div class="content-section shadow-up">
-    <div class="content-data">   
+    <div class="content-data">
     <div class="alert alert-block alert-danger" id="addAPIError" style="display:none">
         <span id="addErrorSpan"></span>
     </div>
@@ -67,7 +70,7 @@
 	        active subscriptions.</p>
             </div>
   <%  }%>
-  
+
   			  <div id="apiSaved" class="alert alert-success" role="alert" style="display:none">
    		<i class="icon fw fw-success fade out"></i><strong><%=i18n.localize("Success!")%></strong>
                     <%=i18n.localize("You have successfully saved the API.")%>
@@ -108,7 +111,7 @@
 							                    <form class="form-horizontal apim-form" method="POST" id="implement_form" enctype="multipart/form-data"
 							                                    action="<%= jagg.url("/site/blocks/item-design/ajax/add.jag?action=implement&"+apiUrlId ) %>">
                                                     <input type="hidden" id="type" name="type" value="<%=api.type%>"/>
-													<div id="endpoint-ui">													
+													<div id="endpoint-ui">
 
 													</div>
 
@@ -151,7 +154,7 @@
 																{{#if invalid }}
 																{{#if invalid.endpoint}}
 																<label class="error" for="name"><%=i18n.localize("Please specify a production or sandbox endpoint.")%></label>
-																{{/if}}																
+																{{/if}}
 																{{/if}}
 																{{#if template_not_supported }}
 																<label class="error" for="name"><%=i18n.localize("Address endpoint does not support URI templates.")%></label>
@@ -190,18 +193,18 @@
 														</div>
 							                            {{else}}
                                                           <%if(api.type.toUpperCase() != "WS"){%>
-							                            <div class="form-group">    
+							                            <div class="form-group">
 								                            <label class="control-label col-xs-12 col-sm-3 col-md-3 col-lg-3">
 								                            </label>
 							                                <div class="col-xs-12 col-sm-9 col-md-9 col-lg-9">
 																<label class="checkbox">
 																  <input type="checkbox" id="load_balance" name="load_balance" {{#if load_balance }}checked="checked"{{/if}}>
 																  <span class="helper">Load Balanced</span>
-																</label>							                                							                                    
+																</label>
 							                                    <label class="checkbox">
 																  <input type="checkbox" id="failover" name="failover" {{#if failover }}checked="checked"{{/if}} {{#if failOver }}checked="checked"{{/if}}>
 																  <span class="helper"><%=i18n.localize("Failover")%></span>
-																</label>																
+																</label>
 							                                </div>
 								                        </div>
                                                                   <%}%>
@@ -233,7 +236,7 @@
 							                            {{/if}}
 							                            {{#if failover }}
 							                            	{{> add_remove_ep ep_type="production_failovers" }}
-							                            {{/if}}		
+							                            {{/if}}
 
 								                        {{#each sandbox_endpoints}}
 								                        	{{#if ../load_balance}}
@@ -313,7 +316,7 @@
 															        <input class="form-control load_balance_property" type="text" name="sessionTimeOut" value="{{sessionTimeOut}}" id="sessionTimeOut">
 															    </div>
 															</div>
-							                            {{/if}}	
+							                            {{/if}}
 							                            <div  id="advance_endpoint_config" class="modal fade">
 														    <div class="modal-dialog">
 														    <div class="modal-content">
@@ -331,11 +334,11 @@
 														        </div>
 														    </div>
 														    </div>
-														</div>				                            
+														</div>
 													</script>
-							
+
 							                        <input type="hidden" id="endpoint_config" name="endpoint_config" value="<%= encode.forHtmlAttribute(api.endpointConfig) %>"/>
-							
+
 							                        <div id="endpoint_help" class="hide">
 								                         <strong>HTTP/REST Endpoint </strong><p><%= i18n.localize("A REST API endpoint based on a URI template")%></p>
 								                         <strong>HTTP/SOAP Endpoint</strong><p><%= i18n.localize("The direct URL of the service")%></p>
@@ -349,6 +352,24 @@
 													<div id="sandbox_endpoints_help" class="hide">
 														 <p><%= i18n.localize("The Sandbox Endpoint is a mock endpoint that resembles the functionality of the actual backend API.")%></p>
 													</div>
+
+                                                    <!--Manage Certificates - main-->
+													<%if (isConfigured) {%>
+                                                        <div class="certificate_mgt_content">
+                                                            <div class="form-group">
+                                                                <div class="col-xs-12 col-sm-3 col-md-3 col-lg-3 col-sm-offset-3 col-md-offset-3 col-lg-offset-3">
+                                                                    <a href="#" class="manage-certs but"
+                                                                       ref="manage-endpoint-certs" title="Manage Certificates">
+                                                                        <%=i18n.localize("Manage Certificates")%>
+                                                                </a>
+                                                            </div>
+                                                            <div id="manage-endpoint-certs" style="display: none">
+                                                                <div id="cert-config"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <% } %>
+                                                    <!--Manage Certificate - form-->
 							<%if(api.type.toUpperCase() != "WS"){%>
 							                         <div class="form-group">
 							                            <div class="col-xs-12 col-sm-3 col-md-3 col-lg-3 col-sm-offset-3 col-md-offset-3 col-lg-offset-3">
@@ -357,14 +378,14 @@
 							                         </div>
 							                        <div id="more-options-endpoints"  style="display:none">
 
-							
+
 							                        <div class="form-group">
 							                            <label class="control-label col-sm-3" for="endpointType"><%=i18n.localize("Endpoint Security Scheme")%>:<span class="requiredAstrix">*</span>
 							                      			<a class="help_popup" help_data="endpointSec_help" data-trigger="hover"  data-placement="bottom" title="endpointSec_help">
 							                      				<span class="icon fw-stack fw-lg" style="font-size:6px">
 												                   <i class="fw fw-circle fw-stack-2x"></i>
 												                   <i class="fw fw-question fw-stack-1x fw-inverse" style="font-size:8px"></i>
-												                </span>							                      				
+												                </span>
 							                      			</a>
 							                            	<p id="endpointSec_help" class="hide"><%=i18n.localize("To connect to secured endpoints, you need to pass the credentials of the backend service.")%></p>
 							                            </label>
@@ -375,7 +396,7 @@
 							                            </select>
 							                            </div>
 							                        </div>
-							
+
 							                        <div class="form-group" id="endpointAuthType" <%if(api.endpointTypeSecured=="false"){%>style="display: none;"<%}%>>
 							                            <label class="control-label col-sm-3" for="endpointAuthType"><%=i18n.localize("Endpoint Auth Type")%>:<span class="requiredAstrix">*</span>
 							                            	<a class="help_popup" help_data="endpointAuth_help" data-trigger="hover" title="<%=i18n.localize("Endpoint Auth Type")%>" data-placement="bottom">
@@ -390,21 +411,183 @@
 							                            <select class="select required form-control" id="endpointAuthType" name="endpointAuthType" >
 							                                <option value="basicAuth" <%if( api.endpointAuthTypeDigest=="false"){%> selected="selected" <%}%>><%=i18n.localize("Basic Auth")%></option>
 							                                <option value="digestAuth" <%if(api.endpointAuthTypeDigest=="true"){%> selected="selected" <%}%>><%=i18n.localize("Digest Auth")%></option>
-							                            </select>							                            
+							                            </select>
 							                            </div>
 							                        </div>
-							
+
+							                        <%
+                                                                                  var inputString = api.epPassword;
+                                                                                  if (inputString != null && inputString != "") {
+                                                                                    var byteArray = [];
+                                                                                    for (var i = 0; i < inputString.length; ++i) {
+                                                                                        byteArray.push(inputString.charCodeAt(i));
+                                                                                    }
+                                                                                    var base64EncodedEncryptedPassword = CryptoUtil.getDefaultCryptoUtil().encryptAndBase64Encode(byteArray);
+                                                                                    session.put(api.name + "-" + api.version + "-epPassword", base64EncodedEncryptedPassword);
+                                                                                  } else {
+                                                                                    session.put(api.name + "-" + api.version + "-epPassword", inputString);
+                                                                                  }
+                                                                                %>
+
 							                        <div class="form-group" id="credentials" <%if(api.endpointTypeSecured=="false"){%>style="display: none;"<%}%>>
 							                            <label class="control-label col-sm-3" for="credentials"><%=i18n.localize("Credentials")%>:<span class="requiredAstrix">*</span></label>
 							                            <div class="col-sm-2">
 							                                <input type="text" class="form-control required validInput" id="epUsername" name="epUsername" placeholder="Username" value="<%=api.epUsername%>">
 														</div>
 														<div class="col-sm-2">
-							                                <input type="password" class="form-control required" id="epPassword" name="epPassword" placeholder="Password" value="<%=api.epPassword%>" autocomplete="off">
+							                                <input type="password" class="form-control required" id="epPassword" name="epPassword" placeholder="Password" <% if(api.epPassword != null && api.epPassword != "") {%> value="*****" <%}%> autocomplete="off">
 							                            </div>
 							                        </div>
 
 							                        </div><!-- more option endpoint --><%}%>
+
+							                        <!--Manage Endpoint Certificate templates -->
+                                                    <input hidden id="cert-data" value="<%=encode.forHtmlAttribute(certificates)%>"/>
+
+                                                    <script id="certificate-ui-template" type="text/x-handlebars-template">
+                                                        <div class="row">
+                                                            <span id="#delete-failed"></span>
+                                                            <div class="col-sm-6 col-lg-offset-3">
+                                                                {{#if certificates}}
+                                                                <table class="certificates-table table table-striped">
+                                                                    <thead>
+                                                                    <tr class="certificate-table-header ">
+                                                                        <td align="center"><strong><%=i18n.localize("Endpoint")%></strong></td>
+                                                                        <td align="center"><strong><%=i18n.localize("Alias")%></strong></td>
+                                                                        <td></td>
+                                                                    </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                    {{#each certificates}}
+                                                                    <tr>
+                                                                        <td align="center">{{endpoint}}</td>
+                                                                        <td align="center">{{alias}}</td>
+                                                                        <% if (outputs.isCreatePermitted) { %>
+                                                                        <td align="right">
+                                                                            <a class="delete-cert" data-alias="{{alias}}" data-ep="{{endpoint}}">
+                                                                                <span class="fw-stack" style="font-size:10px">
+                                                                                    <i class="fw fw-delete fw-stack-1x"></i>
+                                                                                    <i class="fw fw-circle-outline fw-stack-2x"></i>
+                                                                                </span>
+                                                                            </a>
+                                                                        </td>
+                                                                        <%}%>
+                                                                    </tr>
+                                                                    {{/each}}
+                                                                    </tbody>
+                                                                </table>
+
+                                                                {{else}}
+                                                                <div>
+                                                                    <div class="alert alert-danger">
+                                                                        <%=i18n.localize("You do not have any uploaded Certificates for above endpoints")%>.
+                                                                    </div>
+                                                                </div>
+                                                                {{/if}}
+                                                                <% if (outputs.isCreatePermitted) { %>
+                                                                <span class="btn btn-primary add-cert-btn"><%=i18n.localize("Add New Certificate")%></span>
+                                                                <%}%>
+                                                            </div>
+                                                        </div>
+                                                        <br/>
+                                                        <div id="upload-cert-modal" class="modal fade">
+                                                            <div class="modal-dialog">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header">
+                                                                        <button type="button" class="close modal-close" aria-hidden="true"><i class="fw fw-cancel"></i>
+                                                                        </button>
+                                                                        <h3 class="modal-title"><%=i18n.localize("Upload Endpoint Certificates")%></h3>
+                                                                    </div>
+                                                                    <div class="modal-body">
+                                                                        <div class="cert-upload-form"></div>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <div id="res" style="color:red;float:left"></div>
+                                                                        <a href="#" class="btn btn-primary cert-upload-btn" id="cert-upload"
+                                                                           title='<%=i18n.localize("Upload")%>"'><%=i18n.localize("Upload")%></a>
+                                                                        <a href="#" class="btn btn-secondary modal-close" title='<%=i18n.localize("Close")%>"'><%=i18n.localize("Close")%></a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </script>
+
+                                                    <script class="cert-upload-form-content" type="text/x-handlebars-template">
+                                                        <div class="form-group">
+                                                            <label class="control-label col-sm-3" for="certAlias"><%=i18n.localize("Alias")%>:<span
+                                                                    class="requiredAstrix">*</span>
+                                                                <a class="help_popup" help_data="alias-help" data-trigger="hover" title="Alias"
+                                                                   data-placement="bottom">
+                                                                                <span class="icon fw-stack fw-lg" style="font-size:6px">
+                                                                                    <i class="fw fw-circle fw-stack-2x"></i>
+                                                                                    <i class="fw fw-question fw-stack-1x fw-inverse" style="font-size:8px"></i>
+                                                                                </span>
+                                                                </a>
+                                                                <p id="alias-help" class="hide"><%=i18n.localize("Enter an Alias for the certificate")%>.</p>
+                                                            </label>
+                                                            <div class="col-sm-6">
+                                                                <input type="text" class="form-control certAlias" id="certAlias" name="certificate_alias"
+                                                                       placeholder="Certificate Alias" value="" required>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label class="control-label col-sm-3"
+                                                                   for="certEP"><%=i18n.localize("Endpoint")%>:<span
+                                                                    class="requiredAstrix">*</span>
+                                                                <a class="help_popup" help_data="ep-help"
+                                                                   data-trigger="hover" title="Endpoint"
+                                                                   data-placement="bottom">
+                                                                        <span class="icon fw-stack fw-lg" style="font-size:6px">
+                                                                            <i class="fw fw-circle fw-stack-2x"></i>
+                                                                            <i class="fw fw-question fw-stack-1x fw-inverse" style="font-size:8px"></i>
+                                                                        </span>
+                                                                </a>
+                                                                <p id="ep-help" class="hide">
+                                                                    <%=i18n.localize("Select the endpoint for the certificate")%>.
+                                                                </p>
+                                                            </label>
+                                                            <div class="col-sm-6">
+                                                                <select type="text" class="form-control" id="certEP" required>
+                                                                    {{#each enteredEndpoints}}
+                                                                    <option>{{host}}</option>
+                                                                    {{/each}}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label class="control-label col-sm-3"
+                                                                   for="certUpload"><%=i18n.localize("Certificate")%>:<span
+                                                                    class="requiredAstrix">*</span>
+                                                                <a class="help_popup" help_data="cert-help"
+                                                                   data-trigger="hover" title="Alias" data-placement="bottom">
+                                                                        <span class="icon fw-stack fw-lg" style="font-size:6px">
+                                                                            <i class="fw fw-circle fw-stack-2x"></i>
+                                                                            <i class="fw fw-question fw-stack-1x fw-inverse" style="font-size:8px"></i>
+                                                                        </span>
+                                                                </a>
+                                                                <p id="cert-help" class="hide"><%=i18n.localize("Upload the certificate file")%>.</p>
+                                                            </label>
+                                                            <div class="col-sm-6">
+                                                                <div class="input-group input-wrap file-upload-control">
+                                                                    <input class="form-control cert-content" readonly type="text" required>
+                                                                    <input class="form-control cert-upload" id="certUpload"
+                                                                           name="certificate-upload"
+                                                                           type="file"
+                                                                           required
+                                                                           accept="application/pkcs8, application/pkcs10, application/pkix-crl, application/pkcs7-mime, application/x-x509-ca-cert, application/x-x509-user-cert, application/x-pkcs7-crl, application/x-pkcs12, application/x-pkcs7-certificates, application/x-pkcs7-certreqresp, .p8, .p10, .csr, .cer, .crl, .p7c, .crt, .der, .p12, .pfx, .p7b, .spc, .p7r">
+                                                                    <div class="input-group-btn">
+                                                                        <button class="btn btn-secondary browse" title="Browse File" type="button">
+                                                                            <i aria-hidden="true" class="fw fw-file-browse"></i>
+                                                                            <span class="hidden-xs"><%=i18n.localize("Browse")%></span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </script>
+							                        <!--Manage Endpoint Certificates-->
 												<br/><br/>
 							                    <fieldset>
 							                        <% if (isSynapseGateway) { %>
@@ -418,10 +601,10 @@
 							                                            <% if((api.inSequence && (!"none".equals(api.inSequence))) || (api.outSequence && (!"none".equals(api.outSequence)))
 							                                            || ( api.faultSequence && (!"none".equals(api.faultSequence)))) { %> checked="checked" <%}%>>
 							                                            <span class="helper"><%=i18n.localize("Check to select a message mediation policy to be executed in the message flow")%></span>
-							                                    </label>							                                    
+							                                    </label>
 							                                </div>
 							                            </div>
-                                                             <%}%>           
+                                                             <%}%>
 							                            <span id="seqTable"
 							                                        <% if(!api.inSequence && !api.outSequence && !api.faultSequence){ %>style="display:none"<%}%>>
 														<div class="form-group">
@@ -443,7 +626,7 @@
                                                                 </div>
 
 															</div>
-														</div>							                                        
+														</div>
 							                            <div class="form-group">
 															<label class="control-label col-sm-3" for="corsConfigurationManaged"><%=i18n.localize("Out Flow")%></label>
 															<div class="headerContainer tagContainer col-sm-6">
@@ -456,7 +639,7 @@
                                                                         <optgroup label="Added by you" id="outSequenceUserAddedOptGroup">
                                                                             <option value="none" selected="selected"><%=i18n.localize("None")%></option>
                                                                         </optgroup>
-							                                    	</select>																
+							                                    	</select>
 																    <span class="input-group-btn">
                                                                         <a href="#sequenceUpload" role="button" class="btn btn-secondary btn-sequenceUpload" data-id="out" data-name="Out Flow" data-toggle="modal" title="Mediation Policy Upload" ><i class="fw fw-upload"></i> Upload Out Flow</a>
                                                                     </span>
@@ -511,7 +694,7 @@
 							                    <input type="hidden" name="version" value="<%= encode.forHtml(api.version) %>" />
 							                    <input type="hidden" name="provider" value="<%= encode.forHtml(api.provider) %>" />
 							                    <input type="hidden" name="action" value="implement" />
-							                    <input type="hidden" name="wsdl" value="<%= encode.forHtml(api.wsdl) %>" />                                        
+							                    <input type="hidden" name="wsdl" value="<%= encode.forHtml(api.wsdl) %>" />
 							                    <input type="hidden" id="swagger" name="swagger" class="swagger" value="" />
 							                    <input type="hidden" value="endpoint" name="implementation_methods" >
 							                    <div class="form-actions" id="saveButtons">
@@ -535,9 +718,9 @@
 						                            </div>
 						                            <div class="clearfix"></div>
 												</h4>
-											</div>							
+											</div>
 							            <div id="accordion1-collapse2" class="panel-collapse collapse <% if( apiStatus=="PROTOTYPED" ){%> in <%}%>" role="tabpanel" aria-labelledby="headingTwo">
-								            <div class="panel-body">								
+								            <div class="panel-body">
 								            <div class="">
 								            <form class="form-horizontal apim-form" method="POST" id="prototype_form" enctype="multipart/form-data"
 								                action="<%= jagg.url("/site/blocks/item-design/ajax/add.jag?action=implement&"+apiUrlId ) %>">
@@ -552,12 +735,12 @@
 								                                var endpoint_impl = "checked='checked'";
 								                                var hide_impl="hide";
 								                            } %>
-								
+
 								                            <label class="radio add-margin-right-5x">
 								                            	<input class="implementation_methods" type="radio" value="inline" name="implementation_methods" <%= inline_impl%> >
 								                            	<span class="helper">Inline</span>
 								                            </label>
-								
+
 								                            <label class="radio">
 								                            	<input class="implementation_methods" type="radio" value="endpoint" name="implementation_methods" <%= endpoint_impl%> >
 								                            	<span class="helper">Endpoint</span>
@@ -618,7 +801,7 @@
 															<div class="form-group form-inline">
 																<div class="col-sm-3"></div>
 																<div class="col-sm-9">
-																	
+
 																</div>
 															</div>
 
@@ -641,9 +824,9 @@
 								                            </form>
 								                </div>
 								            </div>
-							
+
 							            </div>
-							
+
 							            <div id="prototype-success" class="modal fade">
 							            <div class="modal-dialog">
 							                <div class="modal-content">
@@ -675,7 +858,7 @@
 							            </div>
                     </div>
                 </div>
-            </div>	
+            </div>
     </div>
     </div>
     </div>
@@ -688,16 +871,16 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><i class="fw fw-cancel"></i></button>
         <h3 class="modal-title" id="sequenceUploadLabel"><%=i18n.localize("Upload Mediation Policy - ")%><span id="flowName"></span></h3>
       </div>
-      <div class="">      
+      <div class="">
                             <div class="modal-body add-margin-top-2x add-margin-bottom-2x">
                             	<div id="sequence_file_help" class="alert alert-danger hide" role="alert">
-					                 
+
 					                 <button type="button" class="close" id="errorMsgClose"><span aria-hidden="true">&times;</span></button>
 					            </div>
                                 	<div class="form-group">
 										<div class="controls col-sm-12">
 											<div class="input-group input-wrap file-upload-control">
-												<input type="text" id="sequence_file_value" class="form-control" readonly> 
+												<input type="text" id="sequence_file_value" class="form-control" readonly>
 												<input id="sequence_file" name="sequence_file" type="file" class="form-control" multiple>
 												<input id="flow_id" name="flow_id" type="hidden" value="">
 												<div class="input-group-btn">
@@ -717,7 +900,7 @@
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal"><%=i18n.localize("Close")%></button>
                             </div>
                         </div>
-        
+
 
     </div>
   </div>
@@ -772,7 +955,7 @@
 		/*Uncomment the above comment block to send a sample response.*/{{/if}}
 		</textarea>
 	</div>
-</div>  
+</div>
 </script>
 
 <div  id="environmentsRetry-modal" class="modal fade">
@@ -825,7 +1008,7 @@
 <script id="designer-resources-template" type="text/x-handlebars-template">
 <fieldset class="<%= hide_impl %> implementation_method_inline implementation_method">
 <legend><%=i18n.localize("Resources")%></legend>
-<table style="width:100%">                       
+<table style="width:100%">
 {{#each doc.paths}}
     {{# each this}}
         <tr class="resource_container" data-path="$.paths.{{ path }}.{{@key}}">
@@ -839,7 +1022,7 @@
     {{/each}}
 {{/each}}
 </table>
-</fieldset>                       
+</fieldset>
 </script>
 
 <script>

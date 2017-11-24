@@ -42,6 +42,7 @@ import org.wso2.carbon.apimgt.api.FaultGatewaysException;
 import org.wso2.carbon.apimgt.api.PolicyDeploymentFailureException;
 import org.wso2.carbon.apimgt.api.UnsupportedPolicyTypeException;
 import org.wso2.carbon.apimgt.api.WorkflowResponse;
+import org.wso2.carbon.apimgt.api.dto.CertificateMetadataDTO;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -68,6 +69,10 @@ import org.wso2.carbon.apimgt.api.model.policy.Pipeline;
 import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.api.model.policy.SubscriptionPolicy;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManager;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManagerImpl;
+import org.wso2.carbon.apimgt.impl.certificatemgt.GatewayCertificateManager;
+import org.wso2.carbon.apimgt.impl.certificatemgt.ResponseCode;
 import org.wso2.carbon.apimgt.impl.clients.RegistryCacheInvalidationClient;
 import org.wso2.carbon.apimgt.impl.clients.TierCacheInvalidationClient;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
@@ -1811,6 +1816,13 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             artifact.setId(UUID.randomUUID().toString());
             artifact.setAttribute(APIConstants.API_OVERVIEW_VERSION, newVersion);
 
+            //If the APIEndpointPasswordRegistryHandler is enabled set the endpoint password from the registry hidden
+            // property
+            if ((APIConstants.DEFAULT_MODIFIED_ENDPOINT_PASSWORD)
+                    .equals(artifact.getAttribute(APIConstants.API_OVERVIEW_ENDPOINT_PASSWORD))) {
+                artifact.setAttribute(APIConstants.API_OVERVIEW_ENDPOINT_PASSWORD,
+                        apiSourceArtifact.getProperty(APIConstants.REGISTRY_HIDDEN_ENDPOINT_PROPERTY));
+            }
             //Check the status of the existing api,if its not in 'CREATED' status set
             //the new api status as "CREATED"
             String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
@@ -5031,6 +5043,77 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
     public String getExternalWorkflowReferenceId(int subscriptionId) throws APIManagementException {
         return apiMgtDAO.getExternalWorkflowReferenceForSubscription(subscriptionId);
+    }
+
+    @Override
+    public int addCertificate(String userName, String certificate, String alias, String endpoint)
+            throws APIManagementException {
+        ResponseCode status = ResponseCode.INTERNAL_SERVER_ERROR;
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+        ;
+        try {
+            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                    .getTenantId(tenantDomain);
+            status = certificateManager
+                    .addCertificateToParentNode(certificate, alias, endpoint, tenantId);
+
+            if (status == ResponseCode.SUCCESS) {
+                //Get the gateway manager and add the certificate to gateways.
+                GatewayCertificateManager gatewayCertificateManager = new GatewayCertificateManager();
+                gatewayCertificateManager.addToGateways(certificate, alias);
+            } else {
+                log.error("Adding certificate to the Publisher node is failed. No certificate changes will be " +
+                        "affected.");
+            }
+        } catch (UserStoreException e) {
+            handleException("Error while reading tenant information", e);
+        }
+        return status.getResponseCode();
+    }
+
+    @Override
+    public int deleteCertificate(String userName, String alias, String endpoint) throws APIManagementException {
+        ResponseCode status = ResponseCode.INTERNAL_SERVER_ERROR;
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+
+        try {
+            int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                    .getTenantId(tenantDomain);
+            status = certificateManager.deleteCertificateFromParentNode(alias, endpoint, tenantId);
+
+            if (status == ResponseCode.SUCCESS) {
+                //Get the gateway manager and remove the certificate from gateways.
+                GatewayCertificateManager gatewayCertificateManager = new GatewayCertificateManager();
+                gatewayCertificateManager.removeFromGateways(alias);
+            } else {
+                log.error("Removing the certificate from Publisher node is failed. No certificate changes will "
+                        + "be affected.");
+            }
+        } catch (UserStoreException e) {
+            handleException("Error while reading tenant information", e);
+        }
+        return status.getResponseCode();
+    }
+
+    @Override
+    public boolean isConfigured() {
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        return certificateManager.isConfigured();
+    }
+
+    @Override
+    public List<CertificateMetadataDTO> getCertificates(String userName) throws APIManagementException {
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        int tenantId = 0;
+        try {
+            tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                    .getTenantId(tenantDomain);
+        } catch (UserStoreException e) {
+            handleException("Error while reading tenant information", e);
+        }
+        return certificateManager.getCertificates(tenantId);
     }
 
     /**

@@ -28,9 +28,6 @@ import org.apache.axis2.client.Options;
 import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.transport.http.HTTPConstants;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -38,11 +35,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jaggeryjs.hostobjects.file.FileHostObject;
@@ -62,6 +54,7 @@ import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.FaultGatewaysException;
+import org.wso2.carbon.apimgt.api.dto.CertificateMetadataDTO;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -88,6 +81,8 @@ import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerFactory;
 import org.wso2.carbon.apimgt.impl.UserAwareAPIProvider;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManager;
+import org.wso2.carbon.apimgt.impl.certificatemgt.CertificateManagerImpl;
 import org.wso2.carbon.apimgt.impl.definitions.APIDefinitionFromSwagger20;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.dto.TierPermissionDTO;
@@ -113,6 +108,8 @@ import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import javax.cache.Caching;
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,8 +128,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.cache.Caching;
-import javax.xml.namespace.QName;
 
 @SuppressWarnings("unused")
 public class APIProviderHostObject extends ScriptableObject {
@@ -145,6 +140,8 @@ public class APIProviderHostObject extends ScriptableObject {
     private String username;
     private static String VERSION_PARAM="{version}";
     private static String ICON_PATH = "tmp/icon";
+    private static final String ALIAS = "alias";
+    private static final String END_POINT = "endpoint";
 
     private APIProvider apiProvider;
 
@@ -4920,6 +4917,103 @@ public class APIProviderHostObject extends ScriptableObject {
             handleException("Input context value is null");
         }
         return scopeExist.toString();
+    }
+
+    /**
+     * This method is used to upload backend certificate related to endpoints.
+     *
+     * @param cx      Rhino context
+     * @param thisObj Scriptable object
+     * @param args    Passing arguments {userName, alias, endpoint, certificate}
+     * @param funObj  Function object
+     * @return : True if uploading certificate is successful. False otherwise.
+     */
+    public static int jsFunction_uploadCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
+            throws APIManagementException {
+        if ((args == null) || (args.length != 4) || !isStringValues(args)) {
+            handleException("Invalid number of arguments. Expected User Name, Alias, Endpoint and Certificate");
+        }
+
+        String userName = (String) args[0];
+        String alias = (String) args[1];
+        String endpoint = (String) args[2];
+        String certificate = (String) args[3];
+
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.addCertificate(userName, certificate, alias, endpoint);
+    }
+
+    /**
+     * This method is used to remove backend certificate for the given alias and endpoint.
+     *
+     * @param cx      Rhino context
+     * @param thisObj Scriptable object
+     * @param args    Passing arguments {userName, alias, endpoint}
+     * @param funObj  Function object
+     * @return : True if deleting certificate is successful. False otherwise.
+     */
+    public static int jsFunction_deleteCertificate(Context cx, Scriptable thisObj, Object[] args, Function funObj)
+            throws APIManagementException {
+        if ((args == null) || (args.length != 3) || !isStringValues(args)) {
+            handleException("Invalid number of arguments. Expected User Name, Alias and Endpoint.");
+        }
+
+        String userName = (String) args[0];
+        String alias = (String) args[1];
+        String endpoint = (String) args[2];
+
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.deleteCertificate(userName, alias, endpoint);
+    }
+
+    /**
+     * This method is to retrieve all the certificates belongs to the given tenant.
+     *
+     * @param cx      Rhino context
+     * @param thisObj Scriptable object
+     * @param args    Passing arguments {username}
+     * @param funObj  Function object
+     * @return A list of uploaded certificate metadata.
+     */
+    public static NativeArray jsFunction_getCertificates(Context cx, Scriptable thisObj, Object[] args, Function funObj)
+            throws APIManagementException {
+        NativeArray certificateMetaDataArray = new NativeArray(0);
+
+        NativeObject certificateMetaData = new NativeObject();
+        CertificateManager certificateManager = new CertificateManagerImpl();
+        if ((args == null) || (args.length != 2) || !isStringValues(args)) {
+            log.error("Invalid arguments. Expected User Name and End Point.");
+            return null;
+        }
+
+        String userName = (String) args[0];
+        String endpoint = (String) args[1];
+
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        List<CertificateMetadataDTO> certificates = apiProvider.getCertificates(userName);
+        String tenantDomain = MultitenantUtils.getTenantDomain(userName);
+        int i = 0;
+
+        if (certificates != null) {
+            for (CertificateMetadataDTO certificateMetadata : certificates) {
+                NativeObject obj = new NativeObject();
+                obj.put(ALIAS, obj, certificateMetadata.getAlias());
+                obj.put(END_POINT, obj, certificateMetadata.getEndpoint());
+                certificateMetaDataArray.put(i, certificateMetaDataArray, obj);
+                i++;
+            }
+        }
+        return certificateMetaDataArray;
+    }
+
+    /**
+     * This method is to check whether the required configuration is done in the AM distribution.
+     *
+     * @return : True if the configuration is present, false otherwise.
+     */
+    public static boolean jsFunction_isConfigured(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        return apiProvider.isConfigured();
     }
 
     /**
