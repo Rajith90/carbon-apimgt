@@ -102,6 +102,7 @@ public class APIKeyMgtServiceComponentTest {
         PowerMockito.when(TSSLTransportFactory
                 .getServerSocket(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(InetAddress.class),
                         Mockito.any(TSSLTransportFactory.TSSLTransportParameters.class))).thenReturn(serverTransport);
+        PowerMockito.doThrow(new TTransportException()).when(serverTransport).listen();
         PowerMockito.whenNew(TThreadPoolServer.class).withAnyArguments().thenReturn(tThreadPoolServer);
         PowerMockito.when(ctxt.getBundleContext()).thenReturn(bundleContext);
         PowerMockito.when(bundleContext
@@ -112,6 +113,8 @@ public class APIKeyMgtServiceComponentTest {
         PowerMockito.when(serviceReferenceHolder1.getAPIManagerConfigurationService())
                 .thenReturn(apiManagerConfigurationService);
         PowerMockito.when(apiManagerConfiguration.getProperty(APIConstants.WHITELISTED_SCOPES)).thenReturn(null);
+        PowerMockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_THRIFT_SERVER_HOST))
+                .thenReturn("localhost");
     }
 
     @Test
@@ -189,6 +192,7 @@ public class APIKeyMgtServiceComponentTest {
         Mockito.verify(apiKeyMgtDataHolder, Mockito.atLeastOnce()).setScopesIssuers(null);
     }
 
+    @Test
     public void testActivate() throws Exception {
 
         APIKeyMgtServiceComponent apiKeyMgtServiceComponent = new APIKeyMgtServiceComponent();
@@ -199,6 +203,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateNullThriftAuthenticationService() throws Exception {
 
         APIKeyMgtServiceComponent apiKeyMgtServiceComponent = new APIKeyMgtServiceComponent();
@@ -217,6 +222,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateCaseNullConfigurationService() throws Exception {
         PowerMockito.when(serviceReferenceHolder1.getAPIManagerConfigurationService()).thenReturn(null);
         APIKeyMgtServiceComponent apiKeyMgtServiceComponent = new APIKeyMgtServiceComponent();
@@ -225,6 +231,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateCaseNullAmConfig() throws Exception {
         PowerMockito.when(APIKeyMgtDataHolder.getAmConfigService()).thenReturn(null);
         APIKeyMgtServiceComponent apiKeyMgtServiceComponent = new APIKeyMgtServiceComponent();
@@ -233,6 +240,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateCaseNullThriftPortString() throws Exception {
         PowerMockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_THRIFT_SERVER_PORT))
                 .thenReturn(null);
@@ -242,6 +250,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateNullThriftClientTimeOut() throws Exception {
         PowerMockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_CONNECTION_TIMEOUT))
                 .thenReturn(null);
@@ -251,6 +260,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testActivateInvalidHost() throws Exception {
         PowerMockito.when(apiManagerConfiguration.getFirstProperty(APIConstants.API_KEY_VALIDATOR_THRIFT_SERVER_HOST))
                 .thenReturn("name.99.9.host");
@@ -260,6 +270,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testTTransportException() throws Exception {
         PowerMockito.when(TSSLTransportFactory
                 .getServerSocket(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(InetAddress.class),
@@ -271,6 +282,7 @@ public class APIKeyMgtServiceComponentTest {
                 .addScopesIssuer(Mockito.anyString(), Mockito.any(AbstractScopesIssuer.class));
     }
 
+    @Test
     public void testDeactivate() throws Exception {
         APIKeyMgtServiceComponent apiKeyMgtServiceComponent = new APIKeyMgtServiceComponent();
         apiKeyMgtServiceComponent.activate(ctxt);
