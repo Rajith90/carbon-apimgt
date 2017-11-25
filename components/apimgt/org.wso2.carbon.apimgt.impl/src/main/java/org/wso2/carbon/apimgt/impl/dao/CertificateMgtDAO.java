@@ -46,7 +46,8 @@ import java.util.List;
  */
 public class CertificateMgtDAO {
 
-    private static final String CERTIFICATE_TABLE_NAME = "AM_CERTIFICATE_METADATA";
+    private static final String CERTIFICATE_TABLE_NAME_UPPERCASE = "AM_CERTIFICATE_METADATA";
+    private static final String CERTIFICATE_TABLE_NAME_LOWERCASE = "am_certificate_metadata";
     private static Log log = LogFactory.getLog(CertificateMgtDAO.class);
     private static CertificateMgtDAO certificateMgtDAO = null;
     private static boolean initialAutoCommit = false;
@@ -69,11 +70,8 @@ public class CertificateMgtDAO {
 
     /**
      * Checks whether the certificate management table exists in the data base.
-     *
-     * @return : True if exists, false otherwise.
      */
     public boolean isTableExists() throws CertificateManagementException {
-        boolean isExists = false;
         Connection connection = null;
         ResultSet resultSet = null;
         DatabaseMetaData databaseMetaData = null;
@@ -83,9 +81,14 @@ public class CertificateMgtDAO {
             databaseMetaData = connection.getMetaData();
 
             resultSet = databaseMetaData.getTables(null, null,
-                    CERTIFICATE_TABLE_NAME, null);
+                    CERTIFICATE_TABLE_NAME_UPPERCASE, null);
             if (resultSet.next()) {
-                isExists = true;
+                return true;
+            }
+            resultSet = databaseMetaData.getTables(null, null,
+                    CERTIFICATE_TABLE_NAME_LOWERCASE, null);
+            if (resultSet.next()) {
+                return true;
             }
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
@@ -95,7 +98,7 @@ public class CertificateMgtDAO {
         } finally {
             APIMgtDBUtil.closeAllConnections(null, connection, resultSet);
         }
-        return isExists;
+        return false;
     }
 
 
