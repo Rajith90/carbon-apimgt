@@ -323,6 +323,9 @@ public abstract class AbstractAPIManager implements APIManager {
                 API api = null;
                 try {
                     api = APIUtil.getAPI(artifact);
+                    if (api != null) {
+                        api = getAPI(api.getId());
+                    }
                 } catch (APIManagementException e) {
                     //log and continue since we want to load the rest of the APIs.
                     log.error("Error while loading API " + artifact.getAttribute(APIConstants.API_OVERVIEW_NAME), e);
@@ -374,7 +377,6 @@ public abstract class AbstractAPIManager implements APIManager {
                 throw new APIManagementException("artifact id is null for : " + apiPath);
             }
             GenericArtifact apiArtifact = artifactManager.getGenericArtifact(artifactId);
-
             API api = APIUtil.getAPIForPublishing(apiArtifact, registry);
 
             //check for API visibility
@@ -1827,7 +1829,7 @@ public abstract class AbstractAPIManager implements APIManager {
                     result.put("length", end - start);
                 }
             } else if (searchQuery.startsWith(APIConstants.SUBCONTEXT_SEARCH_TYPE_PREFIX)) {
-                result = APIUtil.searchAPIsByURLPattern(userRegistry, searchQuery.split("=")[1], start, end);
+                result = searchAPIsByURLPattern(userRegistry, searchQuery.split("=")[1], start, end);
             } else {
                 result = searchPaginatedAPIs(userRegistry, searchQuery, start, end, isLazyLoad);
             }
@@ -1842,6 +1844,20 @@ public abstract class AbstractAPIManager implements APIManager {
             }
         }
         return result;
+    }
+
+    /**
+     * To search API With URL pattern
+     * @param registry Registry to search.
+     * @param searchTerm Term to be searched.
+     * @param start Start index
+     * @param end End index.
+     * @return All the APIs, that matches given criteria
+     * @throws APIManagementException API Management Exception.
+     */
+    protected Map<String, Object> searchAPIsByURLPattern(Registry registry, String searchTerm, int start, int end)
+            throws APIManagementException {
+        return APIUtil.searchAPIsByURLPattern(registry, searchTerm, start, end);
     }
 
     /**

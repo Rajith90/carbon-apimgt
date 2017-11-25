@@ -458,6 +458,15 @@ public class APIMappingUtil {
             model.setVisibleTenants(visibleTenants);
         }
 
+        List<String> accessControlRoles = dto.getAccessControlRoles();
+        if (accessControlRoles == null || accessControlRoles.isEmpty()) {
+            model.setAccessControl(APIConstants.NO_ACCESS_CONTROL);
+            model.setAccessControlRoles("null");
+        } else {
+            model.setAccessControlRoles(StringUtils.join(accessControlRoles, ',').toLowerCase());
+            model.setAccessControl(APIConstants.API_RESTRICTED_VISIBILITY);
+        }
+
         APIBusinessInformationDTO apiBusinessInformationDTO = dto.getBusinessInformation();
         if (apiBusinessInformationDTO != null) {
             model.setBusinessOwner(apiBusinessInformationDTO.getBusinessOwner());

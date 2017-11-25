@@ -1058,7 +1058,10 @@ public class APIProviderHostObject extends ScriptableObject {
         name = (name != null ? name.trim() : null);
         version = (version != null ? version.trim() : null);
         APIIdentifier apiId = new APIIdentifier(provider, name, version);
-//        APIProvider apiProvider = getAPIProvider(thisObj);
+        APIProvider apiProvider = getAPIProvider(thisObj);
+        if (apiProvider.getAPI(apiId) == null) {
+            return null;
+        }
 
         boolean isTenantFlowStarted = false;
         String apiJSON = null;

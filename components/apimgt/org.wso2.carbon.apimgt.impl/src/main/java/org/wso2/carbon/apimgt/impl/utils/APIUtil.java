@@ -1163,6 +1163,23 @@ public final class APIUtil {
     }
 
     /**
+     * Utility method to get api identifier from api path.
+     *
+     * @param apiPath Path of the API in registry
+     * @return relevant API Identifier
+     */
+    public static APIIdentifier getAPIIdentifier(String apiPath) {
+        String relativePath = apiPath.substring((APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR)
+                .length());
+        String[] values = relativePath.split(RegistryConstants.PATH_SEPARATOR);
+
+        if (values.length > 3) {
+            return new APIIdentifier(values[0], values[1], values[2]);
+        }
+        return null;
+    }
+
+    /**
      * Utility method to get API provider path
      *
      * @param identifier APIIdentifier

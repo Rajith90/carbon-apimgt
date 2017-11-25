@@ -864,6 +864,4 @@ public interface APIProvider extends APIManager {
      * @throws APIManagementException
      */
     List<CertificateMetadataDTO> getCertificates(String userName) throws APIManagementException;
-
-
 }
