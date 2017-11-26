@@ -94,9 +94,7 @@ public class APIDTO  {
     NONE,  RESTRICTED
   };
 
-  @NotNull
   private AccessControlEnum accessControl = null;
-
 
   private List<String> accessControlRoles = new ArrayList<String>();
   
@@ -396,7 +394,7 @@ public class APIDTO  {
 
   /**
    **/
-  @ApiModelProperty
+  @ApiModelProperty(value = "AccessControl")
   @JsonProperty("accessControl")
   public AccessControlEnum getAccessControl() {
     return accessControl;
@@ -406,8 +404,8 @@ public class APIDTO  {
     this.accessControl = accessControl;
   }
 
-  @ApiModelProperty(value = "The user roles that are able to access the API")
-  @JsonProperty("visibleRoles")
+  @ApiModelProperty(value = "The user roles that are able to access the API in publisher")
+  @JsonProperty("accessControlRoles")
   public List<String> getAccessControlRoles() {
     return accessControlRoles;
   }

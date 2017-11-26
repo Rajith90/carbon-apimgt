@@ -323,8 +323,8 @@ public abstract class AbstractAPIManager implements APIManager {
                 API api = null;
                 try {
                     api = APIUtil.getAPI(artifact);
-                    if (api != null) {
-                        api = getAPI(api.getId());
+                    if (api == null || !checkAccessControlPermission(api.getId())) {
+                        api = null;
                     }
                 } catch (APIManagementException e) {
                     //log and continue since we want to load the rest of the APIs.
@@ -346,6 +346,17 @@ public abstract class AbstractAPIManager implements APIManager {
 
         Collections.sort(apiSortedList, new APINameComparator());
         return apiSortedList;
+    }
+
+    /**
+     * To check authorization of the API against current logged in user.
+     *
+     * @param identifier API identifier
+     * @return true if the user is authorized view the API identified by identifier, otherwise false.
+     * @throws APIManagementException APIManagementException
+     */
+    protected boolean checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
+        return true;
     }
 
     protected API getApi(GovernanceArtifact artifact) throws APIManagementException {

@@ -4065,10 +4065,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
     @Override
     public void saveSwagger20Definition(APIIdentifier apiId, String jsonText) throws APIManagementException {
+        if (!checkAccessControlPermission(apiId)) {
+            throw new APIManagementException("User is not permitted to access the API " + apiId);
+        }
         try {
-            if (!checkAccessControlPermission(apiId)) {
-                throw new APIManagementException("User is not permitted to access the API " + apiId);
-            }
             PrivilegedCarbonContext.startTenantFlow();
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
             definitionFromSwagger20.saveAPIDefinition(getAPI(apiId), jsonText, registry);
@@ -4080,7 +4080,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
     public APIStateChangeResponse changeLifeCycleStatus(APIIdentifier apiIdentifier, String action)
             throws APIManagementException, FaultGatewaysException{
-        
+        if (!checkAccessControlPermission(apiIdentifier)) {
+            throw new APIManagementException("User is not permitted to access the API " + apiIdentifier);
+        }
         APIStateChangeResponse response = new APIStateChangeResponse();
         try {
             PrivilegedCarbonContext.startTenantFlow();
@@ -4304,6 +4306,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     * @return Map<String,Object> a map with lifecycle data
     */
     public Map<String, Object> getAPILifeCycleData(APIIdentifier apiId) throws APIManagementException {
+        if (!checkAccessControlPermission(apiId)) {
+            throw new APIManagementException("User is authorized to view or modify API " + apiId);
+        }
         String path = APIUtil.getAPIPath(apiId);
         Map<String, Object> lcData = new HashMap<String, Object>();
 
@@ -5693,17 +5698,14 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         return apiSortedSet;
     }
 
-    /**
-     * To check authorization of the API against current logged in user.
-     *
-     * @param identifier API identifier
-     * @return true if the user is authorized view the API identified by identifier, otherwise false.
-     * @throws APIManagementException APIManagementException
-     */
-    private boolean checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
+    @Override
+    protected boolean checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
         if (identifier != null && isAccessControlRestrictionIsEnabled) {
             String apiPath = APIUtil.getAPIPath(identifier);
             try {
+                if (!registry.resourceExists(apiPath)) {
+                    return true;
+                }
                 Resource apiResource = registry.get(apiPath);
                 if (apiResource != null) {
                     String accessControlProperty = apiResource.getProperty(APIConstants.ACCESS_CONTROL);

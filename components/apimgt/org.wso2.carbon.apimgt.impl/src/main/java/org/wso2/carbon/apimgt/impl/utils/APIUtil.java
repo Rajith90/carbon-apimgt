@@ -1164,8 +1164,14 @@ public final class APIUtil {
      * @return relevant API Identifier
      */
     public static APIIdentifier getAPIIdentifier(String apiPath) {
-        String relativePath = apiPath.substring((APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR)
-                .length());
+        int length = (APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR).length();
+        if (!apiPath.contains(APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR)) {
+            length = (APIConstants.API_IMAGE_LOCATION + RegistryConstants.PATH_SEPARATOR).length();
+        }
+        if (length <=  0) {
+            length = (APIConstants.API_DOC_LOCATION + RegistryConstants.PATH_SEPARATOR).length();
+        }
+        String relativePath = apiPath.substring(length);
         String[] values = relativePath.split(RegistryConstants.PATH_SEPARATOR);
 
         if (values.length > 3) {
