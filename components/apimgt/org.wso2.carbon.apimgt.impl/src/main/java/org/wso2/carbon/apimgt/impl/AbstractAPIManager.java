@@ -356,6 +356,7 @@ public abstract class AbstractAPIManager implements APIManager {
      * @throws APIManagementException APIManagementException
      */
     protected void checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
+        // Not implemented. This is needed specifically for API Provider, for API store, we do not need to anything.
     }
 
     protected API getApi(GovernanceArtifact artifact) throws APIManagementException {
@@ -1260,6 +1261,8 @@ public abstract class AbstractAPIManager implements APIManager {
             GenericArtifactManager artifactManager = getAPIGenericArtifactManagerFromUtil(registryType, APIConstants
                     .DOCUMENTATION_KEY);
             GenericArtifact artifact = artifactManager.getGenericArtifact(docId);
+            APIIdentifier apiIdentifier = APIUtil.getAPIIdentifier(artifact.getPath());
+            checkAccessControlPermission(apiIdentifier);
             if (null != artifact) {
                 documentation = APIUtil.getDocumentation(artifact);
                 documentation.setCreatedDate(registryType.get(artifact.getPath()).getCreatedTime());
@@ -2288,15 +2291,14 @@ public abstract class AbstractAPIManager implements APIManager {
             }
             PaginationContext.init(start, end, "ASC", APIConstants.API_OVERVIEW_NAME, maxPaginationLimit);
 
-
-            List<GovernanceArtifact> governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(searchQuery,
+            List<GovernanceArtifact> governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(getSearchQuery(searchQuery),
                     registry, APIConstants.API_RXT_MEDIA_TYPE);
             totalLength = PaginationContext.getInstance().getLength();
             boolean isFound = true;
             if (governanceArtifacts == null || governanceArtifacts.size() == 0) {
                 if (searchQuery.contains(APIConstants.API_OVERVIEW_PROVIDER)) {
                     searchQuery = searchQuery.replaceAll(APIConstants.API_OVERVIEW_PROVIDER, APIConstants.API_OVERVIEW_OWNER);
-                    governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(searchQuery,
+                    governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(getSearchQuery(searchQuery),
                             registry, APIConstants.API_RXT_MEDIA_TYPE);
                     if (governanceArtifacts == null || governanceArtifacts.size() == 0) {
                         isFound = false;
@@ -2430,5 +2432,14 @@ public abstract class AbstractAPIManager implements APIManager {
     public Map<Documentation, API> searchAPIDoc(Registry registry, int tenantID, String username,
             String searchTerm) throws APIManagementException {
         return APIUtil.searchAPIsByDoc(registry, tenantID, username, searchTerm, APIConstants.STORE_CLIENT);
+    }
+
+    /**
+     * To get the search query.
+     *
+     * @param searchQuery Initial query
+     */
+    protected String getSearchQuery(String searchQuery) throws APIManagementException {
+        return searchQuery;
     }
 }

@@ -82,7 +82,6 @@ public class NotificationExecutor{
 
                             //starting Notifier threads
                             if (notifierClass != null && !notifierClass.isEmpty()) {
-
                                 Notifier notfier = (Notifier) APIUtil.getClassForName(notifierClass).newInstance();
                                 notfier.setNotificationDTO(notificationDTO);
                                 notfier.setTenantDomain(notificationDTO.getTenantDomain());

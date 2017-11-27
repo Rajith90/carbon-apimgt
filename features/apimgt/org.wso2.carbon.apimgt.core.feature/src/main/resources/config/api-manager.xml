@@ -112,6 +112,7 @@
         subscriptions frequently, modifying the user roles frequently or updating the subscribed APIs frequently, it
         is better to turn-off this cache-->
         <EnableScopeCache>true</EnableScopeCache>
+        <EnablePublisherRoleCache>false</EnablePublisherRoleCache>
 	    <!-- JWT claims Cache expiry in seconds -->
         <!--JWTClaimCacheExpiry>900</JWTClaimCacheExpiry-->
         <!-- Expiry time for the apim key mgt validation info cache -->

@@ -190,6 +190,13 @@ public class ApisApiServiceImpl extends ApisApiService {
                 }
             }
 
+            if (body.getAccessControlRoles() != null) {
+                String errorMessage = RestApiPublisherUtils.validateUserRoles(body.getAccessControlRoles());
+
+                if (!errorMessage.isEmpty()) {
+                    RestApiUtil.handleBadRequest(errorMessage, log);
+                }
+            }
             if (body.getContext().endsWith("/")) {
                 RestApiUtil.handleBadRequest("Context cannot end with '/' character", log);
             }
@@ -804,6 +811,13 @@ public class ApisApiServiceImpl extends ApisApiService {
             if (invalidTiers.size() > 0) {
                 RestApiUtil.handleBadRequest(
                         "Specified tier(s) " + Arrays.toString(invalidTiers.toArray()) + " are invalid", log);
+            }
+            if (body.getAccessControlRoles() != null) {
+                String errorMessage = RestApiPublisherUtils.validateUserRoles(body.getAccessControlRoles());
+
+                if (!errorMessage.isEmpty()) {
+                    RestApiUtil.handleBadRequest(errorMessage, log);
+                }
             }
             API apiToUpdate = APIMappingUtil.fromDTOtoAPI(body, apiIdentifier.getProviderName());
             apiProvider.updateAPI(apiToUpdate);

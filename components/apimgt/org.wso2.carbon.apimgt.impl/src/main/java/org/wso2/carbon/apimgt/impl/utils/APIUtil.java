@@ -234,9 +234,17 @@ public final class APIUtil {
     private static Set<String> currentLoadingTenants = new HashSet<String>();
 
     private static volatile Set<String> whiteListedScopes;
+    private static boolean isPublisherRoleCacheEnabled = false;
+
 
     //Need tenantIdleTime to check whether the tenant is in idle state in loadTenantConfig method
     static {
+        APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
+                .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+        String isPublisherRoleCacheEnabledConfiguration = apiManagerConfiguration
+                .getFirstProperty(APIConstants.PUBLISHER_ROLE_CACHE_ENABLED);
+        isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration != null && Boolean
+                .parseBoolean(isPublisherRoleCacheEnabledConfiguration);
         tenantIdleTimeMillis =
                 Long.parseLong(System.getProperty(
                         org.wso2.carbon.utils.multitenancy.MultitenantConstants.TENANT_IDLE_TIME,
@@ -2362,19 +2370,64 @@ public final class APIUtil {
                     " the anonymous user");
         }
 
+        String[] roles = getValueFromCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username);
+        if (roles != null) {
+            return roles;
+        }
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
         try {
             if (!org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
                 int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getTenantId(tenantDomain);
                 UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
-                return manager.getRoleListOfUser(username);
+                roles = manager.getRoleListOfUser(MultitenantUtils.getTenantAwareUsername(username));
             } else {
-                return AuthorizationManager.getInstance().getRolesOfUser(username);
+                roles = AuthorizationManager.getInstance().getRolesOfUser(MultitenantUtils.getTenantAwareUsername
+                        (username));
             }
+            addToRolesCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username, roles);
+            return roles;
         } catch (UserStoreException e) {
           throw new APIManagementException("UserStoreException while trying the role list of the user " + username,
                   e);
         }
+    }
+
+
+    /**
+     * To get the relevant application scope Cache.
+     *
+     * @param cacheName - Name of the Cache
+     * @param key       - Key of the entry that need to be added.
+     * @param value     - Value of the entry that need to be added.
+     */
+    protected static void addToRolesCache(String cacheName, String key, String[] value) {
+        if (isPublisherRoleCacheEnabled) {
+            if (log.isDebugEnabled()) {
+                log.debug("Publisher role cache is enabled, adding the roles for the " + key + " to the "
+                        + "cache " + cacheName + "'");
+            }
+            Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(cacheName).put(key, value);
+        }
+    }
+
+    /**
+     * To get the value from the cache.
+     *
+     * @param cacheName Name of the cache.
+     * @param key       Key of the cache entry.
+     * @return Scope set relevant to the key
+     */
+    protected static String[] getValueFromCache(String cacheName, String key) {
+        if (isPublisherRoleCacheEnabled) {
+            if (log.isDebugEnabled()) {
+                log.debug("Publisher role cache is enabled, retrieving the roles for  " + key + " from the "
+                        + "cache " + cacheName + "'");
+            }
+            Cache<String, String[]> rolesCache = Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)
+                    .getCache(cacheName);
+            return rolesCache.get(key);
+        }
+        return null;
     }
 
     /**
@@ -3776,19 +3829,24 @@ public final class APIUtil {
      * @throws APIManagementException If an error occurs
      */
     public static String[] getRoleNames(String username) throws APIManagementException {
-
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
+        String[] roles = getValueFromCache(APIConstants.API_PUBLISHER_TENANT_ROLE_CACHE, tenantDomain);
+
+        if (roles != null) {
+            return roles;
+        }
         try {
             if (!org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
                 int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
                 UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService()
                         .getTenantUserRealm(tenantId).getUserStoreManager();
-
-                return manager.getRoleNames();
+                roles = manager.getRoleNames();
             } else {
-                return AuthorizationManager.getInstance().getRoleNames();
+                roles = AuthorizationManager.getInstance().getRoleNames();
             }
+            addToRolesCache(APIConstants.API_PUBLISHER_TENANT_ROLE_CACHE, tenantDomain, roles);
+            return roles;
         } catch (UserStoreException e) {
             log.error("Error while getting all the roles", e);
             return new String[0];
