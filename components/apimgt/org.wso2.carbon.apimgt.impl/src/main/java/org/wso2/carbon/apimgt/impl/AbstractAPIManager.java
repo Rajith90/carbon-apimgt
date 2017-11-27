@@ -323,8 +323,8 @@ public abstract class AbstractAPIManager implements APIManager {
                 API api = null;
                 try {
                     api = APIUtil.getAPI(artifact);
-                    if (api == null || !checkAccessControlPermission(api.getId())) {
-                        api = null;
+                    if (api != null) {
+                        checkAccessControlPermission(api.getId());
                     }
                 } catch (APIManagementException e) {
                     //log and continue since we want to load the rest of the APIs.
@@ -349,14 +349,13 @@ public abstract class AbstractAPIManager implements APIManager {
     }
 
     /**
-     * To check authorization of the API against current logged in user.
+     * To check authorization of the API against current logged in user. If the user is not authorized an exception
+     * will be thrown.
      *
      * @param identifier API identifier
-     * @return true if the user is authorized view the API identified by identifier, otherwise false.
      * @throws APIManagementException APIManagementException
      */
-    protected boolean checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
-        return true;
+    protected void checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
     }
 
     protected API getApi(GovernanceArtifact artifact) throws APIManagementException {
@@ -1496,7 +1495,7 @@ public abstract class AbstractAPIManager implements APIManager {
                             APIConstants.API_KEY);
                     GenericArtifact artifact = artifactManager.getGenericArtifact(
                             resource.getUUID());
-                    API api = APIUtil.getAPI(artifact, registry);
+                    API api = getAPI(artifact);
                     if (api != null) {
                         apiSortedSet.add(api);
                     }
@@ -1512,6 +1511,17 @@ public abstract class AbstractAPIManager implements APIManager {
             }
         }
         return apiSortedSet;
+    }
+
+
+    /**
+     * To get the API from generic artifact, if the user is authorized to view it.
+     *
+     * @param apiArtifact API Artifact.
+     * @return API if the user is authorized  to view this.
+     */
+    protected API getAPI(GenericArtifact apiArtifact) throws APIManagementException {
+        return APIUtil.getAPI(apiArtifact, registry);
     }
 
     /**

@@ -604,7 +604,6 @@ public class APIProviderHostObject extends ScriptableObject {
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
             }
             api = apiProvider.getAPI(apiId);
-
             if (api == null) {
                 return false;
             }
@@ -801,18 +800,13 @@ public class APIProviderHostObject extends ScriptableObject {
         String tenantDomain;
         try {
             tenantDomain = MultitenantUtils.getTenantDomain(APIUtil.replaceEmailDomainBack(provider));
-            if(tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-            	isTenantFlowStarted = true;
+            if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
+                isTenantFlowStarted = true;
                 PrivilegedCarbonContext.startTenantFlow();
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
             }
             api = apiProvider.getAPI(apiId);
-
-            if (api == null) {
-                success = false;
-            } else {
-                success = apiProvider.isAPIUpdateValid(api);
-            }
+            success = api != null && apiProvider.isAPIUpdateValid(api);
         } finally {
         	if (isTenantFlowStarted) {
         		PrivilegedCarbonContext.endTenantFlow();
@@ -884,10 +878,10 @@ public class APIProviderHostObject extends ScriptableObject {
         	visibleRoles = (String) apiData.get("visibleRoles", apiData);
         }
 
-        String publisherAccessControl = (String) apiData.get("accessControl", apiData);
+        String publisherAccessControl = (String) apiData.get(APIConstants.ACCESS_CONTROL_PARAMETER, apiData);
         String publisherAccessControlRoles = "";
         if (publisherAccessControl != null && publisherAccessControl.equals(APIConstants.API_RESTRICTED_VISIBILITY)) {
-            publisherAccessControlRoles = (String) apiData.get("accessControlRoles", apiData);
+            publisherAccessControlRoles = (String) apiData.get(APIConstants.ACCESS_CONTROL_ROLES_PARAMETER, apiData);
             if (publisherAccessControlRoles != null) {
                 publisherAccessControlRoles = publisherAccessControlRoles.toLowerCase().trim();
             }
@@ -957,8 +951,6 @@ public class APIProviderHostObject extends ScriptableObject {
         api.setAccessControlRoles(publisherAccessControlRoles);
         api.setAccessControl(publisherAccessControl);
         api.setAccessControlRoles(publisherAccessControlRoles);
-
-
         return saveAPI(apiProvider, api, fileHostObject, false);
     }
 
@@ -1177,7 +1169,7 @@ public class APIProviderHostObject extends ScriptableObject {
         String thumbUrl = (String) apiData.get("thumbUrl", apiData);
         String environments = (String) apiData.get("environments", apiData);
         String visibleRoles = "";
-        String publisherAccessControl = (String) apiData.get("accessControl", apiData);
+        String publisherAccessControl = (String) apiData.get(APIConstants.ACCESS_CONTROL_PARAMETER, apiData);
         String publisherAccessControlRoles = "";
 
         if (name != null) {
@@ -1199,7 +1191,7 @@ public class APIProviderHostObject extends ScriptableObject {
         }
 
         if (publisherAccessControl != null && publisherAccessControl.equals(APIConstants.API_RESTRICTED_VISIBILITY)) {
-            publisherAccessControlRoles = (String) apiData.get("accessControlRoles", apiData);
+            publisherAccessControlRoles = (String) apiData.get(APIConstants.ACCESS_CONTROL_ROLES_PARAMETER, apiData);
         }
 
         if (sandboxUrl != null && sandboxUrl.trim().length() == 0) {
@@ -1842,11 +1834,9 @@ public class APIProviderHostObject extends ScriptableObject {
         }
 
         API oldApi = apiProvider.getAPI(oldApiId);
-
         if (oldApi == null) {
             return  false;
         }
-
         String transport = getTransports(apiData);
 
         String tier = (String) apiData.get("tier", apiData);
@@ -4437,7 +4427,7 @@ public class APIProviderHostObject extends ScriptableObject {
     public static boolean jsFunction_validateRoles(Context cx,
                                                    Scriptable thisObj, Object[] args,
                                                    Function funObj) {
-        if (args == null || args.length==0) {
+        if (args == null || args.length == 0) {
             return false;
         }
         boolean validateAgainstUserRoles = false;
@@ -4637,8 +4627,8 @@ public class APIProviderHostObject extends ScriptableObject {
 	                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().
 	                        getTenantManager().getTenantId(tenantDomain);
 	                //Check if no external APIStore selected from UI
-	                if (api != null && externalAPIStores != null) {
-		                Set<APIStore> inputStores = new HashSet<APIStore>();
+                    if (api != null && externalAPIStores != null) {
+                        Set<APIStore> inputStores = new HashSet<APIStore>();
 		                for (Object store : externalAPIStores) {
 		                	inputStores.add(APIUtil.getExternalAPIStore((String) store, tenantId));
 		                }

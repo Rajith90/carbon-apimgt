@@ -1315,15 +1315,22 @@ public final class APIConstants {
     public static final String REGEX_ILLEGAL_CHARACTERS_FOR_API_METADATA = "[~!@#;%^*()+={}|<>\"\',\\[\\]&/$\\\\]";
 
     /**
-     * Publisher Access Control related registry properties.
+     * Publisher Access Control related registry properties and values.
      */
     public static final String PUBLISHER_ROLES = "publisher_roles";
     public static final String ACCESS_CONTROL = "publisher_access_control";
     public static final String NO_ACCESS_CONTROL = "none";
+    public static final String NULL_USER_ROLE_LIST = "null";
 
     /**
-     * CustomIndexer to indicate whether it is gone through API Indexer.
+     * CustomIndexer property to indicate whether it is gone through API Custom Indexer.
      */
     public static final String CUSTOM_API_INDEXER_PROPERTY = "registry.customIndexer";
+
+    /**
+     * Parameter related with accessControl support.
+     */
+    public static final String ACCESS_CONTROL_PARAMETER = "accessControl";
+    public static final String ACCESS_CONTROL_ROLES_PARAMETER = "accessControlRoles";
 
 }
