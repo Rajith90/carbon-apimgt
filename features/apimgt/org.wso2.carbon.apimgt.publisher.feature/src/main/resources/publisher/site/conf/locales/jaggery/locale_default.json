@@ -581,5 +581,5 @@
     "tiers": "tiers",
     "user": "user",
     "Access Control" : "Access Control",
-    "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewed and modified only to specific publishers and creators with the roles that you specify" :  "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewed and modified only to specific publishers and creators with the roles that you specify"
+    "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify"
 }

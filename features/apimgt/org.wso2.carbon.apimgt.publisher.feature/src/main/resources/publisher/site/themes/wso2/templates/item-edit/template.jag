@@ -178,8 +178,11 @@ var faultSequencesLoaded = false;
                        </select>
                        <a class="icon-question-sign help_popup" help_data="publisherrole_help" title="publisherrole_help"></a>
                        <p id="publisherrole_help" class="hide">
-                       <%=i18n.localize("<strong>None :</strong> The API is viewable, modifiable by all the " +
-        "publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewed and modified only to specific publishers and creators with the roles that you specify")%></p>
+                        <%=i18n.localize("<strong>None :</strong> The API is viewable,"
+                         + "modifiable by all the publishers and creators.<br/><strong>Restricted by roles :"
+                         + "</strong> The API can be viewable and modifiable by only "
+                         + "specific publishers and creators with the roles that you "
+                         + "specify")%></p>
                    </div>
                </div>
 

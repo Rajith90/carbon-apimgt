@@ -2292,14 +2292,14 @@ public abstract class AbstractAPIManager implements APIManager {
             PaginationContext.init(start, end, "ASC", APIConstants.API_OVERVIEW_NAME, maxPaginationLimit);
 
             List<GovernanceArtifact> governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(getSearchQuery(searchQuery),
-                    registry, APIConstants.API_RXT_MEDIA_TYPE);
+                    registry, APIConstants.API_RXT_MEDIA_TYPE, true);
             totalLength = PaginationContext.getInstance().getLength();
             boolean isFound = true;
             if (governanceArtifacts == null || governanceArtifacts.size() == 0) {
                 if (searchQuery.contains(APIConstants.API_OVERVIEW_PROVIDER)) {
                     searchQuery = searchQuery.replaceAll(APIConstants.API_OVERVIEW_PROVIDER, APIConstants.API_OVERVIEW_OWNER);
                     governanceArtifacts = GovernanceUtils.findGovernanceArtifacts(getSearchQuery(searchQuery),
-                            registry, APIConstants.API_RXT_MEDIA_TYPE);
+                            registry, APIConstants.API_RXT_MEDIA_TYPE, true);
                     if (governanceArtifacts == null || governanceArtifacts.size() == 0) {
                         isFound = false;
                     }

@@ -239,12 +239,6 @@ public final class APIUtil {
 
     //Need tenantIdleTime to check whether the tenant is in idle state in loadTenantConfig method
     static {
-        APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
-                .getAPIManagerConfigurationService().getAPIManagerConfiguration();
-        String isPublisherRoleCacheEnabledConfiguration = apiManagerConfiguration
-                .getFirstProperty(APIConstants.PUBLISHER_ROLE_CACHE_ENABLED);
-        isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration != null && Boolean
-                .parseBoolean(isPublisherRoleCacheEnabledConfiguration);
         tenantIdleTimeMillis =
                 Long.parseLong(System.getProperty(
                         org.wso2.carbon.utils.multitenancy.MultitenantConstants.TENANT_IDLE_TIME,
@@ -253,6 +247,18 @@ public final class APIUtil {
     }
 
     private static String hostAddress = null;
+
+    /**
+     * To initialize the publisherRoleCache configurations, based on configurations.
+     */
+    public static void init() {
+        APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
+                .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+        String isPublisherRoleCacheEnabledConfiguration = apiManagerConfiguration
+                .getFirstProperty(APIConstants.PUBLISHER_ROLE_CACHE_ENABLED);
+        isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration != null && Boolean
+                .parseBoolean(isPublisherRoleCacheEnabledConfiguration);
+    }
 
     /**
      * This method used to get API from governance artifact
@@ -2221,6 +2227,15 @@ public final class APIUtil {
             return authorized;
         }
 
+        if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+            Integer value = getValueFromCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE,
+                    userNameWithoutChange);
+            if (value != null){
+                return value == 1;
+            }
+
+        }
+
         String tenantDomain = MultitenantUtils.getTenantDomain(userNameWithoutChange);
         PrivilegedCarbonContext.startTenantFlow();
         PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
@@ -2250,6 +2265,10 @@ public final class APIUtil {
                         AuthorizationManager.getInstance()
                                 .isUserAuthorized(MultitenantUtils.getTenantAwareUsername(userNameWithoutChange),
                                         permission);
+            }
+            if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+                addToRolesCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange,
+                        authorized ? 1 : 2);
             }
 
         } catch (UserStoreException e) {
@@ -2392,15 +2411,14 @@ public final class APIUtil {
         }
     }
 
-
     /**
-     * To get the relevant application scope Cache.
+     * To add the value to a cache.
      *
      * @param cacheName - Name of the Cache
      * @param key       - Key of the entry that need to be added.
      * @param value     - Value of the entry that need to be added.
      */
-    protected static void addToRolesCache(String cacheName, String key, String[] value) {
+    protected static <T> void addToRolesCache(String cacheName, String key, T value) {
         if (isPublisherRoleCacheEnabled) {
             if (log.isDebugEnabled()) {
                 log.debug("Publisher role cache is enabled, adding the roles for the " + key + " to the "
@@ -2415,15 +2433,15 @@ public final class APIUtil {
      *
      * @param cacheName Name of the cache.
      * @param key       Key of the cache entry.
-     * @return Scope set relevant to the key
+     * @return Role list from the cache, if a values exists, otherwise null.
      */
-    protected static String[] getValueFromCache(String cacheName, String key) {
+    protected static <T> T getValueFromCache(String cacheName, String key) {
         if (isPublisherRoleCacheEnabled) {
             if (log.isDebugEnabled()) {
                 log.debug("Publisher role cache is enabled, retrieving the roles for  " + key + " from the "
                         + "cache " + cacheName + "'");
             }
-            Cache<String, String[]> rolesCache = Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)
+            Cache<String, T> rolesCache = Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)
                     .getCache(cacheName);
             return rolesCache.get(key);
         }
@@ -3830,23 +3848,16 @@ public final class APIUtil {
      */
     public static String[] getRoleNames(String username) throws APIManagementException {
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
-        String[] roles = getValueFromCache(APIConstants.API_PUBLISHER_TENANT_ROLE_CACHE, tenantDomain);
-
-        if (roles != null) {
-            return roles;
-        }
         try {
             if (!org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
                 int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
                         .getTenantId(tenantDomain);
                 UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService()
                         .getTenantUserRealm(tenantId).getUserStoreManager();
-                roles = manager.getRoleNames();
+                return manager.getRoleNames();
             } else {
-                roles = AuthorizationManager.getInstance().getRoleNames();
+                return AuthorizationManager.getInstance().getRoleNames();
             }
-            addToRolesCache(APIConstants.API_PUBLISHER_TENANT_ROLE_CACHE, tenantDomain, roles);
-            return roles;
         } catch (UserStoreException e) {
             log.error("Error while getting all the roles", e);
             return new String[0];

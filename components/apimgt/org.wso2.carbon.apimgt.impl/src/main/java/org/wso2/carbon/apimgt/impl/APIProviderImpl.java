@@ -4474,9 +4474,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (artifactManager != null) {
                 List<GovernanceArtifact> genericArtifacts = null;
 
-                if (isAccessControlRestrictionEnabled) {
+                if (isAccessControlRestrictionEnabled && !APIUtil.hasPermission(userNameWithoutChange, APIConstants
+                        .Permissions.APIM_ADMIN)) {
                     genericArtifacts = GovernanceUtils.findGovernanceArtifacts(getUserRoleListQuery(), userRegistry,
-                            APIConstants.API_RXT_MEDIA_TYPE);
+                            APIConstants.API_RXT_MEDIA_TYPE, true);
                 } else {
                     genericArtifacts = GovernanceUtils
                             .findGovernanceArtifacts(new HashMap<String, List<String>>(), userRegistry,
@@ -5504,8 +5505,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 if (log.isDebugEnabled()) {
                     log.debug("Resource does not exist in the path : " + apiPath + " this can happen if this in the "
                             + "middle of the new API creation, hence not checking the access control");
-                } return;
-            } Resource apiResource = registry.get(apiPath);
+                }
+                return;
+            }
+            Resource apiResource = registry.get(apiPath);
             if (apiResource == null) {
                 return;
             }

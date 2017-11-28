@@ -454,7 +454,7 @@ public final class APIConstants {
     public static final String STORE_TAG_CACHE_DURATION = CACHE_CONFIGS + "TagCacheDuration";
     public static final String API_STORE_RECENTLY_ADDED_API_CACHE_ENABLE = CACHE_CONFIGS + "EnableRecentlyAddedAPICache";
     public static final String SCOPE_CACHE_ENABLED = CACHE_CONFIGS + "EnableScopeCache";
-    public static final String PUBLISHER_ROLE_CACHE_ENABLED = CACHE_CONFIGS + "EnableRoleCache";
+    public static final String PUBLISHER_ROLE_CACHE_ENABLED = CACHE_CONFIGS + "EnablePublisherRoleCache";
     public static final String DEFAULT_CACHE_TIMEOUT = "Cache.DefaultCacheTimeout";
 
     public static final String API_KEY_VALIDATOR = "APIKeyValidator.";
@@ -764,6 +764,7 @@ public final class APIConstants {
     public static final String APP_SUBSCRIPTION_FILTERED_SCOPE_CACHE = "appSubscriptionFilteredScopeCache";
     public static final String API_PUBLISHER_USER_ROLE_CACHE = "appPublisherUserRoleCache";
     public static final String API_PUBLISHER_TENANT_ROLE_CACHE = "appPublisherTenantRoleCache";
+    public static final String API_PUBLISHER_ADMIN_PERMISSION_CACHE = "apimAdminPermissionCache";
 
     //URI Authentication Schemes
     public static final Set<String> SUPPORTED_METHODS =

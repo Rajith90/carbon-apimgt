@@ -34,6 +34,7 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.Documentation;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.APIDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.dto.TierDTO;
@@ -179,9 +180,15 @@ public class RestApiPublisherUtils {
     public static String validateUserRoles(List<String> inputRoles) throws APIManagementException {
         String userName = RestApiUtil.getLoggedInUsername();
         String[] tenantRoleList = APIUtil.getRoleNames(userName);
-        String[] userRoleList = APIUtil.getListOfRoles(userName);
         boolean isMatched = false;
+        String[] userRoleList = null;
 
+        if (APIUtil.hasPermission(userName, APIConstants.Permissions.APIM_ADMIN)) {
+            isMatched = true;
+        } else {
+            userRoleList = APIUtil.getListOfRoles(userName);
+
+        }
         if (inputRoles != null && !inputRoles.isEmpty()) {
             if (tenantRoleList != null || userRoleList != null) {
                 for (String inputRole : inputRoles) {

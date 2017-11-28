@@ -264,6 +264,12 @@ public class APIMappingUtil {
             dto.setVisibleRoles(Arrays.asList(model.getVisibleTenants().split(",")));
         }
 
+        dto.setAccessControl(APIConstants.API_RESTRICTED_VISIBILITY.equals(model.getAccessControl()) ?
+                APIDTO.AccessControlEnum.RESTRICTED :
+                APIDTO.AccessControlEnum.NONE);
+        if (model.getAccessControlRoles() != null) {
+            dto.setAccessControlRoles(Arrays.asList(model.getAccessControlRoles().split(",")));
+        }
         APIBusinessInformationDTO apiBusinessInformationDTO = new APIBusinessInformationDTO();
         apiBusinessInformationDTO.setBusinessOwner(model.getBusinessOwner());
         apiBusinessInformationDTO.setBusinessOwnerEmail(model.getBusinessOwnerEmail());

@@ -182,8 +182,12 @@
                                                                <i class="fw fw-question fw-stack-1x fw-inverse" style="font-size:8px"></i>
                                                         </span>
                                                     </a>
-                                                    <p id="control_help" class="hide"><%=i18n.localize("<strong>None " +
-        ":</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewed and modified only to specific publishers and creators with the roles that you specify")%></p></label>
+                                                    <p id="control_help" class="hide">
+                                                    <%=i18n.localize("<strong>None :</strong> The API is viewable,"
+                                                    + "modifiable by all the publishers and creators.<br/><strong>Restricted by roles :"
+                                                    + "</strong> The API can be viewable and modifiable by only "
+                                                    + "specific publishers and creators with the roles that you "
+                                                    + "specify")%></p></label>
                                                     <div class="col-sm-4">
                                                         <select class="select required form-control" id="access-control"
                                                         name="access-control">
