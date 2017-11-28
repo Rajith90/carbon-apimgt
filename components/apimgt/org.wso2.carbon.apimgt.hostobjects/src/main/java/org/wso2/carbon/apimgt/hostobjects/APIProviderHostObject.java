@@ -948,7 +948,6 @@ public class APIProviderHostObject extends ScriptableObject {
         api.setVisibility(visibility);
         api.setVisibleRoles(visibleRoles != null ? visibleRoles.trim() : null);
         api.setLastUpdated(new Date());
-        api.setAccessControlRoles(publisherAccessControlRoles);
         api.setAccessControl(publisherAccessControl);
         api.setAccessControlRoles(publisherAccessControlRoles);
         return saveAPI(apiProvider, api, fileHostObject, false);
@@ -1740,7 +1739,7 @@ public class APIProviderHostObject extends ScriptableObject {
         String bizOwner = (String) apiData.get("bizOwner", apiData);
         String bizOwnerEmail = (String) apiData.get("bizOwnerEmail", apiData);
         String visibility = (String) apiData.get("visibility", apiData);
-        String publisherAccessControl = (String) apiData.get("accessControl", apiData);
+        String publisherAccessControl = (String) apiData.get(APIConstants.ACCESS_CONTROL_PARAMETER, apiData);
         String thumbUrl = (String) apiData.get("thumbUrl", apiData);
         String environments = (String) apiData.get("environments", apiData);
         String corsConfiguraion = (String) apiData.get("corsConfiguration", apiData);
@@ -1750,7 +1749,7 @@ public class APIProviderHostObject extends ScriptableObject {
         	visibleRoles = (String) apiData.get("visibleRoles", apiData);
         }
         if (publisherAccessControl != null && publisherAccessControl.equals(APIConstants.API_RESTRICTED_VISIBILITY)) {
-            publisherAccessControlRoles = (String) apiData.get("accessControlRoles", apiData);
+            publisherAccessControlRoles = (String) apiData.get(APIConstants.ACCESS_CONTROL_PARAMETER, apiData);
         }
 
         String visibleTenants = "";

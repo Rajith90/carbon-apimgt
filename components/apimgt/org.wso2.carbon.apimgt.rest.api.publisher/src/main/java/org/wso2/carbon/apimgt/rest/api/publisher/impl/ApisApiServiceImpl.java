@@ -344,9 +344,8 @@ public class ApisApiServiceImpl extends ApisApiService {
             if (RestApiUtil.isDueToResourceNotFound(e) || RestApiUtil.isDueToAuthorizationFailure(e)) {
                 RestApiUtil.handleResourceNotFoundError(RestApiConstants.RESOURCE_API, apiId, e, log);
             } else if (isAuthorizationFailure(e)) {
-                RestApiUtil
-                        .handleAuthorizationFailure("Authorization failur while updating the lifecycle of API " + apiId,
-                                e, log);
+                RestApiUtil.handleAuthorizationFailure(
+                        "Authorization failure while updating the lifecycle of API " + apiId, e, log);
             } else {
                 RestApiUtil.handleInternalServerError("Error while updating lifecycle of API " + apiId, e, log);
             }
@@ -749,8 +748,7 @@ public class ApisApiServiceImpl extends ApisApiService {
                 RestApiUtil.handleAuthorizationFailure(
                         "Authorization failure while adding mediation policay for the API " + apiId, e, log);
             } else {
-                String errorMessage = "Error while adding the mediation policy : " + body.getName() +
-                        "of API " + apiId;
+                String errorMessage = "Error while adding the mediation policy : " + body.getName() + "of API " + apiId;
                 RestApiUtil.handleInternalServerError(errorMessage, e, log);
             }
         } catch (URISyntaxException e) {
@@ -814,7 +812,6 @@ public class ApisApiServiceImpl extends ApisApiService {
             }
             if (body.getAccessControlRoles() != null) {
                 String errorMessage = RestApiPublisherUtils.validateUserRoles(body.getAccessControlRoles());
-
                 if (!errorMessage.isEmpty()) {
                     RestApiUtil.handleBadRequest(errorMessage, log);
                 }
@@ -1599,9 +1596,6 @@ public class ApisApiServiceImpl extends ApisApiService {
      */
     private boolean isAuthorizationFailure(Exception e) {
         String errorMessage = e.getMessage();
-        if (errorMessage != null && errorMessage.contains("User is not authorized to")) {
-            return true;
-        }
-        return false;
+        return errorMessage != null && errorMessage.contains("User is not authorized to");
     }
 }

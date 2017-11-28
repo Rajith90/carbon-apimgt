@@ -393,7 +393,9 @@ public class APIDTO  {
   }
 
   /**
-   **/
+   * Publisher access control related parameters getters and setters.
+   *
+   */
   @ApiModelProperty(value = "AccessControl")
   @JsonProperty("accessControl")
   public AccessControlEnum getAccessControl() {

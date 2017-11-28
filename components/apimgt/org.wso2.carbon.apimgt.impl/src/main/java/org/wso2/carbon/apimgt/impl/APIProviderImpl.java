@@ -186,14 +186,12 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 	private static final Log log = LogFactory.getLog(APIProviderImpl.class);
 
 	private final String userNameWithoutChange;
-    private String[] userRoles;
 	// Property to indicate whether access control restriction feature is enabled.
 	private boolean isAccessControlRestrictionEnabled;
 
     public APIProviderImpl(String username) throws APIManagementException {
         super(username);
         this.userNameWithoutChange = username;
-        userRoles = APIUtil.getListOfRoles(userNameWithoutChange);
         APIManagerConfiguration config = ServiceReferenceHolder.getInstance().
                 getAPIManagerConfigurationService().getAPIManagerConfiguration();
         isAccessControlRestrictionEnabled = Boolean
@@ -5563,6 +5561,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         StringBuilder rolesQuery = new StringBuilder();
         rolesQuery.append('(');
         rolesQuery.append(APIConstants.NULL_USER_ROLE_LIST);
+        String[] userRoles = APIUtil.getListOfRoles(userNameWithoutChange);
         if (userRoles != null) {
             for (String userRole : userRoles) {
                 rolesQuery.append(" OR ");

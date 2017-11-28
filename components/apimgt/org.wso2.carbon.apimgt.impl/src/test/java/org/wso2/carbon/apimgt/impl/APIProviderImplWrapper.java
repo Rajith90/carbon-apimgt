@@ -38,10 +38,6 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserStoreException;
 
-import static org.wso2.carbon.apimgt.impl.AbstractAPIManagerTestCase.API_PROVIDER;
-import static org.wso2.carbon.apimgt.impl.AbstractAPIManagerTestCase.SAMPLE_API_NAME;
-import static org.wso2.carbon.apimgt.impl.AbstractAPIManagerTestCase.SAMPLE_API_VERSION;
-
 public class APIProviderImplWrapper extends APIProviderImpl {
 
     private API api;
@@ -71,6 +67,7 @@ public class APIProviderImplWrapper extends APIProviderImpl {
     @Override
     public API getAPI(APIIdentifier identifier) throws APIManagementException {
         return api;
+
     }
 
     @Override

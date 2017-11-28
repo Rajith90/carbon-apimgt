@@ -1609,8 +1609,8 @@ public class AbstractAPIManagerTestCase {
                 abstractAPIManager.searchPaginatedAPIs(APIConstants.API_OVERVIEW_PROVIDER, null, 0, 5, false)
                         .get("length"), 0);
         BDDMockito.when(GovernanceUtils
-                .findGovernanceArtifacts(APIConstants.API_OVERVIEW_OWNER, registry, APIConstants.API_RXT_MEDIA_TYPE))
-                .thenThrow(RegistryException.class).thenReturn(governanceArtifactList);
+                .findGovernanceArtifacts(Mockito.anyString(), Mockito.any(Registry.class), Mockito.anyString(),
+                        Mockito.anyBoolean())).thenThrow(RegistryException.class).thenReturn(governanceArtifactList);
         try {
             abstractAPIManager.searchPaginatedAPIs(APIConstants.API_OVERVIEW_PROVIDER, null, 0, 5, false);
             Assert.fail("APIM exception not thrown for error scenario");

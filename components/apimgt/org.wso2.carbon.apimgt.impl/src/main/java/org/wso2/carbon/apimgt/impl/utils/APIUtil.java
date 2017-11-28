@@ -475,8 +475,9 @@ public final class APIUtil {
             String artifactPath = GovernanceUtils.getArtifactPath(registry, artifact.getId());
             Resource apiResource = registry.get(artifactPath);
             api.setAccessControl(apiResource.getProperty(APIConstants.ACCESS_CONTROL));
-            api.setAccessControlRoles("null".equals(apiResource.getProperty(APIConstants.PUBLISHER_ROLES))? null :
-                    apiResource.getProperty(APIConstants.PUBLISHER_ROLES));
+            api.setAccessControlRoles(
+                    APIConstants.NULL_USER_ROLE_LIST.equals(apiResource.getProperty(APIConstants.PUBLISHER_ROLES)) ?
+                            null : apiResource.getProperty(APIConstants.PUBLISHER_ROLES));
             api.setRating(getAverageRating(apiId));
             //set description
             api.setDescription(artifact.getAttribute(APIConstants.API_OVERVIEW_DESCRIPTION));
@@ -1182,12 +1183,11 @@ public final class APIUtil {
         if (!apiPath.contains(APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR)) {
             length = (APIConstants.API_IMAGE_LOCATION + RegistryConstants.PATH_SEPARATOR).length();
         }
-        if (length <=  0) {
+        if (length <= 0) {
             length = (APIConstants.API_DOC_LOCATION + RegistryConstants.PATH_SEPARATOR).length();
         }
         String relativePath = apiPath.substring(length);
         String[] values = relativePath.split(RegistryConstants.PATH_SEPARATOR);
-
         if (values.length > 3) {
             return new APIIdentifier(values[0], values[1], values[2]);
         }
@@ -2228,9 +2228,8 @@ public final class APIUtil {
         }
 
         if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
-            Integer value = getValueFromCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE,
-                    userNameWithoutChange);
-            if (value != null){
+            Integer value = getValueFromCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange);
+            if (value != null) {
                 return value == 1;
             }
 
@@ -2395,19 +2394,22 @@ public final class APIUtil {
         }
         String tenantDomain = MultitenantUtils.getTenantDomain(username);
         try {
-            if (!org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getTenantId(tenantDomain);
-                UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService().getTenantUserRealm(tenantId).getUserStoreManager();
+            if (!org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME
+                    .equals(tenantDomain)) {
+                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                        .getTenantId(tenantDomain);
+                UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService()
+                        .getTenantUserRealm(tenantId).getUserStoreManager();
                 roles = manager.getRoleListOfUser(MultitenantUtils.getTenantAwareUsername(username));
             } else {
-                roles = AuthorizationManager.getInstance().getRolesOfUser(MultitenantUtils.getTenantAwareUsername
-                        (username));
+                roles = AuthorizationManager.getInstance()
+                        .getRolesOfUser(MultitenantUtils.getTenantAwareUsername(username));
             }
             addToRolesCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username, roles);
             return roles;
         } catch (UserStoreException e) {
-          throw new APIManagementException("UserStoreException while trying the role list of the user " + username,
-                  e);
+            throw new APIManagementException("UserStoreException while trying the role list of the user " + username,
+                    e);
         }
     }
 
@@ -2421,8 +2423,8 @@ public final class APIUtil {
     protected static <T> void addToRolesCache(String cacheName, String key, T value) {
         if (isPublisherRoleCacheEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Publisher role cache is enabled, adding the roles for the " + key + " to the "
-                        + "cache " + cacheName + "'");
+                log.debug("Publisher role cache is enabled, adding the roles for the " + key + " to the cache "
+                        + cacheName + "'");
             }
             Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(cacheName).put(key, value);
         }
@@ -2438,8 +2440,8 @@ public final class APIUtil {
     protected static <T> T getValueFromCache(String cacheName, String key) {
         if (isPublisherRoleCacheEnabled) {
             if (log.isDebugEnabled()) {
-                log.debug("Publisher role cache is enabled, retrieving the roles for  " + key + " from the "
-                        + "cache " + cacheName + "'");
+                log.debug("Publisher role cache is enabled, retrieving the roles for  " + key + " from the cache "
+                        + cacheName + "'");
             }
             Cache<String, T> rolesCache = Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER)
                     .getCache(cacheName);
