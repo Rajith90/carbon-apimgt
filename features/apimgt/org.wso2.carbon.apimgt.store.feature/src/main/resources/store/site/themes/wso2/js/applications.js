@@ -455,6 +455,8 @@ $("#application-actions").each(function(){
     var source   = $("#application-name").html();
     var application_name = Handlebars.compile(source);    
 
+    var grpIdList = false;
+
     var app_list = $('#application-table').datatables_extended({
         serverSide: true,
         processing: true,
@@ -468,6 +470,7 @@ $("#application-actions").each(function(){
                 else{
                     $('#application-table-nodata').removeClass("hide");
                 }
+                grpIdList = json.grpIdList;
                 return json.applications
             }
         },
@@ -475,7 +478,8 @@ $("#application-actions").each(function(){
             { "data": "name",
               "render": function(data, type, rec, meta){
                 var context = rec ;
-                if(rec.groupId !="" && rec.groupId != undefined)
+                context.grpIdList = grpIdList;
+                if(rec.groupId !="" && rec.groupId != undefined && !context.grpIdList)
                     context.shared = true;
                 else
                     context.shared = false;
@@ -484,7 +488,10 @@ $("#application-actions").each(function(){
                     value = value.replace((">"+rec.name+"<"),("><font color='red'>"+rec.name+ i18n.t(" (Blacklisted)") + "<"));
 
                 }
-                return  value;            
+
+                  value = value.replace("> "+rec.owner+"/","> <font color=\"#00008b\">"+rec.owner+"/</font>");
+                  //alert(value);
+                return  value;
               }
             },
             { "data": "tier",

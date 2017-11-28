@@ -3057,6 +3057,7 @@ public class APIStoreHostObject extends ScriptableObject {
                     row.put("groupId", row, application.getGroupId());
                     row.put("isBlacklisted", row, application.getIsBlackListed());
                     row.put("totalCount", row, applicationCount);
+                    row.put("owner", row, application.getSubscriber().getName());
                     myn.put(i++, myn, row);
                 }
 
@@ -4482,19 +4483,31 @@ public class APIStoreHostObject extends ScriptableObject {
      * @return String group id.
      *
      */
-    public static String jsFunction_getGroupIds(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+    public static NativeArray jsFunction_getGroupIds(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
         String response = (String) args[0];
         APIConsumer consumer = getAPIConsumer(thisObj);
-        String groupId = null;
+        NativeArray grpIdList = null;
+        String[] groupIdArray = null;
         try {
-            groupId = consumer.getGroupIds(response);
+            groupIdArray = consumer.getGroupIds(response);
+            grpIdList = new NativeArray(0);
+
+            int i = 0;
+            for (String groupId : groupIdArray) {
+                grpIdList.put(i, grpIdList, groupId);
+                i++;
+            }
+            return grpIdList;
         } catch (APIManagementException e) {
         	//This is actually not an exception, that should abort the user flow. If the groupId is not available then
         	//the flow for which the group id is not required will be run.
             log.error("Error occurred while getting group id", e);
         }
-        return groupId;
+        if(log.isDebugEnabled()){
+            log.debug("Group Id List :- "+grpIdList.toString());
+        }
 
+        return grpIdList;
     }
 
     /**

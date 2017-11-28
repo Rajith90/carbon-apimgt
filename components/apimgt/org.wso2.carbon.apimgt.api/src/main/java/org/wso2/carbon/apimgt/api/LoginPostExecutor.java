@@ -29,4 +29,6 @@ public interface LoginPostExecutor {
      * @return organization identifier
      */
     String getGroupingIdentifiers(String response);
+
+    String[] getGroupingIdentifierList(String response);
 }

@@ -122,6 +122,11 @@ public class SAMLGroupIDExtractorImpl implements LoginPostExecutor {
         return organization;
     }
 
+    @Override
+    public String[] getGroupingIdentifierList(String s) {
+        return new String[0];
+    }
+
     protected ByteArrayInputStream getByteArrayInputStream(String loginResponse) {
         return new ByteArrayInputStream(loginResponse.getBytes());
     }

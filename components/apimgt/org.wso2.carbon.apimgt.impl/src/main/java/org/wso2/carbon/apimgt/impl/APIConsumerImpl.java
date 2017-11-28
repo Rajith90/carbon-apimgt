@@ -2924,13 +2924,20 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 	}
 
 	@Override
-    public String getGroupIds(String response) throws APIManagementException {
+    public String[] getGroupIds(String response) throws APIManagementException {
         String groupingExtractorClass = APIUtil.getGroupingExtractorImplementation();
         if (groupingExtractorClass != null) {
             try {
                 LoginPostExecutor groupingExtractor = (LoginPostExecutor) APIUtil.getClassForName
                         (groupingExtractorClass).newInstance();
-                return groupingExtractor.getGroupingIdentifiers(response);
+                //switching 2.1.0 and 2.2.0
+                if(APIUtil.isMultiGroupSharingEnabled()){
+                    return groupingExtractor.getGroupingIdentifierList(response);
+                }else {
+                    String groupId = groupingExtractor.getGroupingIdentifiers(response);
+                    return new String[]{groupId};
+                }
+
             } catch (ClassNotFoundException e) {
                 String msg = groupingExtractorClass + " is not found in run time";
                 log.error(msg, e);

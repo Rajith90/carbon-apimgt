@@ -14,7 +14,6 @@ jagg.block("application/application-view", {
             username = user.username;
             var applicationName = request.getParameter("name");
             var groupId = session.get("groupId");
-
             mod = jagg.module("application");
             result = mod.getApplicationByName(username,applicationName,groupId);
             application = result.application;
