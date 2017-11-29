@@ -64,6 +64,11 @@ public class APIProviderImplWrapper extends APIProviderImpl {
         super.createAPI(api);
     }
 
+    public void updateSubscription(APIIdentifier apiId, String subStatus, int appId) throws APIManagementException {
+        checkAccessControlPermission(apiId);
+        super.updateSubscription(apiId, subStatus, appId);
+    }
+
     @Override
     public API getAPI(APIIdentifier identifier) throws APIManagementException {
         return api;
