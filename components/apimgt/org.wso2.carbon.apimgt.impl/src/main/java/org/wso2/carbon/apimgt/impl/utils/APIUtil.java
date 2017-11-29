@@ -234,7 +234,7 @@ public final class APIUtil {
     private static Set<String> currentLoadingTenants = new HashSet<String>();
 
     private static volatile Set<String> whiteListedScopes;
-    private static boolean isPublisherRoleCacheEnabled = false;
+    private static boolean isPublisherRoleCacheEnabled = true;
 
 
     //Need tenantIdleTime to check whether the tenant is in idle state in loadTenantConfig method
@@ -256,7 +256,7 @@ public final class APIUtil {
                 .getAPIManagerConfigurationService().getAPIManagerConfiguration();
         String isPublisherRoleCacheEnabledConfiguration = apiManagerConfiguration
                 .getFirstProperty(APIConstants.PUBLISHER_ROLE_CACHE_ENABLED);
-        isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration != null && Boolean
+        isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration == null || Boolean
                 .parseBoolean(isPublisherRoleCacheEnabledConfiguration);
     }
 
@@ -6714,5 +6714,19 @@ public final class APIUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * To clear the publisherRoleCache for certain users.
+     *
+     * @param userName Names of the user.
+     */
+    public static void clearRoleCache(String userName) {
+        if (isPublisherRoleCacheEnabled) {
+            Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIConstants
+                    .API_PUBLISHER_ADMIN_PERMISSION_CACHE).remove(userName);
+            Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIConstants
+                    .API_PUBLISHER_USER_ROLE_CACHE).remove(userName);
+        }
     }
 }

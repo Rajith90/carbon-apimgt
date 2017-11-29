@@ -16,7 +16,7 @@
         <table class="table table-bordered">
             <tbody>
             <tr>
-                <td class="col-sm-3"><%=i18n.localize("Visibility")%></td>
+                <td class="col-sm-3"><%=i18n.localize("Visibility on Store")%></td>
                 <td id="inUrl">
                     <%if(api.visibility == "restricted"){%>
                         <%=i18n.localize("Restricted by roles, only visible to ") + api.roles +"."%><%}

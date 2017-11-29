@@ -168,6 +168,7 @@ import javax.cache.Caching;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
+import static org.wso2.carbon.apimgt.impl.APIConstants.AUTHORIZATION_ERROR_MESSAGE;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.isAllowDisplayAPIsWithMultipleStatus;
 
 /**
@@ -5542,7 +5543,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                     log.debug("API " + identifier + " cannot be accessed by user '" + username + "'. It "
                             + "has a publisher access control restriction");
                 }
-                throw new APIManagementException("User is not authorized to view or modify the API " + identifier);
+                throw new APIManagementException(AUTHORIZATION_ERROR_MESSAGE + " view or modify the API " + identifier);
             }
         } catch (RegistryException e) {
             throw new APIManagementException(

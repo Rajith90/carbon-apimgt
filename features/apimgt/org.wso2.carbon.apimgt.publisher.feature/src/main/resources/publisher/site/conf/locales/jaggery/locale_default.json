@@ -510,6 +510,7 @@
     "View Content": "View Content",
     "View in Store": "View in Store",
     "Visibility": "Visibility",
+    "Visibility on Store": "Visibility on Store",
     "Visible to Roles": "Visible to Roles",
     "Visible to Tenants": "Visible to Tenants",
     "Visible to my Domain": "Visible to my Domain",
@@ -581,5 +582,6 @@
     "tiers": "tiers",
     "user": "user",
     "Access Control" : "Access Control",
-    "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify"
+    "<strong>Public :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>Public :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify"
+
 }

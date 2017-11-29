@@ -178,7 +178,7 @@ var faultSequencesLoaded = false;
                        </select>
                        <a class="icon-question-sign help_popup" help_data="publisherrole_help" title="publisherrole_help"></a>
                        <p id="publisherrole_help" class="hide">
-                       <%=i18n.localize("<strong>None :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify")%>
+                       <%=i18n.localize("<strong>Public :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify")%>
                        </p>
                    </div>
                </div>
@@ -196,7 +196,7 @@ var faultSequencesLoaded = false;
                 </div>
             <% } %>
             <div class="control-group">
-               <label class="control-label" for="visibility"><%=i18n.localize("Visibility")%>:<span
+               <label class="control-label" for="visibility"><%=i18n.localize("Visibility on Store")%>:<span
                class="requiredAstrix">*</span></label>
                <div class="controls">
                    <select class="select required" id="visibility" name="visibility" onchange="showHideRoles()">

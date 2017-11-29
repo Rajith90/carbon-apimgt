@@ -1596,6 +1596,6 @@ public class ApisApiServiceImpl extends ApisApiService {
      */
     private boolean isAuthorizationFailure(Exception e) {
         String errorMessage = e.getMessage();
-        return errorMessage != null && errorMessage.contains("User is not authorized to");
+        return errorMessage != null && errorMessage.contains(APIConstants.AUTHORIZATION_ERROR_MESSAGE);
     }
 }

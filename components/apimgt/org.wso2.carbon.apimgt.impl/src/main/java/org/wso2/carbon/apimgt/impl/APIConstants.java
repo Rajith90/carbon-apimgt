@@ -763,7 +763,6 @@ public final class APIConstants {
     public static final String APP_SUBSCRIPTION_SCOPE_CACHE = "appSubscriptionScopeCache";
     public static final String APP_SUBSCRIPTION_FILTERED_SCOPE_CACHE = "appSubscriptionFilteredScopeCache";
     public static final String API_PUBLISHER_USER_ROLE_CACHE = "appPublisherUserRoleCache";
-    public static final String API_PUBLISHER_TENANT_ROLE_CACHE = "appPublisherTenantRoleCache";
     public static final String API_PUBLISHER_ADMIN_PERMISSION_CACHE = "apimAdminPermissionCache";
 
     //URI Authentication Schemes
@@ -1323,7 +1322,7 @@ public final class APIConstants {
      */
     public static final String PUBLISHER_ROLES = "publisher_roles";
     public static final String ACCESS_CONTROL = "publisher_access_control";
-    public static final String NO_ACCESS_CONTROL = "none";
+    public static final String NO_ACCESS_CONTROL = "all";
     public static final String NULL_USER_ROLE_LIST = "null";
 
     /**
@@ -1336,5 +1335,7 @@ public final class APIConstants {
      */
     public static final String ACCESS_CONTROL_PARAMETER = "accessControl";
     public static final String ACCESS_CONTROL_ROLES_PARAMETER = "accessControlRoles";
+
+    public static final String AUTHORIZATION_ERROR_MESSAGE = "User is not authorized to";
 
 }

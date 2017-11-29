@@ -26,6 +26,7 @@ import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.utils.APIAuthenticationAdminClient;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowConstants;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowException;
 import org.wso2.carbon.apimgt.impl.workflow.WorkflowExecutor;
@@ -145,6 +146,7 @@ public class KeyManagerUserOperationListener extends IdentityOathEventListener {
             username = username.toLowerCase();
         }
 
+        APIUtil.clearRoleCache(username);
         APIManagerConfiguration config = getApiManagerConfiguration();
 
         if (config.getApiGatewayEnvironments().size() <= 0) {
