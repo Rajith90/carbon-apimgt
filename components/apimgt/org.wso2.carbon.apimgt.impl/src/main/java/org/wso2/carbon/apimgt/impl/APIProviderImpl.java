@@ -408,6 +408,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      */
     @Override
     public Set<Subscriber> getSubscribersOfAPI(APIIdentifier identifier) throws APIManagementException {
+
         Set<Subscriber> subscriberSet = null;
         try {
             subscriberSet = apiMgtDAO.getSubscribersOfAPI(identifier);
@@ -794,7 +795,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     }
 
     public boolean isAPIUpdateValid(API api) throws APIManagementException{
-        String apiSourcePath = APIUtil.getAPIPath(api.getId());
+    	String apiSourcePath = APIUtil.getAPIPath(api.getId());
     	boolean isValid = false;
 
     	try{
@@ -840,6 +841,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         if (!isValid) {
             throw new APIManagementException(" User doesn't have permission for update");
         }
+
         Map<String, Map<String, String>> failedGateways = new ConcurrentHashMap<String, Map<String, String>>();
         API oldApi = getAPI(api.getId());
         if (oldApi.getStatus().equals(api.getStatus())) {
@@ -1401,6 +1403,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     @Override
     public boolean updateAPIforStateChange(APIIdentifier identifier, APIStatus newStatus,
             Map<String, String> failedGatewaysMap) throws APIManagementException, FaultGatewaysException {
+
         boolean isSuccess = false;
         Map<String, Map<String, String>> failedGateways = new ConcurrentHashMap<String, Map<String, String>>();
         String provider = identifier.getProviderName();
@@ -2192,7 +2195,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             GenericArtifact artifact = artifactManager.getGenericArtifact(docId);
             docPath = artifact.getPath();
             String docFilePath =  artifact.getAttribute(APIConstants.DOC_FILE_PATH);
-            if (docFilePath != null) {
+
+            if(docFilePath!=null)
+            {
                 File tempFile = new File(docFilePath);
                 String fileName = tempFile.getName();
                 docFilePath = APIUtil.getDocumentationFilePath(apiId,fileName);
@@ -2239,7 +2244,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     public void addDocumentationContent(API api, String documentationName, String text) throws APIManagementException {
 
     	APIIdentifier identifier = api.getId();
-        String documentationPath = APIUtil.getAPIDocPath(identifier) + documentationName;
+    	String documentationPath = APIUtil.getAPIDocPath(identifier) + documentationName;
     	String contentPath = APIUtil.getAPIDocPath(identifier) + APIConstants.INLINE_DOCUMENT_CONTENT_DIR +
     			RegistryConstants.PATH_SEPARATOR + documentationName;
         boolean isTenantFlowStarted = false;
@@ -2324,6 +2329,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      *          if failed to update docs
      */
     public void updateDocumentation(APIIdentifier apiId, Documentation documentation) throws APIManagementException {
+
         String apiPath = APIUtil.getAPIPath(apiId);
         API api = getAPI(apiPath);
         String docPath = APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR + apiId.getProviderName() +
@@ -2396,6 +2402,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      *          if failed to copy docs
      */
     public void copyAllDocumentation(APIIdentifier apiId, String toVersion) throws APIManagementException {
+
         String oldVersion = APIUtil.getAPIDocPath(apiId);
         String newVersion = APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR +
                             apiId.getProviderName() + RegistryConstants.PATH_SEPARATOR + apiId.getApiName() +
@@ -2656,7 +2663,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      *          If failed to update subscription status
      */
     public void updateSubscription(APIIdentifier apiId,String subStatus,int appId) throws APIManagementException {
-        apiMgtDAO.updateSubscription(apiId, subStatus, appId);
+        apiMgtDAO.updateSubscription(apiId,subStatus,appId);
     }
 
     /**
@@ -2843,7 +2850,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         }
     }
 
-    @Override
     public Map<Documentation, API> searchAPIsByDoc(String searchTerm, String searchType) throws APIManagementException {
         return searchAPIDoc(registry, tenantId, username, searchTerm);
     }
@@ -3330,6 +3336,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 	 */
 
 	public List<String> getCustomInSequences(APIIdentifier apiIdentifier) throws APIManagementException {
+
 		List<String> sequenceList = new ArrayList<String>();
 		boolean isTenantFlowStarted = false;
 		try {
@@ -3401,6 +3408,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 	 */
 
 	public List<String> getCustomOutSequences(APIIdentifier apiIdentifier) throws APIManagementException {
+
 		List<String> sequenceList = new ArrayList<String>();
 		boolean isTenantFlowStarted = false;
 		try {
@@ -3605,6 +3613,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      */
 
     public List<String> getCustomFaultSequences(APIIdentifier apiIdentifier) throws APIManagementException {
+
         List<String> sequenceList = new ArrayList<String>();
         boolean isTenantFlowStarted = false;
         try {
@@ -3979,6 +3988,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
      * @throws APIManagementException
      */
     public String[] getConsumerKeys(APIIdentifier apiIdentifier) throws APIManagementException {
+
         return apiMgtDAO.getConsumerKeys(apiIdentifier);
     }
 
@@ -3996,6 +4006,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
 
     public APIStateChangeResponse changeLifeCycleStatus(APIIdentifier apiIdentifier, String action)
             throws APIManagementException, FaultGatewaysException{
+
         APIStateChangeResponse response = new APIStateChangeResponse();
         try {
             PrivilegedCarbonContext.startTenantFlow();
