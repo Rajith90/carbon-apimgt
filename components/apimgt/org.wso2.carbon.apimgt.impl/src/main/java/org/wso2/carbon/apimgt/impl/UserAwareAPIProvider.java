@@ -29,7 +29,11 @@ import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.wso2.carbon.apimgt.impl.APIConstants.AUTHORIZATION_ERROR_MESSAGE;
 
@@ -72,6 +76,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         super.createNewAPIVersion(api, newVersion);
     }
 
+    @Override
     public List<String> getCustomInSequences(APIIdentifier apiIdentifier) throws APIManagementException {
         checkAccessControlPermission(apiIdentifier);
         return super.getCustomInSequences(apiIdentifier);
@@ -94,11 +99,11 @@ public class UserAwareAPIProvider extends APIProviderImpl {
 
     @Override
     public boolean updateAPIStatus(APIIdentifier identifier, String status, boolean publishToGateway,
-            boolean deprecateOldVersions, boolean makeKeysForwardCompatible) throws APIManagementException,
-            FaultGatewaysException {
+            boolean deprecateOldVersions, boolean makeKeysForwardCompatible)
+            throws APIManagementException, FaultGatewaysException {
         checkAccessControlPermission(identifier);
-        return super.updateAPIStatus(identifier, status, publishToGateway, deprecateOldVersions,
-                makeKeysForwardCompatible);
+        return super
+                .updateAPIStatus(identifier, status, publishToGateway, deprecateOldVersions, makeKeysForwardCompatible);
     }
 
     @Override
@@ -160,6 +165,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         super.changeAPIStatus(api, status, userId, updateGatewayConfig);
     }
 
+    @Override
     public Map<String, String> propergateAPIStatusChangeToGateways(APIIdentifier identifier, APIStatus newStatus)
             throws APIManagementException {
         checkAccessControlPermission(identifier);
@@ -173,6 +179,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         return super.updateAPIforStateChange(identifier, newStatus, failedGatewaysMap);
     }
 
+    @Override
     public void addFileToDocumentation(APIIdentifier apiId, Documentation documentation, String filename,
             InputStream content, String contentType) throws APIManagementException {
         checkAccessControlPermission(apiId);
@@ -209,13 +216,13 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     }
 
     @Override
-    public void removeDocumentation(APIIdentifier apiId, String docName,
-                                    String docType) throws APIManagementException {
+    public void removeDocumentation(APIIdentifier apiId, String docName, String docType) throws APIManagementException {
         checkCreatePermission();
         checkAccessControlPermission(apiId);
         super.removeDocumentation(apiId, docName, docType);
     }
 
+    @Override
     public void removeDocumentation(APIIdentifier apiId, String docId) throws APIManagementException {
         checkAccessControlPermission(apiId);
         super.removeDocumentation(apiId, docId);
@@ -282,6 +289,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         return super.changeLifeCycleStatus(apiIdentifier, targetStatus);
     }
 
+    @Override
     public boolean checkAndChangeAPILCCheckListItem(APIIdentifier apiIdentifier, String checkItemName,
             boolean checkItemValue) throws APIManagementException {
         checkAccessControlPermission(apiIdentifier);
@@ -291,13 +299,16 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     public boolean changeAPILCCheckListItems(APIIdentifier apiIdentifier, int checkItem, boolean checkItemValue)
             throws APIManagementException {
         checkPublishPermission();
+        checkAccessControlPermission(apiIdentifier);
         return super.changeAPILCCheckListItems(apiIdentifier, checkItem, checkItemValue);
     }
 
+    @Override
     public Map<String, Object> getAPILifeCycleData(APIIdentifier apiId) throws APIManagementException {
         checkAccessControlPermission(apiId);
         return super.getAPILifeCycleData(apiId);
     }
+
     @Override
     public API getAPI(APIIdentifier identifier) throws APIManagementException {
         checkAccessControlPermission(identifier);
@@ -323,7 +334,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     }
 
     @Override
-    public String getDefaultVersion(APIIdentifier apiid) throws APIManagementException{
+    public String getDefaultVersion(APIIdentifier apiid) throws APIManagementException {
         checkAccessControlPermission(apiid);
         return super.getDefaultVersion(apiid);
     }
@@ -359,7 +370,8 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         return super.getAllApiSpecificMediationPolicies(apiIdentifier);
     }
 
-    public boolean isAPIUpdateValid(API api) throws APIManagementException{
+    @Override
+    public boolean isAPIUpdateValid(API api) throws APIManagementException {
         if (api != null) {
             checkAccessControlPermission(api.getId());
         }
@@ -395,8 +407,8 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     }
 
     @Override
-    public Map<Documentation, API> searchAPIDoc(Registry registry, int tenantID, String username,
-            String searchTerm) throws APIManagementException {
+    public Map<Documentation, API> searchAPIDoc(Registry registry, int tenantID, String username, String searchTerm)
+            throws APIManagementException {
         Map<Documentation, API> apiByDocumentation = APIUtil
                 .searchAPIsByDoc(registry, tenantId, username, searchTerm, APIConstants.PUBLISHER_CLIENT);
         Map<Documentation, API> filteredAPIDocumentation = new HashMap<Documentation, API>();
@@ -430,8 +442,8 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     }
 
     @Override
-    public Resource getApiSpecificMediationResourceFromUuid(String uuid, String resourcePath) throws
-            APIManagementException {
+    public Resource getApiSpecificMediationResourceFromUuid(String uuid, String resourcePath)
+            throws APIManagementException {
         APIIdentifier apiIdentifier = APIUtil.getAPIIdentifier(resourcePath);
         checkAccessControlPermission(apiIdentifier);
         return super.getApiSpecificMediationResourceFromUuid(uuid, resourcePath);
