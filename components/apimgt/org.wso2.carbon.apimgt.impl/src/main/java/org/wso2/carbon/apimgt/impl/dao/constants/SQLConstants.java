@@ -2569,6 +2569,16 @@ public class SQLConstants {
             "AND CON_APP.CONSUMER_KEY=AKM.CONSUMER_KEY " +
             "AND AKM.APPLICATION_ID = APP.APPLICATION_ID";
 
+
+    public static final String REMOVE_GROUP_ID_MAPPING_SQL =
+            "DELETE FROM AM_APPLICATION_GROUP_MAPPING WHERE APPLICATION_ID = ?";
+
+    public static final String ADD_GROUP_ID_MAPPING_SQL =
+            "INSERT INTO AM_APPLICATION_GROUP_MAPPING (APPLICATION_ID, GROUP_ID) VALUES (?,?)";
+
+    public static final String GET_GROUP_ID_SQL =
+            "SELECT GROUP_ID  FROM AM_APPLICATION_GROUP_MAPPING WHERE APPLICATION_ID = ?";
+
     /** Throttle related constants**/
 
     public static class ThrottleSQLConstants{

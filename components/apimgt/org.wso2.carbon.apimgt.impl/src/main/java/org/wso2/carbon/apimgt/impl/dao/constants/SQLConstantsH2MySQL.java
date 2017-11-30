@@ -100,7 +100,7 @@ public class SQLConstantsH2MySQL extends SQLConstants{
                     " AND (" +
                     "    (APPLICATION_ID IN ( SELECT APPLICATION_ID FROM AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params) ))" +
                     "           OR " +
-                    "    ((LOWER (SUB.USER_ID) = LOWER(?)) AND (APPLICATION_ID NOT IN (SELECT APPLICATION_ID FROM AM_APPLICATION_GROUP_MAPPING)))" +
+                    "    (LOWER (SUB.USER_ID) = LOWER(?))" +
                     " )" +
                     " And " +
                     "    NAME like ?" +
@@ -130,7 +130,7 @@ public class SQLConstantsH2MySQL extends SQLConstants{
                     " AND (" +
                     "    (APPLICATION_ID IN ( SELECT APPLICATION_ID FROM AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params)))" +
                     "           OR " +
-                    "    ((LOWER (SUB.USER_ID) = LOWER(?)) AND (APPLICATION_ID NOT IN (SELECT APPLICATION_ID FROM AM_APPLICATION_GROUP_MAPPING)))" +
+                    "    (LOWER (SUB.USER_ID) = LOWER(?))" +
                     " )" +
                     " And "+
                     "    NAME like ?"+

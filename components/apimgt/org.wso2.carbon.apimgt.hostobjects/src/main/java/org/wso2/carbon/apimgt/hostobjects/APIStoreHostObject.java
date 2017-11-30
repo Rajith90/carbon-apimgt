@@ -41,25 +41,7 @@ import org.mozilla.javascript.ScriptableObject;
 import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ApplicationNotFoundException;
-import org.wso2.carbon.apimgt.api.model.API;
-import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIKey;
-import org.wso2.carbon.apimgt.api.model.APIRating;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
-import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
-import org.wso2.carbon.apimgt.api.model.Application;
-import org.wso2.carbon.apimgt.api.model.Comment;
-import org.wso2.carbon.apimgt.api.model.Documentation;
-import org.wso2.carbon.apimgt.api.model.DocumentationType;
-import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
-import org.wso2.carbon.apimgt.api.model.Scope;
-import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
-import org.wso2.carbon.apimgt.api.model.Subscriber;
-import org.wso2.carbon.apimgt.api.model.SubscriptionResponse;
-import org.wso2.carbon.apimgt.api.model.Tag;
-import org.wso2.carbon.apimgt.api.model.Tier;
-import org.wso2.carbon.apimgt.api.model.URITemplate;
-
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.hostobjects.internal.HostObjectComponent;
 import org.wso2.carbon.apimgt.hostobjects.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.APIConstants;
@@ -113,16 +95,7 @@ import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class APIStoreHostObject extends ScriptableObject {
@@ -3096,6 +3069,7 @@ public class APIStoreHostObject extends ScriptableObject {
                     row.put("apiCount", row, subscriptionCount);
                     row.put("groupId", row, application.getGroupId());
                     row.put("isBlacklisted", row, application.getIsBlackListed());
+                    row.put("owner", row, application.getSubscriber().getName());
                     myn.put(i++, myn, row);
                 }
             }
@@ -3134,7 +3108,7 @@ public class APIStoreHostObject extends ScriptableObject {
                 row.put("callbackUrl", row, application.getCallbackUrl());
                 row.put("status", row, application.getStatus());
                 row.put("description", row, application.getDescription());
-
+                row.put("groupId", row, application.getGroupId());
                 return row;
             }
         }
@@ -3308,6 +3282,15 @@ public class APIStoreHostObject extends ScriptableObject {
             updatedApplication.setTier(tier);
             updatedApplication.setCallbackUrl(callbackUrl);
             updatedApplication.setDescription(description);
+
+            if (APIUtil.isMultiGroupSharingEnabled()) {
+                String newGroupId = null;
+                if (args.length > 7 && args[7] != null) {
+                    newGroupId = (String) args[7];
+                }
+                updatedApplication.setGroupId(newGroupId);
+            }
+
             apiConsumer.updateApplication(updatedApplication);
             return true;
         }
@@ -4499,12 +4482,12 @@ public class APIStoreHostObject extends ScriptableObject {
             }
             return grpIdList;
         } catch (APIManagementException e) {
-        	//This is actually not an exception, that should abort the user flow. If the groupId is not available then
-        	//the flow for which the group id is not required will be run.
+            //This is actually not an exception, that should abort the user flow. If the groupId is not available then
+            //the flow for which the group id is not required will be run.
             log.error("Error occurred while getting group id", e);
         }
-        if(log.isDebugEnabled()){
-            log.debug("Group Id List :- "+grpIdList.toString());
+        if (log.isDebugEnabled()) {
+            log.debug("Group Id List :- " + grpIdList.toString());
         }
 
         return grpIdList;

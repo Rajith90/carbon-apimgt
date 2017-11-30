@@ -27,13 +27,15 @@ $(document).ready(function () {
         var apiPath = $("#apiPath").val();
         var goBack = $("#goBack").val();
         var description = $("#description").val();
+        var groupId = $("#groupId").val();
         var status='';
         jagg.post("/site/blocks/application/application-add/ajax/application-add.jag", {
             action:"addApplication",
             application:application,
             tier:tier,
             callbackUrl:callbackUrl,
-            description:description
+            description:description,
+            groupId:groupId
         }, function (result) {
             if (result.error == false) {
                 status=result.status;

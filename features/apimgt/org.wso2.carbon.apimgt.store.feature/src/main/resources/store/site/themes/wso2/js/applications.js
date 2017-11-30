@@ -390,10 +390,10 @@ $("#subscription-actions").each(function(){
 
     var sub_list = $('#subscription-table').datatables_extended({
         "ajax": {
-            "url": jagg.getBaseUrl()+ "/site/blocks/subscription/subscription-list/ajax/subscription-list.jag?action=getSubscriptionByApplication&app="+$("#subscription-table").attr('data-app'),
+            "url": jagg.getBaseUrl()+ "/site/blocks/subscription/subscription-list/ajax/subscription-list.jag?action=getSubscriptionByApplication&app="+$("#subscription-table").attr('data-app')+"&groupId="+$("#subscription-table").attr('data-grp'),
             "dataSrc": function ( json ) {
             	if(json.apis.length > 0){
-            		$('#subscription-table-wrap').removeClass("hide");            		
+            		$('#subscription-table-wrap').removeClass("hide");
             	}
             	else{
             		$('#subscription-table-nodata').removeClass("hide"); 
@@ -490,7 +490,6 @@ $("#application-actions").each(function(){
                 }
 
                   value = value.replace("> "+rec.owner+"/","> <font color=\"#00008b\">"+rec.owner+"/</font>");
-                  //alert(value);
                 return  value;
               }
             },
