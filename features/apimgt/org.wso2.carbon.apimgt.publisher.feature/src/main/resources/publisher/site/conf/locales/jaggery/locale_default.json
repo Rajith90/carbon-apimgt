@@ -582,5 +582,10 @@
     "Add New Certificate": "Add New Certificate",
     "Manage Certificates": "Manage Certificates",
     "Endpoint": "Endpoint",
-    "This action cannot be undone": "This action cannot be undone"
+    "This action cannot be undone": "This action cannot be undone",
+    "Access Control" : "Access Control",
+    "Visibility on Store": "Visibility on Store",
+    "all": "All",
+    "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify",
+    "Restricted by roles, only viewable and modifiable by " : "Restricted by roles, only viewable and modifiable by "
 }
