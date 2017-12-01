@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.wso2.carbon.apimgt.impl.APIConstants.AUTHORIZATION_ERROR_MESSAGE;
+import static org.wso2.carbon.apimgt.impl.APIConstants.UN_AUTHORIZED_ERROR_MESSAGE;
 
 /**
  * User aware APIProvider implementation which ensures that the invoking user has the
@@ -48,8 +48,8 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.AUTHORIZATION_ERROR_MESSA
  * when the object had been created in the anonymous mode, an exception will be thrown.
  */
 public class UserAwareAPIProvider extends APIProviderImpl {
+    protected String username;
 
-    private String username;
     private static final Log log = LogFactory.getLog(UserAwareAPIProvider.class);
 
     UserAwareAPIProvider(String username) throws APIManagementException {
@@ -503,7 +503,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
                     log.debug("API " + identifier + " cannot be accessed by user '" + username + "'. It "
                             + "has a publisher access control restriction");
                 }
-                throw new APIManagementException(AUTHORIZATION_ERROR_MESSAGE + " view or modify the API " + identifier);
+                throw new APIManagementException(UN_AUTHORIZED_ERROR_MESSAGE + " view or modify the API " + identifier);
             }
         } catch (RegistryException e) {
             throw new APIManagementException(

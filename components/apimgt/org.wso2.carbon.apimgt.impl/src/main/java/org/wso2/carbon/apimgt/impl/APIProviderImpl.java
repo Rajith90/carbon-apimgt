@@ -29,6 +29,7 @@ import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.clustering.ClusteringFault;
 import org.apache.axis2.util.JavaUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,7 +56,6 @@ import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.DuplicateAPIException;
 import org.wso2.carbon.apimgt.api.model.LifeCycleEvent;
-import org.wso2.carbon.apimgt.api.model.Mediation;
 import org.wso2.carbon.apimgt.api.model.Provider;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
@@ -144,10 +144,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -168,7 +166,6 @@ import javax.cache.Caching;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
-import static org.wso2.carbon.apimgt.impl.APIConstants.AUTHORIZATION_ERROR_MESSAGE;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.isAllowDisplayAPIsWithMultipleStatus;
 
 /**
@@ -5264,8 +5261,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     @Override
     protected Map<String, Object> searchAPIsByURLPattern(Registry registry, String searchTerm, int start, int end)
             throws APIManagementException {
-        if (!isAccessControlRestrictionEnabled || APIUtil.hasPermission(userNameWithoutChange, APIConstants
-                .Permissions.APIM_ADMIN)) {
+        if (!isAccessControlRestrictionEnabled || APIUtil
+                .hasPermission(userNameWithoutChange, APIConstants.Permissions.APIM_ADMIN)) {
             return super.searchAPIsByURLPattern(registry, searchTerm, start, end);
         }
         SortedSet<API> apiSet = new TreeSet<API>(new APINameComparator());
@@ -5280,11 +5277,16 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
             PaginationContext.init(0, 10000, "ASC", APIConstants.API_OVERVIEW_NAME, Integer.MAX_VALUE);
             if (artifactManager != null) {
-                criteria = new StringBuilder(getUserRoleListQuery());
                 for (int i = 0; i < 20; i++) { //This need to fix in future.We don't have a way to get max value of
                     // "url_template" entry stores in registry,unless we search in each API
+                    criteria = new StringBuilder(getUserRoleListQuery());
                     criteria.append("&");
                     criteria.append(APIConstants.API_URI_PATTERN).append(i).append("=").append(searchValue);
+                    List<GovernanceArtifact> governanceArtifactList = GovernanceUtils
+                            .findGovernanceArtifacts(criteria.toString(), registry, APIConstants.API_RXT_MEDIA_TYPE);
+                    if (governanceArtifactList != null && !governanceArtifactList.isEmpty()) {
+                        governanceArtifacts.addAll(governanceArtifactList);
+                    }
                 }
                 governanceArtifacts = GovernanceUtils
                         .findGovernanceArtifacts(criteria.toString(), registry, APIConstants.API_RXT_MEDIA_TYPE);

@@ -38,7 +38,7 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserStoreException;
 
-public class APIProviderImplWrapper extends APIProviderImpl {
+public class APIProviderImplWrapper extends UserAwareAPIProvider {
 
     private API api;
     private List<Documentation> documentationList = new ArrayList<Documentation>();

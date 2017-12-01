@@ -1336,6 +1336,6 @@ public final class APIConstants {
     public static final String ACCESS_CONTROL_PARAMETER = "accessControl";
     public static final String ACCESS_CONTROL_ROLES_PARAMETER = "accessControlRoles";
 
-    public static final String AUTHORIZATION_ERROR_MESSAGE = "User is not authorized to";
+    public static final String UN_AUTHORIZED_ERROR_MESSAGE = "User is not authorized to";
 
 }

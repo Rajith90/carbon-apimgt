@@ -127,6 +127,11 @@ public class TestUtils {
 
     public static void mockAPIMConfiguration() throws RegistryException,
             UserStoreException {
+        mockAPIMConfiguration(false);
+    }
+
+    public static void mockAPIMConfiguration(boolean enableAccessControl) throws RegistryException,
+            UserStoreException {
         ServiceReferenceHolder sh = mockRegistryAndUserRealm(-1234);
         APIManagerConfigurationService amConfigService = Mockito.mock(APIManagerConfigurationService.class);
         APIManagerConfiguration amConfig = Mockito.mock(APIManagerConfiguration.class);
@@ -144,6 +149,10 @@ public class TestUtils {
                 APIConstants.API_GATEWAY_TYPE_SYNAPSE);
         PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_API_DOC_VISIBILITY_LEVELS)).
                 thenReturn("true", "false");
+        if (enableAccessControl) {
+            PowerMockito.when(amConfig.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_ACCESS_CONTROL_LEVELS)).
+                    thenReturn("true");
+        }
 
         ThrottleProperties throttleProperties = new ThrottleProperties();
         PowerMockito.when(amConfig.getThrottleProperties()).thenReturn(throttleProperties);

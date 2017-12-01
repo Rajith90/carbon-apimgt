@@ -4270,4 +4270,39 @@ public class APIProviderImplTest {
         field.set(null, newValue);
     }
 
+    /**
+     * This method tests the behaviour of the searchAPISByUrlpattern method.
+     *
+     * @throws APIManagementException API Management Exception.
+     * @throws UserStoreException     User Store Exception.
+     * @throws RegistryException      Registry Exception.
+     */
+    @Test
+    public void testSearchAPIsByURLPattern() throws APIManagementException, UserStoreException, RegistryException {
+        TestUtils.mockAPIMConfiguration(true);
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Registry registry = Mockito.mock(Registry.class);
+        Assert.assertEquals("Search APIs By url pattern returns wrong list of APIs", 0,
+                apiProvider.searchAPIsByURLPattern(registry, "test", 0, 10).get("length"));
+    }
+
+    /**
+     * This method tests the behaviour of getSearchQuery method under different circumstances.
+     *
+     * @throws UserStoreException     UserStore Exception.
+     * @throws RegistryException      Registry Exception.
+     * @throws APIManagementException API Management Exception.
+     */
+    @Test
+    public void testSearchQuery() throws UserStoreException, RegistryException, APIManagementException {
+        TestUtils.mockAPIMConfiguration(true);
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Assert.assertTrue("When the access control is enabled, search query includes role query",
+                apiProvider.getSearchQuery("").contains("(null)"));
+        TestUtils.mockAPIMConfiguration();
+        apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Assert.assertFalse("When the access control is enabled, search query includes role query",
+                apiProvider.getSearchQuery("").contains("(null)"));
+    }
+
 }
