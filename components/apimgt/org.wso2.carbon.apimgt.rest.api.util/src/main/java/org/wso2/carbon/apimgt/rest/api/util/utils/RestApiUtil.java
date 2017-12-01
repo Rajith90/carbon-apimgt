@@ -79,8 +79,7 @@ public class RestApiUtil {
     }
 
     public static APIProvider getLoggedInUserProvider() throws APIManagementException {
-        String loggedInUser = CarbonContext.getThreadLocalCarbonContext().getUsername();
-        return APIManagerFactory.getInstance().getAPIProvider(loggedInUser);
+        return APIManagerFactory.getInstance().getAPIProvider(getLoggedInUsername());
     }
 
     public static APIProvider getProvider(String username) throws APIManagementException {
@@ -164,12 +163,18 @@ public class RestApiUtil {
      * @throws APIManagementException
      */
     public static APIConsumer getLoggedInUserConsumer() throws APIManagementException {
-        String loggedInUser = CarbonContext.getThreadLocalCarbonContext().getUsername();
-        return APIManagerFactory.getInstance().getAPIConsumer(loggedInUser);
+        return APIManagerFactory.getInstance().getAPIConsumer(getLoggedInUsername());
     }
 
     public static String getLoggedInUsername() {
-        return CarbonContext.getThreadLocalCarbonContext().getUsername();
+        String userName = CarbonContext.getThreadLocalCarbonContext().getUsername();
+        // This fix is needed to have user names with and without email address, without enabling
+        // "EnableEmailUserName" property
+        if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(getLoggedInUserTenantDomain()) && userName
+                .contains("@") && !userName.endsWith("@" + MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)) {
+            userName += "@" + MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+        }
+        return userName;
     }
 
     public static String getLoggedInUserTenantDomain() {

@@ -65,6 +65,7 @@
     "Alias exists in trust store": "Alias exists in trust store",
     "Alias should not be empty": "Alias should not be empty",
     "All": "All",
+    "all": "All",
     "All APIs": "All APIs",
     "All Allow Origins": "All Allow Origins",
     "Allow": "Allow",
@@ -582,6 +583,7 @@
     "tiers": "tiers",
     "user": "user",
     "Access Control" : "Access Control",
-    "<strong>Public :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>Public :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify"
+    "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify",
+    "Restricted by roles, only viewable and modifiable by " : "Restricted by roles, only viewable and modifiable by "
 
 }
