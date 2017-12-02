@@ -31,7 +31,8 @@ import org.wso2.carbon.registry.indexing.IndexingHandler;
 @SuppressWarnings("unused")
 public class CustomAPIIndexHandler extends IndexingHandler {
     public void put(RequestContext requestContext) throws RegistryException {
-        if (requestContext.getResource().getProperty(APIConstants.CUSTOM_API_INDEXER_PROPERTY) != null) {
+        if (requestContext != null && requestContext.getResource() != null && requestContext.getResource().getProperty
+                (APIConstants.CUSTOM_API_INDEXER_PROPERTY) != null) {
             return;
         }
         super.put(requestContext);

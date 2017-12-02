@@ -22,13 +22,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.common.SolrException;
 import org.wso2.carbon.apimgt.impl.APIConstants;
-import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.governance.registry.extensions.indexers.RXTIndexer;
 import org.wso2.carbon.registry.core.Registry;
 import org.wso2.carbon.registry.core.RegistryConstants;
 import org.wso2.carbon.registry.core.Resource;
 import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.indexing.AsyncIndexer;
+import org.wso2.carbon.registry.indexing.IndexingManager;
 import org.wso2.carbon.registry.indexing.solr.IndexDocument;
 
 import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPERTY;
@@ -41,11 +42,14 @@ public class CustomAPIIndexer extends RXTIndexer {
     public static final Log log = LogFactory.getLog(CustomAPIIndexer.class);
 
     public IndexDocument getIndexedDocument(AsyncIndexer.File2Index fileData) throws SolrException, RegistryException {
-        Registry registry = ServiceReferenceHolder.getInstance().getRegistryService()
-                .getGovernanceSystemRegistry(fileData.tenantId);
+        Registry registry = GovernanceUtils
+                .getGovernanceSystemRegistry(IndexingManager.getInstance().getRegistry(fileData.tenantId));
         String resourcePath = fileData.path.substring(RegistryConstants.GOVERNANCE_REGISTRY_BASE_PATH.length());
-        Resource resource = registry.get(resourcePath);
+        Resource resource = null;
 
+        if (registry.resourceExists(resourcePath)) {
+            resource = registry.get(resourcePath);
+        }
         if (log.isDebugEnabled()) {
             log.debug("CustomAPIIndexer is currently indexing the api at path " + resourcePath);
         }
