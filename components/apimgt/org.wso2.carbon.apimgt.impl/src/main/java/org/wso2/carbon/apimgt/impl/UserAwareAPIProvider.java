@@ -479,7 +479,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
                 }
                 return;
             }
-            if (APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN)) {
+            if (APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN, true)) {
                 return;
             }
             String publisherAccessControlRoles = apiResource.getProperty(APIConstants.PUBLISHER_ROLES);
@@ -489,7 +489,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
                     log.debug("API has restricted access to creators and publishers with the roles : " + Arrays
                             .toString(accessControlRoleList));
                 }
-                String[] userRoleList = APIUtil.getListOfRoles(username);
+                String[] userRoleList = APIUtil.getListOfRoles(username, true);
                 if (log.isDebugEnabled()) {
                     log.debug("User " + username + " has roles " + Arrays.toString(userRoleList));
                 }

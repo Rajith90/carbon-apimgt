@@ -183,10 +183,10 @@ public class RestApiPublisherUtils {
         boolean isMatched = false;
         String[] userRoleList = null;
 
-        if (APIUtil.hasPermission(userName, APIConstants.Permissions.APIM_ADMIN)) {
+        if (APIUtil.hasPermission(userName, APIConstants.Permissions.APIM_ADMIN, true)) {
             isMatched = true;
         } else {
-            userRoleList = APIUtil.getListOfRoles(userName);
+            userRoleList = APIUtil.getListOfRoles(userName, true);
 
         }
         if (inputRoles != null && !inputRoles.isEmpty()) {

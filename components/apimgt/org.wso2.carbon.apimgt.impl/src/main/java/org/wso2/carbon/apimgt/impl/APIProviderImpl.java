@@ -4424,7 +4424,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 List<GovernanceArtifact> genericArtifacts = null;
 
                 if (isAccessControlRestrictionEnabled && !APIUtil.hasPermission(userNameWithoutChange, APIConstants
-                        .Permissions.APIM_ADMIN)) {
+                        .Permissions.APIM_ADMIN, true)) {
                     genericArtifacts = GovernanceUtils.findGovernanceArtifacts(getUserRoleListQuery(), userRegistry,
                             APIConstants.API_RXT_MEDIA_TYPE, true);
                 } else {
@@ -5262,7 +5262,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     protected Map<String, Object> searchAPIsByURLPattern(Registry registry, String searchTerm, int start, int end)
             throws APIManagementException {
         if (!isAccessControlRestrictionEnabled || APIUtil
-                .hasPermission(userNameWithoutChange, APIConstants.Permissions.APIM_ADMIN)) {
+                .hasPermission(userNameWithoutChange, APIConstants.Permissions.APIM_ADMIN, true)) {
             return super.searchAPIsByURLPattern(registry, searchTerm, start, end);
         }
         SortedSet<API> apiSet = new TreeSet<API>(new APINameComparator());
@@ -5347,7 +5347,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         StringBuilder rolesQuery = new StringBuilder();
         rolesQuery.append('(');
         rolesQuery.append(APIConstants.NULL_USER_ROLE_LIST);
-        String[] userRoles = APIUtil.getListOfRoles(userNameWithoutChange);
+        String[] userRoles = APIUtil.getListOfRoles(userNameWithoutChange, true);
         if (userRoles != null) {
             for (String userRole : userRoles) {
                 rolesQuery.append(" OR ");
@@ -5361,7 +5361,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     @Override
     protected String getSearchQuery(String searchQuery) throws APIManagementException {
         if (!isAccessControlRestrictionEnabled || APIUtil.hasPermission(userNameWithoutChange, APIConstants.Permissions
-                .APIM_ADMIN)) {
+                .APIM_ADMIN, true)) {
             return searchQuery;
         }
         String criteria = getUserRoleListQuery();

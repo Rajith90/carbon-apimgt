@@ -159,7 +159,8 @@ public class UserAwareAPIProviderTest {
         Mockito.doReturn(resource).when(userRegistry).get(SAMPLE_IDENTIFIER);
         Mockito.doReturn(APIConstants.API_RESTRICTED_VISIBILITY).when(resource)
                 .getProperty(APIConstants.ACCESS_CONTROL);
-        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN)).thenReturn(true);
+        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN, true))
+                .thenReturn(true);
         userAwareAPIProvider.checkAccessControlPermission(apiIdentifier);
     }
 
@@ -177,12 +178,18 @@ public class UserAwareAPIProviderTest {
         Mockito.doReturn(resource).when(userRegistry).get(SAMPLE_IDENTIFIER);
         Mockito.doReturn(APIConstants.API_RESTRICTED_VISIBILITY).when(resource)
                 .getProperty(APIConstants.ACCESS_CONTROL);
-        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN))
+        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN, true))
                 .thenReturn(false);
         Mockito.doReturn(null).when(resource).getProperty(APIConstants.PUBLISHER_ROLES);
         userAwareAPIProvider.checkAccessControlPermission(apiIdentifier);
     }
 
+    /**
+     * This method checks the behaviour of checkAccessControlPermission when the publisher roles is specified.
+     *
+     * @throws RegistryException      Registry Exception.
+     * @throws APIManagementException API Management Exception.
+     */
     @Test
     public void testCheckAccessControlPermissionWithPublisherRoles() throws RegistryException, APIManagementException {
         PowerMockito.when(APIUtil.getAPIPath(apiIdentifier)).thenReturn(SAMPLE_IDENTIFIER);
@@ -190,10 +197,10 @@ public class UserAwareAPIProviderTest {
         Mockito.doReturn(resource).when(userRegistry).get(SAMPLE_IDENTIFIER);
         Mockito.doReturn(APIConstants.API_RESTRICTED_VISIBILITY).when(resource)
                 .getProperty(APIConstants.ACCESS_CONTROL);
-        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN))
+        PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN, true))
                 .thenReturn(false);
         Mockito.doReturn(ADMIN_ROLE_NAME).when(resource).getProperty(APIConstants.PUBLISHER_ROLES);
-        PowerMockito.when(APIUtil.getListOfRoles(ADMIN_ROLE_NAME)).thenReturn(new String[] { ADMIN_ROLE_NAME });
+        PowerMockito.when(APIUtil.getListOfRoles(ADMIN_ROLE_NAME, true)).thenReturn(new String[] { ADMIN_ROLE_NAME });
         userAwareAPIProvider.checkAccessControlPermission(apiIdentifier);
     }
 
@@ -214,7 +221,8 @@ public class UserAwareAPIProviderTest {
             PowerMockito.when(APIUtil.hasPermission(ADMIN_ROLE_NAME, APIConstants.Permissions.APIM_ADMIN))
                     .thenReturn(false);
             Mockito.doReturn(ADMIN_ROLE_NAME).when(resource).getProperty(APIConstants.PUBLISHER_ROLES);
-            PowerMockito.when(APIUtil.getListOfRoles(ADMIN_ROLE_NAME)).thenReturn(new String[] { "Internal/everyone" });
+            PowerMockito.when(APIUtil.getListOfRoles(ADMIN_ROLE_NAME, true))
+                    .thenReturn(new String[] { "Internal/everyone" });
             userAwareAPIProvider.checkAccessControlPermission(apiIdentifier);
             Assert.fail("For a user, who is un-authorized access an API was able to successfully access the API");
         } catch (APIManagementException e) {

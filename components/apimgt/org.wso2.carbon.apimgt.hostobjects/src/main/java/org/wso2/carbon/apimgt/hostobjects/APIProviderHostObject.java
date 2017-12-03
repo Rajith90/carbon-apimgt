@@ -4446,10 +4446,10 @@ public class APIProviderHostObject extends ScriptableObject {
             String[] userRoleList = null;
 
             if (validateAgainstUserRoles) {
-                if (APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN)){
+                if (APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN, true)){
                     foundUserRole = true;
                 } else {
-                    userRoleList = APIUtil.getListOfRoles(username);
+                    userRoleList = APIUtil.getListOfRoles(username, true);
                 }
             }
             if (roles != null && inputRoles != null) {

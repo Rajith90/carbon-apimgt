@@ -2206,6 +2206,17 @@ public final class APIUtil {
         }
     }
 
+    /**
+     * Checks whether the specified user has the specified permission.
+     *
+     * @param userNameWithoutChange A username
+     * @param permission            A valid Carbon permission
+     * @throws APIManagementException If the user does not have the specified permission or if an error occurs
+     */
+    public static boolean hasPermission(String userNameWithoutChange, String permission) throws
+            APIManagementException {
+        return hasPermission(userNameWithoutChange, permission, false);
+    }
 
     /**
      * Checks whether the specified user has the specified permission.
@@ -2214,7 +2225,8 @@ public final class APIUtil {
      * @param permission            A valid Carbon permission
      * @throws APIManagementException If the user does not have the specified permission or if an error occurs
      */
-    public static boolean hasPermission(String userNameWithoutChange, String permission) throws APIManagementException {
+    public static boolean hasPermission(String userNameWithoutChange, String permission, boolean isFromPublisher)
+            throws APIManagementException {
         boolean authorized = false;
         if (userNameWithoutChange == null) {
             throw new APIManagementException("Attempt to execute privileged operation as" +
@@ -2227,7 +2239,7 @@ public final class APIUtil {
             return authorized;
         }
 
-        if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+        if (isFromPublisher && APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
             Integer value = getValueFromCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange);
             if (value != null) {
                 return value == 1;
@@ -2265,7 +2277,7 @@ public final class APIUtil {
                                 .isUserAuthorized(MultitenantUtils.getTenantAwareUsername(userNameWithoutChange),
                                         permission);
             }
-            if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+            if (isFromPublisher && APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
                 addToRolesCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange,
                         authorized ? 1 : 2);
             }
@@ -2379,16 +2391,31 @@ public final class APIUtil {
     /**
      * Retrieves the role list of a user
      *
-     * @param username A username
+     * @param username Name of the username
      * @throws APIManagementException If an error occurs
      */
     public static String[] getListOfRoles(String username) throws APIManagementException {
+        return getListOfRoles(username, false);
+    }
+
+    /**
+     * Retrieves the role list of a user
+     *
+     * @param username A username
+     * @param isFromPublisher To specify whether this call is from publisher
+     * @throws APIManagementException If an error occurs
+     */
+    public static String[] getListOfRoles(String username, boolean isFromPublisher) throws APIManagementException {
         if (username == null) {
             throw new APIManagementException("Attempt to execute privileged operation as" +
                     " the anonymous user");
         }
 
-        String[] roles = getValueFromCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username);
+        String[] roles = null;
+
+        if (isFromPublisher) {
+            roles = getValueFromCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username);
+        }
         if (roles != null) {
             return roles;
         }
@@ -2405,7 +2432,9 @@ public final class APIUtil {
                 roles = AuthorizationManager.getInstance()
                         .getRolesOfUser(MultitenantUtils.getTenantAwareUsername(username));
             }
-            addToRolesCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username, roles);
+            if (isFromPublisher) {
+                addToRolesCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username, roles);
+            }
             return roles;
         } catch (UserStoreException e) {
             throw new APIManagementException("UserStoreException while trying the role list of the user " + username,
@@ -6708,9 +6737,11 @@ public final class APIUtil {
      * @return true if the Array contains the role specified.
      */
     public static boolean compareRoleList(String[] userRoleList, String accessControlRole) {
-        for (String userRole : userRoleList) {
-            if (userRole.equalsIgnoreCase(accessControlRole)) {
-                return true;
+        if (userRoleList != null) {
+            for (String userRole : userRoleList) {
+                if (userRole.equalsIgnoreCase(accessControlRole)) {
+                    return true;
+                }
             }
         }
         return false;
