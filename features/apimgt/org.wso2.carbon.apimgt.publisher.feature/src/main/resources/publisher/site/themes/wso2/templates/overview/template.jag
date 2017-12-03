@@ -24,7 +24,7 @@
                     <td class="col-sm-3"><%=i18n.localize("Access Control")%></td>
                     <td id="inUrl">
                         <%if(api.accessControl == "restricted"){%>
-                            <%=i18n.localize("Restricted by roles, only viewable and modifiable by ") + api.publisherRoles +"."%>
+                            <%=i18n.localize("Restricted by roles, only viewable and modifiable by ") + api.accessControlRoles +"."%>
                        <%} else{%>
                             <%=i18n.localize(api.accessControl,api.accessControl)%>
                        <%}%>

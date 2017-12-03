@@ -187,7 +187,7 @@
                                                     </p></label>
                                                     <div class="col-sm-4">
                                                         <select class="select required form-control" id="access-control"
-                                                        name="access-control">
+                                                        name="accessControl">
                                                         <% if (api) {%>
                                                             <option value="all" <%if(api.accessControl=="all"){%>
                                                             selected="selected" <%}%>>
@@ -216,7 +216,8 @@
                                                             <div class="col-sm-9">
                                                                 <input type="text" class="form-control required
                                                                 validInput validateUserRoles"
-                                                                id="publisherRoles" name="publisherRoles"  value="<%=api.publisherRoles%>"
+                                                                id="publisherRoles" name="accessControlRoles"
+                                                                value="<%=api.accessControlRoles%>"
                                                                 placeholder="<%=i18n.localize("Comma-separated list (e.g.: role1,role2,role3)")%>"/>
                                                             </div>
                                                         </div>
@@ -228,7 +229,8 @@
                                                         </label>
                                                         <div class="col-sm-9">
                                                             <input type="text" class="form-control required validInput
-                                                            validateUserRoles" id="publisherRoles" name="publisherRoles"
+                                                            validateUserRoles" id="publisherRoles"
+                                                            name="accessControlRoles"
                                                             placeholder="<%=i18n.localize("Comma-separated list (e.g.: role1,role2,role3)")%>"/>
                                                         </div>
                                                     </div>

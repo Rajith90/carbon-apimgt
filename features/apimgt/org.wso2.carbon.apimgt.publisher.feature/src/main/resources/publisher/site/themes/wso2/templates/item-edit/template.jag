@@ -169,7 +169,7 @@ var faultSequencesLoaded = false;
                    <label class="control-label" for="access-control"><%=i18n.localize("Access-Control")%>:<span
                    class="requiredAstrix">*</span></label>
                    <div class="controls">
-                       <select class="select required" id="access-control" name="access-control"
+                       <select class="select required" id="access-control" name="accessControl"
                        onchange="showHidePublisherAccessControlRoles()">
                            <option value="none" <%if(api.accessControl!="restricted"){%> selected="selected" <%}%>>
                            <%=i18n.localize("None")%></option>
@@ -190,7 +190,7 @@ var faultSequencesLoaded = false;
                     </label>
                     <div class="controls">
                         <input type="text" class="input required validInput validateUserRoles"
-                        id="publisherRoles" name="publisherRoles"  value="<%=api.publisherRoles%>"/>
+                        id="publisherRoles" name="accessControlRoles"  value="<%=api.accessControlRoles%>"/>
                         <p class="help-block" id="rolesHelp"><%=i18n.localize("Comma-separated list (e.g.: role1,role2,role3)")%></p>
                     </div>
                 </div>
@@ -217,7 +217,7 @@ var faultSequencesLoaded = false;
                     <%=i18n.localize("Visible to Roles")%>:<% if (isSuperTenant) { %><span class="requiredAstrix">*</span><%}%>
                 </label>
                 <div class="controls">
-                    <input type="text" class="input required validInput validateRoles"
+                    <input type="text" class="input required n validateRoles"
                     id="roles" name="roles"  value="<%=api.roles%>"/>
                     <p class="help-block" id="rolesHelp"><%=i18n.localize("Comma-separated list (e.g.: role1,role2,role3)")%></p>
                 </div>
