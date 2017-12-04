@@ -84,7 +84,7 @@ public class DefaultGroupIDExtractorImplTest {
 
         DefaultGroupIDExtractorImpl defaultGroupIDExtractor = new DefaultGroupIDExtractorImpl();
 
-        String[] expectedArr = new String[] {"carbon.super/org1", "carbon.super/org2", "carbon.super/org3"};
+        String[] expectedArr = new String[] {"org1", "org2", "org3"};
 
         Assert.assertEquals(expectedArr[0], defaultGroupIDExtractor.
                 getGroupingIdentifierList("{\"user\":\"user\", \"isSuperTenant\":true}")[0]);
@@ -98,7 +98,7 @@ public class DefaultGroupIDExtractorImplTest {
 
         Mockito.when(userStoreManager.getUserClaimValue(MultitenantUtils.getTenantAwareUsername("user"),
                 "http://wso2.org/claims/organization", null)).thenReturn("org1|org2|org3");
-        Assert.assertEquals("carbon.super/org1|org2|org3", defaultGroupIDExtractor.
+        Assert.assertEquals("org1|org2|org3", defaultGroupIDExtractor.
                 getGroupingIdentifierList("{\"user\":\"user\", \"isSuperTenant\":false}")[0]);
 
         Mockito.when(userStoreManager.getUserClaimValue(MultitenantUtils.getTenantAwareUsername("user"),
