@@ -97,6 +97,9 @@ public class DefaultGroupIDExtractorImpl implements LoginPostExecutor {
                     organization = tenantDomain + "/" + organization.trim();
                     groupIdArray = new String[]{organization};
                 }
+            }else {
+                // If claim is null then returning a empty string
+                groupIdArray = new String[]{};
             }
         } catch (JSONException e) {
             log.error("Exception occured while trying to get group Identifier from login response", e);
