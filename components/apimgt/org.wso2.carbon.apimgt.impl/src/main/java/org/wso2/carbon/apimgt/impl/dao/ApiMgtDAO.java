@@ -1396,22 +1396,41 @@ public class ApiMgtDAO {
                 + " AND SUB.USER_ID = ?))";
         String whereClauseWithGroupIdorceCaseInsensitiveComp = " AND (APP.GROUP_ID = ?"
                 + " OR ((APP.GROUP_ID='' OR APP.GROUP_ID IS NULL) AND LOWER(SUB.USER_ID) = LOWER(?)))";
-        //ssb check to add other query
+
+        String whereClauseWithMultiGroupId = " AND  ( (APP.APPLICATION_ID IN (SELECT APPLICATION_ID FROM " +
+                "AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params)))  OR  ( SUB.USER_ID = ? ))";
+        String whereClauseWithMultiGroupIdCaseInsensitive = " AND  ( (APP.APPLICATION_ID IN  (SELECT APPLICATION_ID " +
+                "FROM AM_APPLICATION_GROUP_MAPPING  WHERE GROUP_ID IN ($params)))  OR  ( LOWER(SUB.USER_ID) = LOWER" +
+                "(?) ))";
         try {
             connection = APIMgtDBUtil.getConnection();
             int tenantId = APIUtil.getTenantId(subscriber.getName());
             if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
-                if (forceCaseInsensitiveComparisons) {
-                    sqlQuery += whereClauseWithGroupIdorceCaseInsensitiveComp;
+                if (multiGropIdEnabled) {
+                    if (forceCaseInsensitiveComparisons) {
+                        sqlQuery += whereClauseWithMultiGroupIdCaseInsensitive;
+                    } else {
+                        sqlQuery += whereClauseWithMultiGroupId;
+                    }
+                    String groupIDArray[] = groupingId.split(",");
+                    int paramIndex = groupIDArray.length + 3;
+                    ps = fillQueryParams(connection, sqlQuery, groupIDArray, 3);
+                    ps.setInt(1, tenantId);
+                    ps.setString(2, applicationName);
+                    ps.setString(paramIndex, subscriber.getName());
                 } else {
-                    sqlQuery += whereClauseWithGroupId;
+                    if (forceCaseInsensitiveComparisons) {
+                        sqlQuery += whereClauseWithGroupIdorceCaseInsensitiveComp;
+                    } else {
+                        sqlQuery += whereClauseWithGroupId;
+                    }
+                    ps = connection.prepareStatement(sqlQuery);
+                    ps.setInt(1, tenantId);
+                    ps.setString(2, applicationName);
+                    ps.setString(3, groupingId);
+                    ps.setString(4, subscriber.getName());
                 }
 
-                ps = connection.prepareStatement(sqlQuery);
-                ps.setInt(1, tenantId);
-                ps.setString(2, applicationName);
-                ps.setString(3, groupingId);
-                ps.setString(4, subscriber.getName());
             } else {
                 if (forceCaseInsensitiveComparisons) {
                     sqlQuery += whereClauseForceCaseInsensitiveComp;
@@ -1479,14 +1498,40 @@ public class ApiMgtDAO {
                 + " AND SUB.USER_ID = ?))";
         String whereClauseWithGroupIdorceCaseInsensitiveComp = " AND (APP.GROUP_ID = ? "
                 + "OR ((APP.GROUP_ID='' OR APP.GROUP_ID IS NULL) AND LOWER(SUB.USER_ID) = LOWER(?)))";
+
+        String whereClauseWithMultiGroupId = " AND  ( (APP.APPLICATION_ID IN (SELECT APPLICATION_ID  FROM " +
+                "AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params)))  OR  ( SUB.USER_ID = ? ))";
+        String whereClauseWithGroupIdMultiCaseInsensitiveComp =" AND  ( (APP.APPLICATION_ID IN (SELECT APPLICATION_ID  FROM " +
+                "AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params)))  OR  ( LOWER(SUB.USER_ID) = LOWER(?) ))";
         try {
             connection = APIMgtDBUtil.getConnection();
 
+
             if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
-                if (forceCaseInsensitiveComparisons) {
-                    sqlQuery += whereClauseWithGroupIdorceCaseInsensitiveComp;
+
+                if (multiGropIdEnabled) {
+                    if (forceCaseInsensitiveComparisons) {
+                        sqlQuery += whereClauseWithGroupIdMultiCaseInsensitiveComp;
+                    } else {
+                        sqlQuery += whereClauseWithMultiGroupId;
+                    }
+                    String[] groupIdArr = groupingId.split(",");
+                    int paramIndex = groupIdArr.length + 2;
+                    ps = fillQueryParams(connection, sqlQuery, groupIdArr, 2);
+                    int tenantId = APIUtil.getTenantId(subscriber.getName());
+                    ps.setInt(1, tenantId);
+                    ps.setString(paramIndex, subscriber.getName());
                 } else {
-                    sqlQuery += whereClauseWithGroupId;
+                    if (forceCaseInsensitiveComparisons) {
+                        sqlQuery += whereClauseWithGroupIdorceCaseInsensitiveComp;
+                    } else {
+                        sqlQuery += whereClauseWithGroupId;
+                    }
+                    ps = connection.prepareStatement(sqlQuery);
+                    int tenantId = APIUtil.getTenantId(subscriber.getName());
+                    ps.setInt(1, tenantId);
+                    ps.setString(2, groupingId);
+                    ps.setString(3, subscriber.getName());
                 }
             } else {
                 if (forceCaseInsensitiveComparisons) {
@@ -1494,15 +1539,9 @@ public class ApiMgtDAO {
                 } else {
                     sqlQuery += whereClause;
                 }
-            }
-
-            ps = connection.prepareStatement(sqlQuery);
-            int tenantId = APIUtil.getTenantId(subscriber.getName());
-            ps.setInt(1, tenantId);
-            if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
-                ps.setString(2, groupingId);
-                ps.setString(3, subscriber.getName());
-            } else {
+                ps = connection.prepareStatement(sqlQuery);
+                int tenantId = APIUtil.getTenantId(subscriber.getName());
+                ps.setInt(1, tenantId);
                 ps.setString(2, subscriber.getName());
             }
 
@@ -1540,6 +1579,10 @@ public class ApiMgtDAO {
 
                     for (Map.Entry<String, OAuthApplicationInfo> entry : oauthApps.entrySet()) {
                         application.addOAuthApp(entry.getKey(), entry.getValue());
+                    }
+
+                    if(multiGropIdEnabled){
+                        application.setGroupId(getGroupId(application.getId()));
                     }
 
                     applicationCache.put(applicationId, application);
@@ -4311,25 +4354,40 @@ public class ApiMgtDAO {
 
         String whereClauseWithGroupId = " AND " + "(APP.GROUP_ID= ? OR ((APP.GROUP_ID='' OR APP.GROUP_ID IS NULL) AND " +
                 whereSubscriberUserID + "))";
-        String whereClause = " AND " + whereSubscriberUserID;
 
-        if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
-            sqlQuery += whereClauseWithGroupId;
-        } else {
-            sqlQuery += whereClause;
-        }
+        String whereClauseWithMultiGroupId = " AND  ( (APP.APPLICATION_ID IN (SELECT APPLICATION_ID  FROM " +
+                "AM_APPLICATION_GROUP_MAPPING WHERE GROUP_ID IN ($params)))  OR  ( SUB.USER_ID = ? ))";
+
+        String whereClause = " AND " + whereSubscriberUserID;
         try {
             connection = APIMgtDBUtil.getConnection();
-            prepStmt = connection.prepareStatement(sqlQuery);
-            prepStmt.setString(1, applicationName);
-            prepStmt.setString(2, keyType);
-            if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
-                prepStmt.setString(3, groupingId);
-                prepStmt.setString(4, subscriberId);
 
+            if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
+                if (multiGropIdEnabled) {
+                    String groupIDArray[] = groupingId.split(",");
+                    int paramIndex = groupIDArray.length + 3;
+                    sqlQuery += whereClauseWithMultiGroupId;
+                    prepStmt = fillQueryParams(connection, sqlQuery, groupIDArray, 3);
+                    prepStmt = connection.prepareStatement(sqlQuery);
+                    prepStmt.setString(1, applicationName);
+                    prepStmt.setString(2, keyType);
+                    prepStmt.setString(paramIndex, subscriberId);
+                } else {
+                    sqlQuery += whereClauseWithGroupId;
+                    prepStmt = connection.prepareStatement(sqlQuery);
+                    prepStmt.setString(1, applicationName);
+                    prepStmt.setString(2, keyType);
+                    prepStmt.setString(3, groupingId);
+                    prepStmt.setString(4, subscriberId);
+                }
             } else {
+                sqlQuery += whereClause;
+                prepStmt = connection.prepareStatement(sqlQuery);
+                prepStmt.setString(1, applicationName);
+                prepStmt.setString(2, keyType);
                 prepStmt.setString(3, subscriberId);
             }
+
             rs = prepStmt.executeQuery();
 
             while (rs.next()) {
@@ -10690,8 +10748,10 @@ public class ApiMgtDAO {
         return infoDTO;
     }
 
-    /** Returns a Prepared statement after setting all the dynamic parameters. Dynamic parameters will be added in
+    /**
+     * Returns a Prepared statement after setting all the dynamic parameters. Dynamic parameters will be added in
      * the place of $params in query string
+     *
      * @param conn               connection which will be used to create a prepared statement
      * @param query              dynamic query string which will be modified.
      * @param params             list of parameters
@@ -10699,7 +10759,8 @@ public class ApiMgtDAO {
      * @return
      * @throws SQLException
      */
-    public PreparedStatement fillQueryParams(Connection conn, String query, String params[], int startingParamIndex) throws SQLException {
+    public PreparedStatement fillQueryParams(Connection conn, String query, String params[], int startingParamIndex)
+            throws SQLException {
 
         String paramString = "";
 
@@ -10713,9 +10774,9 @@ public class ApiMgtDAO {
 
         query = query.replace("$params", paramString);
 
-        // if(log.isDebugEnabled()){
-        log.info("Prepared statement query :" + query);
-        //  }
+        if (log.isDebugEnabled()) {
+            log.info("Prepared statement query :" + query);
+        }
 
         PreparedStatement preparedStatement = conn.prepareStatement(query);
         for (int i = 0; i < params.length; i++) {
@@ -10727,6 +10788,7 @@ public class ApiMgtDAO {
 
     /**
      * Returns True if AM_APPLICATION_GROUP_MAPPING table exist in AM DB
+     *
      * @return
      */
     public boolean isGrpIdMappingTableExist() {
@@ -10751,14 +10813,17 @@ public class ApiMgtDAO {
         return true;
     }
 
-    /** Adds a new record in AM_APPLICATION_GROUP_MAPPING for each group
+    /**
+     * Adds a new record in AM_APPLICATION_GROUP_MAPPING for each group
+     *
      * @param conn
      * @param applicationId
      * @param groupIdString group id values separated by commas
      * @return
      * @throws APIManagementException
      */
-    private boolean updateGroupIDMappings(Connection conn, int applicationId, String groupIdString) throws APIManagementException {
+    private boolean updateGroupIDMappings(Connection conn, int applicationId, String groupIdString) throws
+            APIManagementException {
 
         boolean updateSuccessful = false;
 
@@ -10798,6 +10863,7 @@ public class ApiMgtDAO {
 
     /**
      * Fetches all the groups for a given application and creates a single string separated by comma
+     *
      * @param applicationId
      * @return comma separated group Id String
      * @throws APIManagementException
