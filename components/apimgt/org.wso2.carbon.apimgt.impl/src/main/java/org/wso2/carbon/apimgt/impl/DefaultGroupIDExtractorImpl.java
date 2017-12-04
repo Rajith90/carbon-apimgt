@@ -90,11 +90,10 @@ public class DefaultGroupIDExtractorImpl implements LoginPostExecutor {
                     groupIdArray = organization.split(",");
 
                     for (int i = 0; i < groupIdArray.length; i++) {
-                        groupIdArray[i] = tenantDomain + "/" + groupIdArray[i].toString();
+                        groupIdArray[i] = groupIdArray[i].toString();
                     }
                 }else {
-
-                    organization = tenantDomain + "/" + organization.trim();
+                    organization = organization.trim();
                     groupIdArray = new String[]{organization};
                 }
             }else {
