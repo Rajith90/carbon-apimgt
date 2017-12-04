@@ -200,8 +200,15 @@ public class RestApiUtil {
             }
             String loginInfoString = loginInfoJsonObj.toJSONString();
             String[] groupIdArr = apiConsumer.getGroupIds(loginInfoString);
-            //todo ssb
-            return Arrays.toString(groupIdArr);
+            String groupId = "";
+            for (int i = 0; i < groupIdArr.length; i++) {
+                if(i == groupIdArr.length-1){
+                    groupId = groupId + groupIdArr[i];
+                }else{
+                    groupId = groupId + groupIdArr[i] + ",";
+                }
+            }
+            return groupId;
         } catch (APIManagementException e) {
             String errorMsg = "Unable to get groupIds of user " + username;
             handleInternalServerError(errorMsg, e, log);
