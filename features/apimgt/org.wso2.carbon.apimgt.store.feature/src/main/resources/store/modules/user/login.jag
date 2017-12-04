@@ -35,13 +35,15 @@ var login = function (username, password,tenantMode) {
     var groupIdArray = store.getGroupIds(stringify(result));
 
     var groupId = "";
-    var length = groupIdArray.length;
-    if(groupIdArray != null && length != 0){
-        for(i = 0 ; i<length ;i++){
-            if(i == (length-1)){
-                groupId = groupId + groupIdArray[i].toString();
-            }else{
-                groupId = groupId + groupIdArray[i].toString() + ",";
+    if(groupIdArray != null && groupIdArray.length != 0){
+        var length = groupIdArray.length;
+        for (i = 0; i < length; i++) {
+            if (groupIdArray[i] != null) {
+                if (i == (length - 1)) {
+                    groupId = groupId + groupIdArray[i].toString();
+                } else {
+                    groupId = groupId + groupIdArray[i].toString() + ",";
+                }
             }
         }
     }
