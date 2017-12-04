@@ -3769,12 +3769,13 @@ public class APIProviderHostObject extends ScriptableObject {
         }
         String tenantDomain = MultitenantUtils.getTenantDomain(providerName);
         boolean isTenantFlowStarted = false;
-        if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
-            isTenantFlowStarted = true;
-        }
+
         try {
+            if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                isTenantFlowStarted = true;
+            }
             if ("*".equals(searchTerm) || searchTerm.startsWith("*")) {
                 searchTerm = searchTerm.replaceFirst("\\*", ".*");
             }
