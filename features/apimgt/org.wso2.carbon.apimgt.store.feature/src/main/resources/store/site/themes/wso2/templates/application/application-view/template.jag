@@ -48,7 +48,10 @@ for(var i=0;i < outputs.tiers.length; i++){
     <div class="form-group">
        <label class="col-sm-3 control-label">Groups%></label>
        <div class="col-sm-9 " style="width: 200px">
-         <p class="form-control-static" style="width: inherit"><%= encode.forHtml(application.groupId) %></p>
+         <%
+            var groupId = encode.forHtml(application.groupId).replace(/,/g," ");
+         %>
+         <p class="form-control-static" style="width: 100%"><span style="font-weight: bold;"><%= encode.forHtml(groupId)%></span></p>
        </div>
   </div>
 <%}%>
