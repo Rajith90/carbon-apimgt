@@ -1019,7 +1019,7 @@ public class APIConsumerImplTest {
         } catch (APIManagementException e) {
             Assert.assertTrue(e.getMessage().contains("Error occurred while instantiating"));
         }
-        Assert.assertEquals(apiConsumer.getGroupIds("login"), "success");
+        Assert.assertEquals(apiConsumer.getGroupIds("login")[0], "success");
     }
 
     @Test
