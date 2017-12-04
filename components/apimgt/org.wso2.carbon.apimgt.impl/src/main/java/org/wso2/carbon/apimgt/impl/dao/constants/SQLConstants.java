@@ -1143,7 +1143,7 @@ public class SQLConstants {
             "   API.API_PROVIDER AS API_PROVIDER, " +
             "   API.API_NAME AS API_NAME, " +
             "   API.API_VERSION AS API_VERSION, " +
-            "   SUB.USER_ID AS USER_ID, " +
+            "   SUBS.CREATED_BY AS USER_ID, " +
             "   APP.NAME AS APPNAME, " +
             "   SUBS.UUID AS SUB_UUID, " +
             "   SUBS.TIER_ID AS SUB_TIER_ID, " +
