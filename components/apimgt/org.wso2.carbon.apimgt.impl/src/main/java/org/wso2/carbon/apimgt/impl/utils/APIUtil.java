@@ -182,10 +182,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -240,8 +236,6 @@ public final class APIUtil {
     private static volatile Set<String> whiteListedScopes;
     private static boolean isPublisherRoleCacheEnabled = true;
 
-
-    private static String multiGroupEnabled = null;
 
     //Need tenantIdleTime to check whether the tenant is in idle state in loadTenantConfig method
     static {
