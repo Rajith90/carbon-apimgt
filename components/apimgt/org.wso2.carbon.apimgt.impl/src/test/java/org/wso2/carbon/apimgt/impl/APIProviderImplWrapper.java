@@ -38,12 +38,12 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.api.UserStoreException;
 
-public class APIProviderImplWrapper extends APIProviderImpl {
-    
+public class APIProviderImplWrapper extends UserAwareAPIProvider {
+
     private API api;
     private List<Documentation> documentationList = new ArrayList<Documentation>();
 
-    public APIProviderImplWrapper(ApiMgtDAO apiMgtDAO, List<Documentation> documentationList) 
+    public APIProviderImplWrapper(ApiMgtDAO apiMgtDAO, List<Documentation> documentationList)
             throws APIManagementException {
         super(null);
         this.apiMgtDAO = apiMgtDAO;
@@ -51,56 +51,61 @@ public class APIProviderImplWrapper extends APIProviderImpl {
             this.documentationList = documentationList;
         }
     }
-    
+
     @Override
     protected void registerCustomQueries(UserRegistry registry, String username)
             throws RegistryException, APIManagementException {
      // do nothing
     }
-    
+
     @Override
     protected void createAPI(API api) throws APIManagementException {
         this.api = api;
         super.createAPI(api);
     }
-    
+
+    public void updateSubscription(APIIdentifier apiId, String subStatus, int appId) throws APIManagementException {
+        checkAccessControlPermission(apiId);
+        super.updateSubscription(apiId, subStatus, appId);
+    }
+
     @Override
     public API getAPI(APIIdentifier identifier) throws APIManagementException {
         return api;
-        
+
     }
-    
+
     @Override
     public void makeAPIKeysForwardCompatible(API api) throws APIManagementException {
         //do nothing
     }
-    
+
     @Override
     public List<Documentation> getAllDocumentation(APIIdentifier apiId) throws APIManagementException {
         return documentationList;
     }
-    
+
     @Override
     protected int getTenantId(String tenantDomain) {
         return -1234;
     }
-    
+
     @Override
     public String addResourceFile(String resourcePath, ResourceFile resourceFile) throws APIManagementException{
         return null;
     }
-    
+
     @Override
     protected void sendAsncNotification(NotificationDTO notificationDTO) throws NotificationException {
         //do nothing
     }
-    
+
     @Override
-    protected void invalidateResourceCache(String apiContext, String apiVersion, String resourceURLContext, 
+    protected void invalidateResourceCache(String apiContext, String apiVersion, String resourceURLContext,
             String httpVerb, Environment environment) throws AxisFault {
         //do nothing
     }
-    
+
     @Override
     protected ThrottlePolicyTemplateBuilder getThrottlePolicyTemplateBuilder() {
         final String POLICY_LOCATION = "src" + File.separator + "test" + File.separator + "resources"
@@ -110,7 +115,7 @@ public class APIProviderImplWrapper extends APIProviderImpl {
         policyBuilder.setPolicyTemplateLocation(POLICY_LOCATION);
         return policyBuilder;
     }
-    
+
     protected String getTenantConfigContent() throws RegistryException, UserStoreException {
         return "{\"EnableMonetization\":false,\"IsUnlimitedTierPaid\":false,\"ExtensionHandlerPosition\":\"bottom\","
                 + "\"RESTAPIScopes\":{\"Scope\":[{\"Name\":\"apim:api_publish\",\"Roles\":\"admin,Internal/publisher\"},"

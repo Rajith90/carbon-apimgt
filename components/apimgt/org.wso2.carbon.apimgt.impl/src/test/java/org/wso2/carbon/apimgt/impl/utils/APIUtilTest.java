@@ -47,6 +47,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -166,6 +167,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
 
@@ -3783,6 +3785,7 @@ public class APIUtilTest {
         PowerMockito.when(AuthorizationManager.getInstance()).thenReturn(authorizationManager);
         String[] roles = new String[]{"role1", "role2"};
         Mockito.when(authorizationManager.getRolesOfUser(user)).thenReturn(roles);
+        initAPIUtil();
         Assert.assertEquals(2, APIUtil.getListOfRoles(user).length);
         try {
             APIUtil.getListOfRoles(null);
@@ -3800,6 +3803,7 @@ public class APIUtilTest {
         PowerMockito.when(AuthorizationManager.getInstance()).thenReturn(authorizationManager);
         String[] roles = new String[]{"role1", "role2", "role3"};
         Mockito.when(authorizationManager.getRolesOfUser(user)).thenReturn(roles);
+        initAPIUtil();
         Assert.assertEquals(3, APIUtil.getListOfRolesQuietly(user).length);
         Assert.assertEquals(0, APIUtil.getListOfRolesQuietly(null).length);
     }
@@ -4352,6 +4356,24 @@ public class APIUtilTest {
         permLink = APIUtil.getRegistryResourceHTTPPermlink("/apimgt/applicationdata");
         Assert.assertFalse(permLink.contains("vv1"));
 
+    }
+
+    /**
+     * This method to avoid cache usage for PublisherRoles.
+     */
+    private void initAPIUtil() {
+        PowerMockito.mockStatic(ServiceReferenceHolder.class);
+        ServiceReferenceHolder serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        APIManagerConfigurationService apiManagerConfigurationService = Mockito.mock(APIManagerConfigurationService
+                .class);
+        Mockito.doReturn(apiManagerConfigurationService).when(serviceReferenceHolder)
+                .getAPIManagerConfigurationService();
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        Mockito.doReturn("false").when(apiManagerConfiguration).getFirstProperty(APIConstants
+                .PUBLISHER_ROLE_CACHE_ENABLED);
+        Mockito.doReturn(apiManagerConfiguration).when(apiManagerConfigurationService).getAPIManagerConfiguration();
+        APIUtil.init();
     }
 
 }

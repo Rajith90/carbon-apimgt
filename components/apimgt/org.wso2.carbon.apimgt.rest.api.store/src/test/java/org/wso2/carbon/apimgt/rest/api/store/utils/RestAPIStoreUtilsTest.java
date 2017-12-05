@@ -29,13 +29,16 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.api.model.Application;
+import org.wso2.carbon.apimgt.api.model.Scope;
+import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
+import org.wso2.carbon.apimgt.api.model.Subscriber;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
-import org.wso2.carbon.apimgt.keymgt.stub.useradmin.APIKeyMgtException;
-import org.wso2.carbon.apimgt.keymgt.stub.useradmin.MultiTenantUserAdminServiceStub;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.rest.api.store.dto.ScopeListDTO;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 import org.wso2.carbon.context.CarbonContext;
@@ -46,7 +49,6 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import java.lang.reflect.Field;
-import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -58,13 +60,12 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
  * This is a test case for RestAPIStoreUtils.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ CarbonContext.class, ServiceReferenceHolder.class, MultiTenantUserAdminServiceStub.class,
-        CarbonUtils.class, Caching.class, RestApiUtil.class })
+@PrepareForTest({ CarbonContext.class, ServiceReferenceHolder.class, CarbonUtils.class, Caching.class,
+        RestApiUtil.class, APIUtil.class})
 public class RestAPIStoreUtilsTest {
     private final String ADMIN = "admin";
     private Application application;
     private Set<SubscribedAPI> subscriptions;
-    private MultiTenantUserAdminServiceStub multiTenantUserAdminServiceStub;
 
     @Before @SuppressWarnings("unchecked")
     public void init() throws Exception {
@@ -90,14 +91,6 @@ public class RestAPIStoreUtilsTest {
         Mockito.doReturn(ADMIN).when(apiManagerConfiguration).getFirstProperty(APIConstants.KEY_MANAGER_PASSWORD);
         Mockito.doReturn("true").when(apiManagerConfiguration).getFirstProperty(APIConstants.SCOPE_CACHE_ENABLED);
 
-        // Creating mock of MutiTenantUserAdminServiceStub.
-        multiTenantUserAdminServiceStub = Mockito.mock(MultiTenantUserAdminServiceStub.class);
-        Mockito.doReturn(new String[] { ADMIN }).when(multiTenantUserAdminServiceStub)
-                .getUserRoleList(Mockito.anyString());
-        Mockito.doReturn(serviceClient).when(multiTenantUserAdminServiceStub)._getServiceClient();
-        PowerMockito.whenNew(MultiTenantUserAdminServiceStub.class).withArguments(Mockito.any(), Mockito.any())
-                .thenReturn(multiTenantUserAdminServiceStub);
-
         PowerMockito.mockStatic(CarbonUtils.class);
         PowerMockito.doNothing()
                 .when(CarbonUtils.class, "setBasicAccessSecurityHeaders", Mockito.anyString(), Mockito.anyString(),
@@ -114,11 +107,8 @@ public class RestAPIStoreUtilsTest {
                 .getCache(APIConstants.APP_SUBSCRIPTION_FILTERED_SCOPE_CACHE);
         Mockito.doReturn(new LinkedHashSet<Set<Scope>>()).when(appCache).get(applicationUuid);
         Mockito.doReturn(new LinkedHashSet<Set<Scope>>()).when(appCache).get(ADMIN + "-" + applicationUuid);
-
-        Field multiTenantUserAdminServiceStubField = RestAPIStoreUtils.class
-                .getDeclaredField("multiTenantUserAdminServiceStub");
-        multiTenantUserAdminServiceStubField.setAccessible(true);
-        multiTenantUserAdminServiceStubField.set(null, multiTenantUserAdminServiceStub);
+        PowerMockito.mockStatic(APIUtil.class);
+        PowerMockito.when(APIUtil.getListOfRoles(Mockito.anyString())).thenReturn(new String[] { ADMIN });
     }
 
     /**
@@ -179,36 +169,6 @@ public class RestAPIStoreUtilsTest {
         Assert.assertNotNull("Scope list was null for a application with scope list", scopeListDTO);
         Assert.assertEquals("Random scope list has been added to the application with one scopes", 1,
                 scopeListDTO.getList().size());
-    }
-
-    /**
-     * This method tests the behaviour of the getUserRoleList method when the userAdminStub is not available.
-     *
-     * @throws Exception Exception.
-     */
-    @Test(expected = APIManagementException.class)
-    public void testGetUserRoleListNegativeScenario1() throws Exception {
-        Mockito.doThrow(new RemoteException()).when(multiTenantUserAdminServiceStub)
-                .getUserRoleList(Mockito.anyString());
-        PowerMockito.mockStatic(RestApiUtil.class);
-        PowerMockito.doReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)
-                .when(RestApiUtil.class, "getLoggedInUserTenantDomain");
-        RestAPIStoreUtils.getRoleListOfUser(ADMIN);
-    }
-
-    /**
-     * This method tests the behaviour of the getUserRoleList when there is Key Manager exception;
-     *
-     * @throws Exception Exception.
-     */
-    @Test(expected = APIManagementException.class)
-    public void testGetUserRoleListNegativeScenario2() throws Exception {
-        Mockito.doThrow(new APIKeyMgtException()).when(multiTenantUserAdminServiceStub)
-                .getUserRoleList(Mockito.anyString());
-        PowerMockito.mockStatic(RestApiUtil.class);
-        PowerMockito.doReturn(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME)
-                .when(RestApiUtil.class, "getLoggedInUserTenantDomain");
-        RestAPIStoreUtils.getRoleListOfUser(ADMIN);
     }
 
     /**

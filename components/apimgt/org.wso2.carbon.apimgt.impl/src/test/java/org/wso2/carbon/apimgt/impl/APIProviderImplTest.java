@@ -3397,17 +3397,18 @@ public class APIProviderImplTest {
         PowerMockito.when(realmService.getTenantManager()).thenReturn(tm);
         PowerMockito.when(tm.getTenantId("carbon.super")).thenReturn(-1234);
         
-        GenericArtifact genericArtifact1 = Mockito.mock(GenericArtifact.class);
-        GenericArtifact genericArtifact2 = Mockito.mock(GenericArtifact.class);
+        final GenericArtifact genericArtifact1 = Mockito.mock(GenericArtifact.class);
+        final GenericArtifact genericArtifact2 = Mockito.mock(GenericArtifact.class);
         
         Mockito.when(APIUtil.getAPI(genericArtifact1)).thenReturn(api1);
         Mockito.when(APIUtil.getAPI(genericArtifact2)).thenReturn(api2);
         
         GenericArtifact[] genericArtifacts = {genericArtifact1, genericArtifact2};
         GenericArtifact[] genericArtifacts1 = {};
-        
-        Mockito.when(artifactManager.findGenericArtifacts(Matchers.anyMap())).thenReturn(genericArtifacts, 
-                genericArtifacts1);
+
+        PowerMockito.when(GovernanceUtils.findGovernanceArtifacts(Mockito.anyMap(), Mockito.any(Registry.class),
+                Mockito.anyString())).thenReturn(new ArrayList<GovernanceArtifact>(){{add(genericArtifact1); add
+                (genericArtifact2);}}, new ArrayList<GovernanceArtifact>());
         
         Map<String, Object> result = apiProvider.getAllPaginatedAPIs("carbon.super", 0, 10);
         
@@ -3424,7 +3425,8 @@ public class APIProviderImplTest {
         Assert.assertEquals(0, apiList1.size());
         
         //Registry Exception while retrieving artifacts
-        Mockito.when(artifactManager.findGenericArtifacts(Matchers.anyMap())).thenThrow(RegistryException.class);
+        PowerMockito.when(GovernanceUtils.findGovernanceArtifacts(Mockito.anyMap(), Mockito.any(Registry.class),
+                Mockito.anyString())).thenThrow(RegistryException.class);
         try {
             apiProvider.getAllPaginatedAPIs("carbon.super", 0, 10);
         } catch(APIManagementException e) {
@@ -4266,6 +4268,41 @@ public class APIProviderImplTest {
         modifiersField.setAccessible(true);
         modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
         field.set(null, newValue);
+    }
+
+    /**
+     * This method tests the behaviour of the searchAPISByUrlpattern method.
+     *
+     * @throws APIManagementException API Management Exception.
+     * @throws UserStoreException     User Store Exception.
+     * @throws RegistryException      Registry Exception.
+     */
+    @Test
+    public void testSearchAPIsByURLPattern() throws APIManagementException, UserStoreException, RegistryException {
+        TestUtils.mockAPIMConfiguration(true);
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Registry registry = Mockito.mock(Registry.class);
+        Assert.assertEquals("Search APIs By url pattern returns wrong list of APIs", 0,
+                apiProvider.searchAPIsByURLPattern(registry, "test", 0, 10).get("length"));
+    }
+
+    /**
+     * This method tests the behaviour of getSearchQuery method under different circumstances.
+     *
+     * @throws UserStoreException     UserStore Exception.
+     * @throws RegistryException      Registry Exception.
+     * @throws APIManagementException API Management Exception.
+     */
+    @Test
+    public void testSearchQuery() throws UserStoreException, RegistryException, APIManagementException {
+        TestUtils.mockAPIMConfiguration(true);
+        APIProviderImplWrapper apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Assert.assertTrue("When the access control is enabled, search query includes role query",
+                apiProvider.getSearchQuery("").contains("(null)"));
+        TestUtils.mockAPIMConfiguration();
+        apiProvider = new APIProviderImplWrapper(apimgtDAO, null);
+        Assert.assertFalse("When the access control is enabled, search query includes role query",
+                apiProvider.getSearchQuery("").contains("(null)"));
     }
 
 }
