@@ -426,23 +426,32 @@ var jagg = jagg || (function () {
          // security fix for HOST Header Attack
         return validateHostName(match, host) + url(path);;
     }
-}
+};
 
-    var validateHostName = function(match, host) {
-         var CarbonUtils = Packages.org.wso2.carbon.utils.CarbonUtils;
-         var carbonUtils = new CarbonUtils();
-         var hostName = carbonUtils.getServerConfiguration().getFirstProperty("HostName");
-         var process = require('process');
+    function validateHostName(match, host) {
+        var CarbonUtils = Packages.org.wso2.carbon.utils.CarbonUtils;
+        var carbonUtils = new CarbonUtils();
+        var hostName = carbonUtils.getServerConfiguration().getFirstProperty("HostName");
+        var process = require('process');
         if ((hostName != null && match.host.split(":")[0].equals(hostName.split(":")[0])) || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
-            return host;
-        } else {
-           // Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration.
-            if (hostName) {
-                host = hostName + ":" + process.getProperty('mgt.transport.https.port');
-            } else {
-                host = process.getProperty('carbon.local.ip') + ":" + process.getProperty('mgt.transport.https.port');
+           return host;
+        } else if(isReverseProxyEnabled()) {
+            var proxyHost = site.reverseProxy.host;
+            if(!host.split(":")[0].equals(proxyHost)) {
+                // Possible HOST Header Attack is identified with reverse proxy enabled. Hence, rewritting to defaul revers proxy host in configuration.
+                host = proxyHost;
             }
-               return match.protocol + "//" + host;
+            return match.protocol + "//" + host;
+        } else if(site.reverseProxy.enabled != "auto") {
+           // Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration.
+            if (hostName) {equals
+                host = hostName + ":" + process.getProperty('mgt.transport.https.port');
+        } else {
+           host = process.getProperty('carbon.local.ip') + ":" + process.getProperty('mgt.transport.https.port');
+        }
+     return match.protocol + "//" + host;
+        } else {
+            return host;
         }
     };
 
@@ -528,6 +537,7 @@ var jagg = jagg || (function () {
     };
 
     var isReverseProxyEnabled = function(){
+        var reverse_proxy;
         if(reverse_proxy != undefined){
             return reverse_proxy;
         }
