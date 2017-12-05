@@ -1583,6 +1583,7 @@ public class ApiMgtDAO {
 
                     if(multiGropIdEnabled){
                         application.setGroupId(getGroupId(application.getId()));
+                        application.setOwner(result.getString("OWNER"));
                     }
 
                     applicationCache.put(applicationId, application);
@@ -3961,9 +3962,10 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
-                String subscriberID = rs.getString("USER_ID");
-                application.setSubscriber(getSubscriber(subscriberID));
-
+                if(multiGropIdEnabled) {
+                    String subscriberID = rs.getString("USER_ID");
+                    application.setSubscriber(getSubscriber(subscriberID));
+                }
                 Set<APIKey> keys = getApplicationKeys(subscriber.getName(), application.getId());
                 Map<String, OAuthApplicationInfo> keyMap = getOAuthApplications(application.getId());
 
@@ -5293,6 +5295,7 @@ public class ApiMgtDAO {
                     query += whereClauseWithMultiGroupId;
                     String[] groupIds = groupId.split(",");
                     int parameterIndex = groupIds.length;
+                    //
                     prepStmt = fillQueryParams(connection, query, groupIds, 1);
                     prepStmt.setString(++parameterIndex, userId);
                     prepStmt.setString(++parameterIndex, applicationName);

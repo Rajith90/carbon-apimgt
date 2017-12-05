@@ -615,6 +615,7 @@ public class SQLConstants {
             "   APP.CALLBACK_URL AS CALLBACK_URL, " +
             "   SUBS.UUID AS SUB_UUID, " +
             "   APP.UUID AS APP_UUID " +
+            "   APP.CREATED_BY AS OWNER" +
             " FROM " +
             "   AM_SUBSCRIBER SUB," +
             "   AM_APPLICATION APP, " +

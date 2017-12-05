@@ -2444,6 +2444,11 @@ public class APIStoreHostObject extends ScriptableObject {
                     row.put("applicationId", row, api.getApplication().getId());
                     row.put("prodKey", row, getKey(api, APIConstants.API_KEY_TYPE_PRODUCTION));
                     row.put("sandboxKey", row, getKey(api, APIConstants.API_KEY_TYPE_SANDBOX));
+
+                    if(APIUtil.isMultiGroupSharingEnabled()){
+                        row.put("owner", row, api.getApplication().getOwner());
+                    }
+
                     ArrayList<APIKey> keys = (ArrayList<APIKey>) api.getApplication().getKeys();
                     for(APIKey key : keys){
                         row.put(key.getType()+"_KEY", row, key.getAccessToken());
