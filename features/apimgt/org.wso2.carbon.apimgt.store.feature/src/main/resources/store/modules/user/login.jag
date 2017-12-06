@@ -47,11 +47,13 @@ var login = function (username, password,tenantMode) {
             }
         }
     }
-
     if(log.isDebugEnabled()){
         log.debug("Setting Group ID :-" + groupId);
     }
-
+    if(groupId == null || groupId == "null"){
+        //   Set group Id to empty string to avoid null value being passed to backend.
+        groupId="";
+    }
     session.put("groupId", groupId);
     var subscriber = store.getSubscriber(username);
     if (!subscriber) {

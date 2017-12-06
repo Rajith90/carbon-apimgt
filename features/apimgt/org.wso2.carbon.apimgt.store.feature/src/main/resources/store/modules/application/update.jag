@@ -10,6 +10,12 @@ var updateApplication = function (applicationNew,applicationOld,username,tier,ca
         if(jagg.isMultiGroupEnabled()){
             groupId = groupIdOld;
         }
+
+        if (groupIdNew == null || groupIdNew == "null") {
+            //   Set group Id to empty string to avoid null value being passed to backend.
+            groupIdNew = " ";
+        }
+
         var status = store.updateApplication(applicationNew,applicationOld,username,tier,callbackUrlNew,descriptionNew,groupId,groupIdNew);
         if (log.isDebugEnabled()) {
             log.debug("updateApplication");
