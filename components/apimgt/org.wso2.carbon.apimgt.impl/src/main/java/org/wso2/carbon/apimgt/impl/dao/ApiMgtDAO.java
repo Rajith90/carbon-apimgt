@@ -3961,7 +3961,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
-                if(groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
+                if(multiGropIdEnabled) {
                     application.setOwner(rs.getString("CREATED_BY"));
                     application.setGroupId(getGroupId(application.getId()));
                 }
@@ -5329,7 +5329,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setGroupId(rs.getString("GROUP_ID"));
 
-                if (groupId != null && !"null".equals(groupId) && !groupId.isEmpty() && multiGropIdEnabled) {
+                if (multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                 }
             }
