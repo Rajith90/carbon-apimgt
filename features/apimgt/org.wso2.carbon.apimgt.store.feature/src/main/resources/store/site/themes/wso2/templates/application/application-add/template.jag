@@ -2,7 +2,6 @@
  var APIUtil = org.wso2.carbon.apimgt.impl.utils.APIUtil;
  var apiPath = "";
  var goBack = "";
- var groupingId = session.get("groupId");
 
  if(session.get('apiPath') != null){
         apiPath = session.get('apiPath');
@@ -64,7 +63,7 @@
         </label>
         <div class="col-sm-9 tagContainer">
             <input type="text" style="width: 100%" placeholder="Add groups"
-            class="form-control validInput validRegistryName" id="groupId" name="groups" value="<%=encode.forHtml(groupingId) %>" data-role="tagsinput"
+            class="form-control validInput validRegistryName" id="groupId" name="groups" data-role="tagsinput"
             onkeyup="$(this).validate()"/>
 
             <label class="tags-error error pull-left" style="display:none"></label>
