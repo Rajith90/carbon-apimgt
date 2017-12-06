@@ -2,6 +2,7 @@
  var APIUtil = org.wso2.carbon.apimgt.impl.utils.APIUtil;
  var apiPath = "";
  var goBack = "";
+
  if(session.get('apiPath') != null){
         apiPath = session.get('apiPath');
  }
@@ -54,6 +55,24 @@
       <input type="text" class="form-control required validateSpecialChars validName" title="Application Name" id="application-name" autofocus="autofocus"/>
     </div>
   </div>
+<%
+ if(jagg.isMultiGroupEnabled()){
+%>
+  <div class="form-group">
+        <label class="col-sm-3 control-label" for="groups"><%=i18n.localize("Groups")%>
+        </label>
+        <div class="col-sm-9 tagContainer">
+            <input type="text" style="width: 100%" placeholder="Add groups"
+            class="form-control validInput validRegistryName" id="groupId" name="groups" data-role="tagsinput"
+            onkeyup="$(this).validate()"/>
+
+            <label class="tags-error error pull-left" style="display:none"></label>
+            <label class="add-tags-error error pull-left" style="display:none"></label>
+            <p class="help-block" id="rolesHelp"><%=i18n.localize("Type a Group and Enter")%></p>
+        </div>
+    </div>
+
+<%}%>
   <div class="form-group">
   <%
     if(!APIUtil.isAdvanceThrottlingEnabled()){
