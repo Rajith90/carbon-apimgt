@@ -1506,7 +1506,6 @@ public class ApiMgtDAO {
         try {
             connection = APIMgtDBUtil.getConnection();
 
-
             if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
 
                 if (multiGropIdEnabled) {
@@ -3899,9 +3898,9 @@ public class ApiMgtDAO {
         if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
             if (multiGropIdEnabled) {
                 if (forceCaseInsensitiveComparisons) {
-                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITH_MULTIGROUPID");
-                } else {
                     sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_NONE_CASESENSITVE_WITH_MULTIGROUPID");
+                } else {
+                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITH_MULTIGROUPID");
                 }
             } else {
                 if (forceCaseInsensitiveComparisons) {
@@ -3962,7 +3961,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
-                if(multiGropIdEnabled) {
+                if(groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
                     application.setOwner(rs.getString("CREATED_BY"));
                     application.setGroupId(getGroupId(application.getId()));
                 }
@@ -4085,7 +4084,7 @@ public class ApiMgtDAO {
                 for (APIKey key : keys) {
                     application.addKey(key);
                 }
-                if (multiGropIdEnabled) {
+                if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                     application.setOwner(rs.getString("CREATED_BY"));
                 }
@@ -5330,7 +5329,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setGroupId(rs.getString("GROUP_ID"));
 
-                if (multiGropIdEnabled) {
+                if (groupId != null && !"null".equals(groupId) && !groupId.isEmpty() && multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                 }
             }
