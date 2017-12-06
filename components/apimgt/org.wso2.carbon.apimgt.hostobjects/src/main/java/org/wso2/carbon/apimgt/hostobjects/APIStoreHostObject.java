@@ -4478,14 +4478,15 @@ public class APIStoreHostObject extends ScriptableObject {
         String[] groupIdArray = null;
         try {
             groupIdArray = consumer.getGroupIds(response);
-            grpIdList = new NativeArray(0);
-
-            int i = 0;
-            for (String groupId : groupIdArray) {
-                grpIdList.put(i, grpIdList, groupId);
-                i++;
+            if (groupIdArray != null) {
+                grpIdList = new NativeArray(0);
+                int i = 0;
+                for (String groupId : groupIdArray) {
+                    grpIdList.put(i, grpIdList, groupId);
+                    i++;
+                }
+                return grpIdList;
             }
-            return grpIdList;
         } catch (APIManagementException e) {
             //This is actually not an exception, that should abort the user flow. If the groupId is not available then
             //the flow for which the group id is not required will be run.
