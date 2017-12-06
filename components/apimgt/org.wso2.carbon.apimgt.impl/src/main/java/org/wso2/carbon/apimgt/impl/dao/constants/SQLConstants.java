@@ -614,7 +614,7 @@ public class SQLConstants {
             "   APP.NAME AS APP_NAME, " +
             "   APP.CALLBACK_URL AS CALLBACK_URL, " +
             "   SUBS.UUID AS SUB_UUID, " +
-            "   APP.UUID AS APP_UUID " +
+            "   APP.UUID AS APP_UUID, " +
             "   APP.CREATED_BY AS OWNER" +
             " FROM " +
             "   AM_SUBSCRIBER SUB," +
@@ -1144,7 +1144,7 @@ public class SQLConstants {
             "   API.API_PROVIDER AS API_PROVIDER, " +
             "   API.API_NAME AS API_NAME, " +
             "   API.API_VERSION AS API_VERSION, " +
-            "   SUBS.CREATED_BY AS USER_ID, " +
+            "   SUB.USER_ID AS USER_ID, " +
             "   APP.NAME AS APPNAME, " +
             "   SUBS.UUID AS SUB_UUID, " +
             "   SUBS.TIER_ID AS SUB_TIER_ID, " +
@@ -1305,7 +1305,8 @@ public class SQLConstants {
             "   APPLICATION_STATUS, " +
             "   USER_ID, " +
             "   GROUP_ID, " +
-            "   UUID " +
+            "   UUID, " +
+            "   APP.CREATED_BY " +
             " FROM" +
             "   AM_APPLICATION APP, " +
             "   AM_SUBSCRIBER SUB  " +

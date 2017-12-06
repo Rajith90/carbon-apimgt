@@ -3035,7 +3035,7 @@ public class APIStoreHostObject extends ScriptableObject {
                     row.put("groupId", row, application.getGroupId());
                     row.put("isBlacklisted", row, application.getIsBlackListed());
                     row.put("totalCount", row, applicationCount);
-                    row.put("owner", row, application.getSubscriber().getName());
+                    row.put("owner", row, application.getOwner());
                     myn.put(i++, myn, row);
                 }
 
@@ -3074,7 +3074,7 @@ public class APIStoreHostObject extends ScriptableObject {
                     row.put("apiCount", row, subscriptionCount);
                     row.put("groupId", row, application.getGroupId());
                     row.put("isBlacklisted", row, application.getIsBlackListed());
-                    row.put("owner", row, application.getSubscriber().getName());
+                    row.put("owner", row, application.getOwner());
                     myn.put(i++, myn, row);
                 }
             }

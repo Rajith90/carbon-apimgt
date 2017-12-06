@@ -107,10 +107,6 @@ public class Application {
         return subscriber;
     }
 
-    public void setSubscriber(Subscriber subscriber) {
-        this.subscriber = subscriber;
-    }
-
     public Set<SubscribedAPI> getSubscribedAPIs() {
         return subscribedAPIs;
     }

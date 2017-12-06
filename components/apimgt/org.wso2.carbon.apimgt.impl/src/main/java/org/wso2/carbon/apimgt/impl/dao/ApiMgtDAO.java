@@ -3963,8 +3963,8 @@ public class ApiMgtDAO {
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
                 if(multiGropIdEnabled) {
-                    String subscriberID = rs.getString("USER_ID");
-                    application.setSubscriber(getSubscriber(subscriberID));
+                    application.setOwner(rs.getString("CREATED_BY"));
+                    application.setGroupId(getGroupId(application.getId()));
                 }
                 Set<APIKey> keys = getApplicationKeys(subscriber.getName(), application.getId());
                 Map<String, OAuthApplicationInfo> keyMap = getOAuthApplications(application.getId());
@@ -3975,9 +3975,6 @@ public class ApiMgtDAO {
 
                 for (APIKey key : keys) {
                     application.addKey(key);
-                }
-                if (multiGropIdEnabled) {
-                    application.setGroupId(getGroupId(application.getId()));
                 }
                 applicationsList.add(application);
 
@@ -4090,8 +4087,7 @@ public class ApiMgtDAO {
                 }
                 if (multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
-                    String subscriberID = rs.getString("USER_ID");
-                    application.setSubscriber(getSubscriber(subscriberID));
+                    application.setOwner(rs.getString("CREATED_BY"));
                 }
                 applicationsList.add(application);
             }
