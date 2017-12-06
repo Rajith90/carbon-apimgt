@@ -424,11 +424,11 @@ var jagg = jagg || (function () {
         var match = getRequestSegments();
         var host = match.protocol + "//" + match.host;
          // security fix for HOST Header Attack
-        if(site.reverseProxy.enabled != "auto") {
-                return validateHostName(match, host) + url(path);
-        	}
-        else{
-        	return host;
+        if (site.reverseProxy.enabled != "auto") {
+            return validateHostName(match, host) + url(path);
+        }
+        else {
+            return host;
        	}
     }
 };
