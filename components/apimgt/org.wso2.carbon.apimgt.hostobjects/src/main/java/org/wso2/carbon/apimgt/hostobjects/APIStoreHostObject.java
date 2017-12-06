@@ -4486,6 +4486,8 @@ public class APIStoreHostObject extends ScriptableObject {
                     i++;
                 }
                 return grpIdList;
+            }else{
+                return null;
             }
         } catch (APIManagementException e) {
             //This is actually not an exception, that should abort the user flow. If the groupId is not available then
