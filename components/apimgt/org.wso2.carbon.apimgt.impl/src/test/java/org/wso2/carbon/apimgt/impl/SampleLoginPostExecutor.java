@@ -26,8 +26,4 @@ public class SampleLoginPostExecutor implements LoginPostExecutor{
         return "success";
     }
 
-    @Override
-    public String[] getGroupingIdentifierList(String response) {
-        return new String[]{"success"};
-    }
 }

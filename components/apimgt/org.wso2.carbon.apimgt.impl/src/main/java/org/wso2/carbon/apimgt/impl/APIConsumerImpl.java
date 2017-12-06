@@ -29,6 +29,7 @@ import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIMgtResourceNotFoundException;
 import org.wso2.carbon.apimgt.api.LoginPostExecutor;
+import org.wso2.carbon.apimgt.api.NewPostLoginExecutor;
 import org.wso2.carbon.apimgt.api.WorkflowResponse;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -2932,7 +2933,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                         (groupingExtractorClass).newInstance();
                 //switching 2.1.0 and 2.2.0
                 if(APIUtil.isMultiGroupSharingEnabled()){
-                    return groupingExtractor.getGroupingIdentifierList(response);
+                    NewPostLoginExecutor newGroupIdListExtractor = (NewPostLoginExecutor)groupingExtractor;
+                    return newGroupIdListExtractor.getGroupingIdentifierList(response);
                 }else {
                     String groupId = groupingExtractor.getGroupingIdentifiers(response);
                     return new String[]{groupId};
@@ -2942,7 +2944,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 String msg = groupingExtractorClass + " is not found in run time";
                 log.error(msg, e);
                 throw new APIManagementException(msg, e);
-            } catch (IllegalAccessException e) {
+            }  catch (ClassCastException e) {
+                String msg = "Cannot cast " + groupingExtractorClass + " NewPostLoginExecutor";
+                log.error(msg, e);
+                throw new APIManagementException(msg, e);
+            }catch (IllegalAccessException e) {
                 String msg = "Error occurred while invocation of getGroupingIdentifier method";
                 log.error(msg, e);
                 throw new APIManagementException(msg, e);
