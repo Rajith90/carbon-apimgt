@@ -294,7 +294,7 @@ function validateHostName(match, host) {
         }
         return match.protocol + "//" + host;
     } else if(site.reverseProxy.enabled == "auto" || site.reverseProxy.enabled == false) {
-        log.warn("Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration.");
+        log.warn("Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration. site.reverseProxy.enabled = " + site.reverseProxy.enabled);
         if (hostName) {
             host = hostName + ":" + process.getProperty('mgt.transport.https.port');
         } else {

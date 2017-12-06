@@ -424,7 +424,12 @@ var jagg = jagg || (function () {
         var match = getRequestSegments();
         var host = match.protocol + "//" + match.host;
          // security fix for HOST Header Attack
-        return validateHostName(match, host) + url(path);;
+        if(site.reverseProxy.enabled != "auto") {
+                return validateHostName(match, host) + url(path);
+        	}
+        else{
+        	return host;
+       	}
     }
 };
 
@@ -444,7 +449,7 @@ var jagg = jagg || (function () {
             }
             return match.protocol + "//" + host;
         } else if(site.reverseProxy.enabled == "auto" || site.reverseProxy.enabled == false) {
-            log.warn("Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration.");
+            log.warn("Possible HOST Header Attack is identified. Hence, rewritting to defaul host in configuration. site.reverseProxy.enabled = " + site.reverseProxy.enabled);
             if (hostName) {
                 host = hostName + ":" + process.getProperty('mgt.transport.https.port');
             } else {
