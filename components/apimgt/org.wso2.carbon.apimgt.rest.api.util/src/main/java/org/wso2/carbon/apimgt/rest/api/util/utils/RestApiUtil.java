@@ -201,11 +201,15 @@ public class RestApiUtil {
             String loginInfoString = loginInfoJsonObj.toJSONString();
             String[] groupIdArr = apiConsumer.getGroupIds(loginInfoString);
             String groupId = "";
-            for (int i = 0; i < groupIdArr.length; i++) {
-                if(i == groupIdArr.length-1){
-                    groupId = groupId + groupIdArr[i];
-                }else{
-                    groupId = groupId + groupIdArr[i] + ",";
+            if (groupIdArr != null) {
+                for (int i = 0; i < groupIdArr.length; i++) {
+                    if (groupIdArr[i] != null) {
+                        if (i == groupIdArr.length - 1) {
+                            groupId = groupId + groupIdArr[i];
+                        } else {
+                            groupId = groupId + groupIdArr[i] + ",";
+                        }
+                    }
                 }
             }
             return groupId;
