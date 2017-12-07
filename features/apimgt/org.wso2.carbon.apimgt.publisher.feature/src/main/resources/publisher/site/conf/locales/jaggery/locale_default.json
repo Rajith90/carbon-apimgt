@@ -428,7 +428,7 @@
     "The following APIs have been created. APIs that are marked as PUBLISHED can be subscribed to through the API Store. ": "The following APIs have been created. APIs that are marked as PUBLISHED can be subscribed to through the API Store. ",
     "The maximum duration that the endpoint is suspended after receiving the suspended error codes .": "The maximum duration that the endpoint is suspended after receiving the suspended error codes .",
     "The new algorithm on which the load balancing is based on.":"The new algorithm on which the load balancing is based on.",
-    "The number of milliseconds before the session is terminated.":"The number of milliseconds before the session is terminated.",
+    "The number of milliseconds before the session times out.":"The number of milliseconds before the session times out.",
     "The number of retries in case of a timeout, caused by the above listed error codes.": "The number of retries in case of a timeout, caused by the above listed error codes.",
     "The Production Endpoint is the actual backend endpoint URL of the API.": "The Production Endpoint is the actual backend endpoint URL of the API.",
     "The Sandbox Endpoint is a mock endpoint that resembles the functionality of the actual backend API.": "The Sandbox Endpoint is a mock endpoint that resembles the functionality of the actual backend API.",

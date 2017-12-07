@@ -362,7 +362,7 @@
 														 <p><%= i18n.localize("A session management method.")%></p>
 													</div>
 													<div id="session_timeout_help" class="hide">
-														 <p><%= i18n.localize("The number of milliseconds before the session is terminated.")%></p>
+														 <p><%= i18n.localize("The number of milliseconds before the session times out.")%></p>
 													</div>
 
                                                     <!--Manage Certificates - main-->
