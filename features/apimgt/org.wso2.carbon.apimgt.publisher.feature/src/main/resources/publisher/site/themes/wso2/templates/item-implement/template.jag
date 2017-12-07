@@ -353,16 +353,16 @@
 														 <p><%= i18n.localize("The Sandbox Endpoint is a mock endpoint that resembles the functionality of the actual backend API.")%></p>
 													</div>
 													<div id="algorithm_help" class="hide">
-														 <p><%= i18n.localize("The algorithm on which the load balancing is based.")%></p>
+														 <p><%= i18n.localize("The algorithm on which the load balancing is based on.")%></p>
 													</div>
 													<div id="algorithm_class_name_help" class="hide">
-														 <p><%= i18n.localize("The new algorithm on which the load balancing is based.")%></p>
+														 <p><%= i18n.localize("The new algorithm on which the load balancing is based on.")%></p>
 													</div>
 													<div id="session_management_help" class="hide">
-														 <p><%= i18n.localize("A session management method from the load balancing group.")%></p>
+														 <p><%= i18n.localize("A session management method.")%></p>
 													</div>
 													<div id="session_timeout_help" class="hide">
-														 <p><%= i18n.localize("The number of milliseconds after which the session would time out.")%></p>
+														 <p><%= i18n.localize("The number of milliseconds before the session is terminated.")%></p>
 													</div>
 
                                                     <!--Manage Certificates - main-->
