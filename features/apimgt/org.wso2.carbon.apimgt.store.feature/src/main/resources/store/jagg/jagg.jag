@@ -428,7 +428,7 @@ var jagg = jagg || (function () {
             return validateHostName(match, host) + url(path);
         }
         else {
-            return host;
+            return host + url(path);
        	}
     }
 };
