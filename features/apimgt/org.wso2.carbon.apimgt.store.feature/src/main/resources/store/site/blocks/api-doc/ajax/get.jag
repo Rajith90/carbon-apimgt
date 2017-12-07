@@ -278,6 +278,30 @@ function getLocation(href) {
     }
 }
 
+function isReverseProxyEnabled() {
+    var reverse_proxy;
+    if(reverse_proxy != undefined) {
+        return reverse_proxy;
+    }
+    if(site.reverseProxy.enabled) {
+        if(site.reverseProxy.enabled == "auto") {
+            var xfwd = request.getHeader("X-Forwarded-Host");
+                if(xfwd != null) {
+                    xfwd = xfwd.split(",")[0];
+                    reverse_proxy = true;
+                    site.reverseProxy.host = xfwd.trim();
+                } else {
+                    reverse_proxy = false;
+                }
+        } else {
+            reverse_proxy = true;
+        }
+    } else {
+        reverse_proxy = false;
+    }
+    return reverse_proxy;
+};
+
 function validateHostName(match, host) {
     var log = new Log();
     var CarbonUtils = Packages.org.wso2.carbon.utils.CarbonUtils;
@@ -304,29 +328,5 @@ function validateHostName(match, host) {
     } else {
         return host;
     }
-};
-
-var isReverseProxyEnabled = function() {
-    var reverse_proxy;
-    if(reverse_proxy != undefined) {
-        return reverse_proxy;
-    }
-    if(site.reverseProxy.enabled) {
-        if(site.reverseProxy.enabled == "auto") {
-            var xfwd = request.getHeader("X-Forwarded-Host");
-                if(xfwd != null) {
-                    xfwd = xfwd.split(",")[0];
-                    reverse_proxy = true;
-                    site.reverseProxy.host = xfwd.trim();
-                } else {
-                    reverse_proxy = false;
-                }
-        } else {
-            reverse_proxy = true;
-        }
-    } else {
-        reverse_proxy = false;
-    }
-    return reverse_proxy;
 };
 %>
