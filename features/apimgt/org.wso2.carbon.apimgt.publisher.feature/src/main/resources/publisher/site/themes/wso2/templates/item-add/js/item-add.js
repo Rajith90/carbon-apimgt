@@ -89,14 +89,12 @@ $( document ).ready(function() {
             if (swaggerFile.trim() == "") {
                 $('#swagger-file').addClass('error');
                 $('.swaggerFileError').show();
-                console.log("Wrong endpoint.");
                 return;
             }
         } else {
             if (swaggerUrl.trim() == "") {
                 $('#swagger-url').addClass('error');
                 $('.swaggerUrlError').show();
-                console.log("Wrong endpoint.");
                 return;
             }
         }
