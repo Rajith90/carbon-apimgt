@@ -55,15 +55,15 @@ $( document ).ready(function() {
         });
     });
 
-    $('#swagger-file').change(function(){
+    $('#swagger-file').change(function () {
         $('.swaggerFileError').hide();
         $('#swagger-file').removeClass('error');
     });
 
-    $('#swagger-file').keyup(function(){
+    $('#swagger-file').keyup(function () {
         $('.swaggerFileError').hide();
         $('#swagger-file').removeClass('error');
-        if($('#swagger-file').val().length != 0) {
+        if ($('#swagger-file').val().length != 0) {
             $('#startFromExistingAPI').removeAttr("disabled");
         }
     });
