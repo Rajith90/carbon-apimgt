@@ -68,15 +68,15 @@ $( document ).ready(function() {
         }
     });
 
-    $('#swagger-url').change(function(){
+    $('#swagger-url').change(function () {
         $('.swaggerUrlError').hide();
         $('#swagger-url').removeClass('error');
     });
 
-    $('#swagger-url').keyup(function(){
+    $('#swagger-url').keyup(function () {
         $('.swaggerUrlError').hide();
         $('#swagger-url').removeClass('error');
-        if($('#swagger-url').val().length != 0) {
+        if ($('#swagger-url').val().length != 0) {
             $('#startFromExistingAPI').removeAttr("disabled");
         }
     });
