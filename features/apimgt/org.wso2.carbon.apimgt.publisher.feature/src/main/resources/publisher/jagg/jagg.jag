@@ -353,7 +353,7 @@ var getThemeFile = function (path) {
     };
 
     var getAbsoluteUrl = function (path) {
-        var host = "" 
+        var host = "";
         if(isReverseProxyEnabled()){
             host = "https://" + site.reverseProxy.host ;
             return host + url(path);

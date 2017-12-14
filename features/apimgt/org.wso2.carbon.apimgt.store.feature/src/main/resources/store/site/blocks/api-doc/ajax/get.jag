@@ -332,7 +332,7 @@ function validateHostName(match, host) {
     }
 };
 
-var isWhiteListedHost = function (host) {
+function isWhiteListedHost (host) {
     var whiteListedHostNames = site.whiteListedHostNames;
     for (var i = 0; i < whiteListedHostNames.length; i++) {
         if(host.equals(whiteListedHostNames[i])) {
