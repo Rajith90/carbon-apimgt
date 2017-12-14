@@ -376,7 +376,9 @@ var getThemeFile = function (path) {
         var carbonUtils = new CarbonUtils();
         var hostName = carbonUtils.getServerConfiguration().getFirstProperty("HostName");
         var process = require('process');
-        if ((hostName != null && match.host.split(":")[0].equals(hostName.split(":")[0])) || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
+        if ((hostName != null && match.host.split(":")[0].equals(hostName.split(":")[0]))
+                        || isWhiteListedHost(match.host.split(":")[0])
+                             || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
             return host;
         } else if (isReverseProxyEnabled()) {
             var proxyHost = site.reverseProxy.host;
@@ -397,6 +399,16 @@ var getThemeFile = function (path) {
             return host;
         }
     };
+
+    var isWhiteListedHost = function (host) {
+    	var whiteListedHostNames = site.whiteListedHostNames;
+    	for (var i = 0; i < whiteListedHostNames.length; i++) {
+    		if(host.equals(whiteListedHostNames[i])) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
     
     var getAbsoluteReqUrl = function (path) {
         var host = "";
