@@ -51,5 +51,6 @@
         "host" : "sample.proxydomain.com", // If reverse proxy do not have a domain name use IP
         "context":"",
       //"regContext":"" // Use only if different path is used for registry
-    }
+    },
+    "whiteListedHostNames" : ["localhost"]
 }
