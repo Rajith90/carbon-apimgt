@@ -199,7 +199,7 @@ var urlPrefix = jagg.getTenantURLPrefix("&");
                                 %>
 
                                     <%if(jagg.isMultiGroupEnabled()){%>
-                                        <div class="form-group multi-grp-app-dropdown" id="application-selection-list">
+                                        <div class="form-group multi-grp-application-dropdown" id="application-selection-list">
                                    <%}else{ %>
                                         <div class="form-group" id="application-selection-list">
                                     <%}%>
