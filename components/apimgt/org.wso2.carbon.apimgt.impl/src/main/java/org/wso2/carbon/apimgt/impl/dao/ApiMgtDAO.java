@@ -4117,7 +4117,7 @@ public class ApiMgtDAO {
                 for (APIKey key : keys) {
                     application.addKey(key);
                 }
-                if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
+                if (multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                     application.setOwner(rs.getString("CREATED_BY"));
                 }
