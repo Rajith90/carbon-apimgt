@@ -61,7 +61,7 @@ public class DefaultGroupIDExtractorImpl implements NewPostLoginExecutor {
         JSONObject obj;
         String username  = null;
         Boolean isSuperTenant;
-        int tenantId = MultitenantConstants.SUPER_TENANT_ID;N
+        int tenantId = MultitenantConstants.SUPER_TENANT_ID;
         String tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
         String claim = "http://wso2.org/claims/organization";
         String organization = null;
