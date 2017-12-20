@@ -91,7 +91,7 @@ public class DefaultGroupIDExtractorImpl implements NewPostLoginExecutor {
                     groupIdArray = organization.split(",");
 
                     for (int i = 0; i < groupIdArray.length; i++) {
-                        groupIdArray[i] = groupIdArray[i].toString();
+                        groupIdArray[i] = groupIdArray[i].toString().trim();
                     }
                 }else {
                     organization = organization.trim();
