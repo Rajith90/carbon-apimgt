@@ -1336,4 +1336,8 @@ public final class APIConstants {
 
     public static final String UN_AUTHORIZED_ERROR_MESSAGE = "User is not authorized to";
 
+    /**
+     * Parameter for enabling tenant load notifications to members in the same HZ cluster
+     */
+    public static final String ENABLE_TENANT_LOAD_NOTIFICATION = "enableTenantLoadNotification";
 }
