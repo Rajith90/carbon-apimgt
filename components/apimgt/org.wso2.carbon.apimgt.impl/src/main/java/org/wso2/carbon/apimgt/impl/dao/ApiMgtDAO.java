@@ -1594,7 +1594,8 @@ public class ApiMgtDAO {
                         application.addOAuthApp(entry.getKey(), entry.getValue());
                     }
 
-                    if (multiGropIdEnabled) {
+                    if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() &&
+                            multiGropIdEnabled) {
                         application.setGroupId(getGroupId(application.getId()));
                         application.setOwner(result.getString("OWNER"));
                     }
@@ -3994,7 +3995,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
-                if(multiGropIdEnabled) {
+                if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
                     application.setOwner(rs.getString("CREATED_BY"));
                     application.setGroupId(getGroupId(application.getId()));
                 }
@@ -4120,7 +4121,7 @@ public class ApiMgtDAO {
                 for (APIKey key : keys) {
                     application.addKey(key);
                 }
-                if (multiGropIdEnabled) {
+                if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() && multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                     application.setOwner(rs.getString("CREATED_BY"));
                 }
@@ -5371,7 +5372,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setGroupId(rs.getString("GROUP_ID"));
 
-                if (multiGropIdEnabled) {
+                if (groupId != null && !"null".equals(groupId) && !groupId.isEmpty() && multiGropIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                 }
             }
