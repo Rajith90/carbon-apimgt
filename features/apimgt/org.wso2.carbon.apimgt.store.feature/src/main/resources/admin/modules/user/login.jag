@@ -57,6 +57,7 @@ var login = function (username, password, tenantMode) {
     	var isAllowed = isUserAllowed(loginResponse.user);
 
         if (isAllowed) {
+            username = loginResponse.user;
             getWorkflowCookie(username, password);
             var auth = getAuthorizationHeaderCredentials(username, password);
 
