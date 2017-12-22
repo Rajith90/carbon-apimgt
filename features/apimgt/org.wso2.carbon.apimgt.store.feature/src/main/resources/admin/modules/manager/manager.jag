@@ -110,7 +110,7 @@ function validateHostName(match, host) {
              host = proxyHost;
          }
          return match.protocol + "//" + host;
-     } else if (site.reverseProxy.enabled == "auto" || site.reverseProxy.enabled == false) {
+     } else if (site.reverseProxy.enabled == false) {
         log.warn("Possible HOST Header Attack is identified. Hence, rewriting to default host in configuration. site.reverseProxy.enabled = " + site.reverseProxy.enabled);
         if (hostName) {
             host = hostName + ":" + process.getProperty('mgt.transport.https.port');
