@@ -7,6 +7,8 @@ var getHTTPsURL = function() {
     var url = request.getRequestURL();
     var match = getLocation(url);
     var host = match.host;
+    //We do not validate host name against whitelisted host names when site.reverseProxy.enabled == "auto" as in this
+    //case Host is re written by the X-Forwarded-Host at the LB
     if (site.reverseProxy.enabled != "auto") {
         host = validateHostName(match, host);
     }
