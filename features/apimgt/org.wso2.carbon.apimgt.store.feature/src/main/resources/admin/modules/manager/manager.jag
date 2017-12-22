@@ -100,6 +100,7 @@ function validateHostName(match, host) {
      var hostName = carbonUtils.getServerConfiguration().getFirstProperty("HostName");
      var process = require('process');
      if ((hostName != null && match.host.split(":")[0].equals(hostName.split(":")[0]))
+        || isWhiteListedHost(match.host.split(":")[0])
             || match.host.split(":")[0].equals(process.getProperty('carbon.local.ip').split(":")[0])) {
          return host;
      } else if (isReverseProxyEnabled()) {
@@ -120,6 +121,16 @@ function validateHostName(match, host) {
      } else {
         return host;
      }
+};
+
+var isWhiteListedHost = function (host) {
+    var whiteListedHostNames = site.whiteListedHostNames;
+    for (var i = 0; i < whiteListedHostNames.length; i++) {
+        if(host.equals(whiteListedHostNames[i])) {
+            return true;
+        }
+    }
+    return false;
 };
 
 var isReverseProxyEnabled = function() {
