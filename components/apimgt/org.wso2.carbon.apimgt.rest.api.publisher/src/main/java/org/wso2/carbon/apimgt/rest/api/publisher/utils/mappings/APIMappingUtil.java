@@ -548,7 +548,6 @@ public class APIMappingUtil {
             apiListDTO.setList(apiInfoDTOs);
         }
 
-        //add the required range of objects to be returne
         for (int i = 0; i <= apiList.size() -1; i++) {
             apiInfoDTOs.add(fromAPIToInfoDTO(apiList.get(i)));
         }
