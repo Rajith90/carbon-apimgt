@@ -4,6 +4,7 @@ var log = new Log();
 var encode = require('encode');
 encode = new encode.Encode();
 var CryptoUtil = Packages.org.wso2.carbon.core.util.CryptoUtil;
+var SwaggerParser = Packages.io.swagger.parser.SwaggerParser;
 
 function loadSwaggerObj(path)
 {
@@ -43,6 +44,7 @@ if(jagg.isCSRFTokenValid())
             var swagger = null;
             var wsdl = null;
             var supportedSwaggerVersion = "2.0";
+	        var parser = new SwaggerParser();
             if(type == "rest"){
                 var url = request.getParameter("swagger-url");
                 var file = request.getFile("swagger-file");
@@ -62,18 +64,21 @@ if(jagg.isCSRFTokenValid())
                                 return;
                             }
                         }
-                        var swaggerJSON = parse(swagger);
+                        var swaggerDeserializationResult = parser.readWithInfo(swagger);
+			var swaggerObj = swaggerDeserializationResult.getSwagger();
+                        var swaggerErrors = swaggerDeserializationResult.getMessages();
+
                         //Supported swagger version check
-                        if(swaggerJSON.swagger != supportedSwaggerVersion){
+                        if(swaggerObj.swagger != supportedSwaggerVersion){
                             print({
                                 error: true,
-                                message: "Unsupported swagger version provided. Please re-imported with swagger " + supportedSwaggerVersion
+                                message: "Unsupported swagger version provided. Please re-import with swagger " + supportedSwaggerVersion
                             });
                             return;
                         }
                         //Validate swagger definition with mandatory swagger elements
-                        if(swaggerJSON.swagger == null || swaggerJSON.paths == null || swaggerJSON.info == null){
-                            print({error: true, message: url + " contains invalid swagger definition"});
+                        if (swaggerErrors.size() > 0) {
+                            print({error: true, message: file.getName() + " contains invalid swagger definition"});
                             return;
                         }
 
@@ -86,19 +91,21 @@ if(jagg.isCSRFTokenValid())
                     file.open("r");
                     swagger = file.readAll();
                     try {
-                        var swaggerJSON = parse(swagger);
+                        var swaggerDeserializationResult = parser.readWithInfo(swagger);
+                        var swaggerObj = swaggerDeserializationResult.getSwagger();
+                        var swaggerErrors = swaggerDeserializationResult.getMessages();
+
                         //Supported swagger version check
-                        if (swaggerJSON.swagger != supportedSwaggerVersion) {
+                        if (swaggerObj.swagger != supportedSwaggerVersion) {
                             print({
                                 error: true,
-                                message: "Unsupported swagger version provided. Please re-imported with swagger " + supportedSwaggerVersion
+                                message: "Unsupported swagger version provided. Please re-import with swagger " + supportedSwaggerVersion
                             });
                             return;
                         }
-                        //Validate swagger definition with mandatory swagger elements
-                        if (swaggerJSON.swagger == null || swaggerJSON.paths == null || swaggerJSON.info == null) {
+                        if (swaggerErrors.size() > 0) {
                             print({error: true, message: file.getName() + " contains invalid swagger definition"});
-                            return;
+                                        return;
                         }
                     } catch (e) {
                         print({error: true, message: file.getName() + " is not a valid Swagger Definition file"});
