@@ -250,11 +250,11 @@ var checkWorkflowServerStatus = function (serverUrl) {
         var httpClient = new Packages.org.apache.http.impl.client.DefaultHttpClient();
         var httpGet = new Packages.org.apache.http.client.methods.HttpGet(endpoint);
         var response = httpClient.execute(httpGet);
-	if(response.getStatusLine().getStatusCode() == 200) {
-		return true;
-	} else {
-		return false;
-	}
+        if(response.getStatusLine().getStatusCode() == 200) {
+            return true;
+        } else {
+            return false;
+        }
     } catch (e) {
         log.warn("Not Retrieving Pending Tasks. Check BPS Connectivity. " + e.message);
         return false;
