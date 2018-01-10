@@ -245,7 +245,11 @@ var getAuthCookieBySAMLToken = function (serverUrl) {
 
 var checkWorkflowServerStatus = function (serverUrl) {
     var log = new Log();
-    var endpoint = serverUrl.substring(0, serverUrl.length - 9) + "carbon";
+    var endpoint;
+    if (serverUrl.length - serverUrl.lastIndexOf("services") == 9) {
+        serverUrl = serverUrl.substring(0, serverUrl.length - 9);
+    }
+    endpoint = serverUrl + "carbon";
     try {
         var httpClient = new Packages.org.apache.http.impl.client.DefaultHttpClient();
         var httpGet = new Packages.org.apache.http.client.methods.HttpGet(endpoint);
