@@ -246,7 +246,6 @@ var getAuthCookieBySAMLToken = function (serverUrl) {
 var checkWorkflowServerStatus = function (serverUrl) {
     var log = new Log();
     var endpoint = serverUrl.substring(0, serverUrl.length - 9) + "carbon";
-    log.info(endpoint);
     try {
         var httpClient = new Packages.org.apache.http.impl.client.DefaultHttpClient();
         var httpGet = new Packages.org.apache.http.client.methods.HttpGet(endpoint);
@@ -258,7 +257,6 @@ var checkWorkflowServerStatus = function (serverUrl) {
 	}
     } catch (e) {
         log.warn("Not Retrieving Pending Tasks. Check BPS Connectivity. " + e.message);
-	log.info("returning false");
         return false;
     }
 };
