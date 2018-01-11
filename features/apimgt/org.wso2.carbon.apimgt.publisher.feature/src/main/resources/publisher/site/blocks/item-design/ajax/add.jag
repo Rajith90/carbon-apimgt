@@ -44,7 +44,7 @@ if(jagg.isCSRFTokenValid())
             var swagger = null;
             var wsdl = null;
             var supportedSwaggerVersion = "2.0";
-            var parser = new SwaggerParser();
+	        var parser = new SwaggerParser();
             if(type == "rest"){
                 var url = request.getParameter("swagger-url");
                 var file = request.getFile("swagger-file");
@@ -65,7 +65,7 @@ if(jagg.isCSRFTokenValid())
                             }
                         }
                         var swaggerDeserializationResult = parser.readWithInfo(swagger);
-                        var swaggerObj = swaggerDeserializationResult.getSwagger();
+			var swaggerObj = swaggerDeserializationResult.getSwagger();
                         var swaggerErrors = swaggerDeserializationResult.getMessages();
 
                         //Supported swagger version check
@@ -78,10 +78,16 @@ if(jagg.isCSRFTokenValid())
                         }
                         //Validate swagger definition with mandatory swagger elements
                         if (swaggerErrors.size() > 0) {
-                            print({error: true, message: file.getName() + " contains invalid swagger definition"});
+                            var errorCount = swaggerErrors.size();
+                            var errorMsg = "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div><ol>" ;
+                            var count = 0;
+                            for (count = 0; count < errorCount; count++) {
+                                errorMsg = errorMsg + "<li>" + swaggerErrors.get(count) + "</li>";
+                            }
+                            errorMsg = errorMsg + "</ol></div>"
+                            print({error: true, message: errorMsg});
                             return;
                         }
-
                     } catch (e) {
                         print({error: true, message: url + " is not a valid Swagger Definition url"});
                         return;
@@ -104,7 +110,14 @@ if(jagg.isCSRFTokenValid())
                             return;
                         }
                         if (swaggerErrors.size() > 0) {
-                            print({error: true, message: file.getName() + " contains invalid swagger definition"});
+                            var errorCount = swaggerErrors.size();
+                            var errorMsg = "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div><ol>" ;
+                            var count = 0;
+                            for (count = 0; count < errorCount; count++) {
+                                errorMsg = errorMsg + "<li>" + swaggerErrors.get(count) + "</li>";
+                            }
+                            errorMsg = errorMsg + "</ol></div>"
+                            print({error: true, message: errorMsg});
                             return;
                         }
                     } catch (e) {
