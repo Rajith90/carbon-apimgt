@@ -66,15 +66,6 @@ if(jagg.isCSRFTokenValid())
                     try {
                         var content = get(url, data);
                         swagger = content.data;
-                        var keywords = [/swagger/i, /info/i, /paths/i, /version/i];
-                        var valid = true;
-                        for (var i = 0; i < keywords.length; i++) {
-                            if ((m = keywords[i].exec(content.data)) == null) {
-                                swagger = "undefined";
-                                print({error: true, message: url + " contains invalid swagger definition"});
-                                return;
-                            }
-                        }
                         var swaggerDeserializationResult = parser.readWithInfo(swagger);
                         var swaggerObj = swaggerDeserializationResult.getSwagger();
                         var swaggerErrors = swaggerDeserializationResult.getMessages();
