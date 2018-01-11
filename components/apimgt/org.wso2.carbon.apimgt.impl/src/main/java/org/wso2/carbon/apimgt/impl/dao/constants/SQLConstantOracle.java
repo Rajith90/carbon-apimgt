@@ -39,8 +39,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -71,8 +70,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -100,8 +98,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -133,8 +130,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -167,8 +163,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -197,8 +192,7 @@ public class SQLConstantOracle extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +

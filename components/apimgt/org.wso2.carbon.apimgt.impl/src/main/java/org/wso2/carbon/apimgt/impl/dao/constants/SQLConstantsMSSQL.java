@@ -40,8 +40,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
             "   APPLICATION_STATUS, " +
             "   USER_ID, " +
             "   GROUP_ID, " +
-            "   UUID, " +
-            "   APP.CREATED_BY AS CREATED_BY " +
+            "   UUID " +
             " FROM" +
             "   AM_APPLICATION APP, " +
             "   AM_SUBSCRIBER SUB  " +
@@ -72,8 +71,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
             "   APPLICATION_STATUS, " +
             "   USER_ID, " +
             "   GROUP_ID, " +
-            "   UUID, " +
-            "   APP.CREATED_BY AS CREATED_BY " +
+            "   UUID " +
             " FROM" +
             "   AM_APPLICATION APP, " +
             "   AM_SUBSCRIBER SUB  " +
@@ -102,8 +100,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -137,8 +134,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
                     "   APPLICATION_STATUS, " +
                     "   USER_ID, " +
                     "   GROUP_ID, " +
-                    "   UUID, " +
-                    "   APP.CREATED_BY AS CREATED_BY " +
+                    "   UUID " +
                     " FROM" +
                     "   AM_APPLICATION APP, " +
                     "   AM_SUBSCRIBER SUB  " +
@@ -171,8 +167,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
             "   APPLICATION_STATUS, " +
             "   USER_ID, " +
             "   GROUP_ID, " +
-            "   UUID, " +
-            "   APP.CREATED_BY AS CREATED_BY " +
+            "   UUID " +
             " FROM" +
             "   AM_APPLICATION APP, " +
             "   AM_SUBSCRIBER SUB  " +
@@ -201,8 +196,7 @@ public class SQLConstantsMSSQL extends SQLConstants{
             "   APPLICATION_STATUS, " +
             "   USER_ID, " +
             "   GROUP_ID, " +
-            "   UUID, " +
-            "   APP.CREATED_BY AS CREATED_BY " +
+            "   UUID " +
             " FROM" +
             "   AM_APPLICATION APP, " +
             "   AM_SUBSCRIBER SUB  " +
@@ -215,6 +209,8 @@ public class SQLConstantsMSSQL extends SQLConstants{
             " ) a WHERE a.row > ? and a.row <= a.row + ?"+
             " )x left join AM_BLOCK_CONDITIONS bl on  ( bl.TYPE = 'APPLICATION' AND bl.VALUE = (x.USER_ID + ':') + x.NAME)"+
             " ORDER BY $1 $2 ";
+
+
 
 }
 
