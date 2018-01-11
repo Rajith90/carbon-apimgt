@@ -105,7 +105,7 @@ if(jagg.isCSRFTokenValid())
                         }
                         if (swaggerErrors.size() > 0) {
                             print({error: true, message: file.getName() + " contains invalid swagger definition"});
-                                        return;
+                            return;
                         }
                     } catch (e) {
                         print({error: true, message: file.getName() + " is not a valid Swagger Definition file"});
