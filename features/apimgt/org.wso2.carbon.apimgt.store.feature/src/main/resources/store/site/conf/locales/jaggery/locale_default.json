@@ -338,5 +338,6 @@
     "User is not permitted to login to store.": "User is not permitted to login to store.",
     "Return to public store": "Return to public store",
     "Groups" : "Groups",
-    "Type a Group and Enter" : "Type a Group and Enter"
+    "Type a group and enter" : "Type a group and enter",
+    "No groups assigned" : "No groups assigned"
 }
