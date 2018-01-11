@@ -44,7 +44,7 @@ if(jagg.isCSRFTokenValid())
             var swagger = null;
             var wsdl = null;
             var supportedSwaggerVersion = "2.0";
-	    var parser = new SwaggerParser();
+            var parser = new SwaggerParser();
             if(type == "rest"){
                 var url = request.getParameter("swagger-url");
                 var file = request.getFile("swagger-file");
@@ -65,7 +65,7 @@ if(jagg.isCSRFTokenValid())
                             }
                         }
                         var swaggerDeserializationResult = parser.readWithInfo(swagger);
-			var swaggerObj = swaggerDeserializationResult.getSwagger();
+                        var swaggerObj = swaggerDeserializationResult.getSwagger();
                         var swaggerErrors = swaggerDeserializationResult.getMessages();
 
                         //Supported swagger version check
