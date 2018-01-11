@@ -21,6 +21,17 @@ function isPositiveInteger(s) {
     return !!s.match(/^[0-9]+$/);
 }
 
+function getSwaggerError(errorsList) {
+    var errorCount = errorsList.size();
+    var errorMsg = "<ol>" ;
+    var count = 0;
+    for (count = 0; count < errorCount; count++) {
+        errorMsg = errorMsg + "<li>" + errorsList.get(count) + "</li>";
+    }
+    errorMsg = errorMsg + "</ol></div>";
+    return errorMsg;
+}
+
 if(jagg.isCSRFTokenValid())
 (function () {
     response.contentType = "text/plain; charset=UTF-8";
@@ -44,7 +55,7 @@ if(jagg.isCSRFTokenValid())
             var swagger = null;
             var wsdl = null;
             var supportedSwaggerVersion = "2.0";
-            var parser = new SwaggerParser();
+	        var parser = new SwaggerParser();
             if(type == "rest"){
                 var url = request.getParameter("swagger-url");
                 var file = request.getFile("swagger-file");
@@ -65,7 +76,7 @@ if(jagg.isCSRFTokenValid())
                             }
                         }
                         var swaggerDeserializationResult = parser.readWithInfo(swagger);
-                        var swaggerObj = swaggerDeserializationResult.getSwagger();
+			var swaggerObj = swaggerDeserializationResult.getSwagger();
                         var swaggerErrors = swaggerDeserializationResult.getMessages();
 
                         //Supported swagger version check
@@ -78,14 +89,8 @@ if(jagg.isCSRFTokenValid())
                         }
                         //Validate swagger definition with mandatory swagger elements
                         if (swaggerErrors.size() > 0) {
-                            var errorCount = swaggerErrors.size();
-                            var errorMsg = "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div><ol>" ;
-                            var count = 0;
-                            for (count = 0; count < errorCount; count++) {
-                                errorMsg = errorMsg + "<li>" + swaggerErrors.get(count) + "</li>";
-                            }
-                            errorMsg = errorMsg + "</ol></div>"
-                            print({error: true, message: errorMsg});
+			                errorMsg = getSwaggerError(swaggerErrors);
+                            print({error: true, message: "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div>" + errorMsg});
                             return;
                         }
                     } catch (e) {
@@ -110,14 +115,8 @@ if(jagg.isCSRFTokenValid())
                             return;
                         }
                         if (swaggerErrors.size() > 0) {
-                            var errorCount = swaggerErrors.size();
-                            var errorMsg = "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div><ol>" ;
-                            var count = 0;
-                            for (count = 0; count < errorCount; count++) {
-                                errorMsg = errorMsg + "<li>" + swaggerErrors.get(count) + "</li>";
-                            }
-                            errorMsg = errorMsg + "</ol></div>"
-                            print({error: true, message: errorMsg});
+			                errorMsg = getSwaggerError(swaggerErrors);
+                            print({error: true, message: "<div><div>" + file.getName() + " contains invalid swagger definition" + "</div>" + errorMsg});
                             return;
                         }
                     } catch (e) {
