@@ -7209,7 +7209,9 @@ Operation.prototype.urlify = function (args) {
 
     if (typeof args[param.name] !== 'undefined') {
       if (param.in === 'path') {
-        var reg = new RegExp('\{' + param.name + '\}', 'gi');
+        //Escaping specical characters in path param name
+        var paramname =  param.name.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        var reg = new RegExp('\{' + paramname + '\}', 'gi');
         var value = args[param.name];
 
         if (Array.isArray(value)) {
