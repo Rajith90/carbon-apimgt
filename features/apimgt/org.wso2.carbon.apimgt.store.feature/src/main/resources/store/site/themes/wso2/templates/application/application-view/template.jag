@@ -51,7 +51,7 @@ for(var i=0;i < outputs.tiers.length; i++){
          <%
             var groupId = encode.forHtml(application.groupId).replace(/,/g," ");
 
-            if (groupId == "null") {
+            if (groupId == "" || groupId == "null") {
                 groupId = i18n.localize("No groups assigned");
             }
          %>
