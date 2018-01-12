@@ -1590,8 +1590,7 @@ public class ApiMgtDAO {
                         application.addOAuthApp(entry.getKey(), entry.getValue());
                     }
 
-                    if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty() &&
-                            multiGroupIdEnabled) {
+                    if (multiGroupIdEnabled) {
                         application.setGroupId(getGroupId(application.getId()));
                         application.setOwner(result.getString("OWNER"));
                     }
@@ -5368,7 +5367,7 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setGroupId(rs.getString("GROUP_ID"));
 
-                if (groupId != null && !"null".equals(groupId) && !groupId.isEmpty() && multiGroupIdEnabled) {
+                if (multiGroupIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                 }
             }
