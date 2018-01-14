@@ -1125,38 +1125,34 @@ paths:
     get:
       x-scope: 'apim:subscribe'
       x-wso2-request: |-
-        GET https://127.0.0.1:9443/api/am/store/v0.11/applications/scopes/896658a0-b4ee-4535-bbfa-806c894a4015
-        Authorization: Beareraa0ddec1ac656744234477f20fafcb0d
-      x-wso2-curl: 'curl -k -H "Authorization: Bearer aa0ddec1ac656744234477f20fafcb0d" "https://127.0.0.1:9443/api/am/store/v0.11/applications/scopes/896658a0-b4ee-4535-bbfa-806c894a4015"'
+        GET https://127.0.0.1:9443/api/am/store/v0.11/applications/scopes/43673dbd-2412-495b-bcaf-310a059c14b4
+        Authorization: Bearer f6c277ed-a89a-31d9-b8ba-91cce6506988
+      x-wso2-curl: 'curl -k -H "Authorization: Bearer f6c277ed-a89a-31d9-b8ba-91cce6506988" "https://127.0.0.1:9443/api/am/store/v0.11/applications/scopes/43673dbd-2412-495b-bcaf-310a059c14b4"'
       x-wso2-response: |-
         HTTP/1.1 200 OK
         Content-Type: application/json
-
-        {
-           "groupId": "",
-           "callbackUrl": null,
-           "subscriber": "admin",
-           "throttlingTier": "Unlimited",
-           "applicationId": "896658a0-b4ee-4535-bbfa-806c894a4015",
-           "description": null,
-           "status": "APPROVED",
-           "name": "DefaultApplication",
-           "keys": [   {
-              "consumerKey": "AVoREWiB16kY_GTIzscl40GYYZQa",
-              "consumerSecret": "KXQxmS8W3xDvvJH4AfR6xrhKIeIa",
-              "keyState": "COMPLETED",
-              "keyType": "PRODUCTION",
-              "supportedGrantTypes": null,
-              "token":       {
-                 "validityTime": 3600,
-                 "accessToken": "3887da6d111f0429c6dff47a46e87209",
-                 "tokenScopes":          [
-                    "am_application_scope",
-                    "default"
-                 ]
-              }
-           }]
-        }
+         {
+             "list": [
+                 {
+                     "key": "creator1",
+                     "name": "creator1",
+                     "roles": "creator,admin",
+                     "description": ""
+                 },
+                 {
+                     "key": "creator2",
+                     "name": "creator2",
+                     "roles": "",
+                     "description": ""
+                 },
+                 {
+                     "key": "api_creator",
+                     "name": "creator",
+                     "roles": "creator",
+                     "description": ""
+                 }
+             ]
+         }
       summary: |
         Get scopes associated with a particular application based on subscribed APIs
       description: |
@@ -1367,9 +1363,9 @@ paths:
             OK.
             Successful response with the newly created objects as entity in the body.
           schema:
-            $ref: '#/definitions/Subscription'
+            type: array
             items:
-              type: array
+              $ref: '#/definitions/Subscription'
           headers:
             Content-Type:
               description: |
