@@ -65,8 +65,6 @@
         <script src="../site/themes/wso2/libs/jquery_1.11.0/jquery-1.11.3.min.js"></script>
         <script src="../site/themes/wso2/libs/bootstrap_3.3.5/js/bootstrap.js"></script>
         <link rel="stylesheet" href="../site/themes/wso2/libs/bootstrap_3.3.5/css/bootstrap.css">
-        <style>
-        </style>
 
         <script>
 
