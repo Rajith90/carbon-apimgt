@@ -141,7 +141,7 @@ public class CertificateMgtDAO {
                 APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
                 connection.setAutoCommit(initialAutoCommit);
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Error occurred in finally block while retrieving certificate metadata. ", e);
             }
