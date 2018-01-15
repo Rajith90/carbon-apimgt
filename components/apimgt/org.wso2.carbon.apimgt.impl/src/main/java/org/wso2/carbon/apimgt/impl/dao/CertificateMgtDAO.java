@@ -118,10 +118,13 @@ public class CertificateMgtDAO {
 
         try {
             connection = APIMgtDBUtil.getConnection();
+            initialAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
             connection.commit();
             preparedStatement = connection.prepareStatement(getCertsQuery);
             preparedStatement.setInt(1, tenantId);
             resultSet = preparedStatement.executeQuery();
+            connection.setAutoCommit(initialAutoCommit);
 
             while (resultSet.next()) {
                 certificateMetadataDTO = new CertificateMetadataDTO();
@@ -224,11 +227,14 @@ public class CertificateMgtDAO {
 
         try {
             connection = APIMgtDBUtil.getConnection();
+            initialAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
             connection.commit();
             preparedStatement = connection.prepareStatement(getCertQuery);
             preparedStatement.setString(1, alias);
             preparedStatement.setString(2, endpoint);
             resultSet = preparedStatement.executeQuery();
+            connection.setAutoCommit(initialAutoCommit);
 
             while (resultSet.next()) {
                 certificateMetadataDTO = new CertificateMetadataDTO();
@@ -263,12 +269,15 @@ public class CertificateMgtDAO {
 
         try {
             connection = APIMgtDBUtil.getConnection();
+            initialAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
             connection.commit();
             preparedStatement = connection.prepareStatement(getCertQuery);
             preparedStatement.setInt(1, tenantId);
             preparedStatement.setString(2, alias);
             preparedStatement.setString(3, endpoint);
             resultSet = preparedStatement.executeQuery();
+            connection.setAutoCommit(initialAutoCommit);
 
             while (resultSet.next()) {
                 certificateMetadataDTO = new CertificateMetadataDTO();
