@@ -160,7 +160,7 @@ public final class APIConstants {
     public static final String API_WSDL_RESOURCE = API_APPLICATION_DATA_LOCATION+"/wsdls";
     public static final String WSDL_FILE_EXTENSION = ".wsdl";
     public static final String WSDL_PROVIDER_SEPERATOR = "--";
-    
+
     public static final String API_DOC_RESOURCE_NAME = "api-doc.json";
 
     public static final String API_DOC_1_2_RESOURCE_NAME = "/api-doc";
@@ -1340,4 +1340,6 @@ public final class APIConstants {
      * Parameter for enabling tenant load notifications to members in the same HZ cluster
      */
     public static final String ENABLE_TENANT_LOAD_NOTIFICATION = "enableTenantLoadNotification";
+
+    public static final String STORE_VIEW_ROLES = "store_view_roles";
 }

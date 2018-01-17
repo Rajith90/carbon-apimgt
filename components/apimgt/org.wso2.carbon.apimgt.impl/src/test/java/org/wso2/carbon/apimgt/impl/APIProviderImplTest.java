@@ -2097,6 +2097,7 @@ public class APIProviderImplTest {
         final API api = new API(identifier);
         api.setStatus(APIStatus.CREATED);
         api.setVisibility("public");
+        api.setAccessControl("all");
         api.setTransports("http,https");
         api.setContext("/test");
         api.setEnvironments(environments);
@@ -2105,6 +2106,7 @@ public class APIProviderImplTest {
         API oldApi = new API(identifier);
         oldApi.setStatus(APIStatus.CREATED);
         oldApi.setVisibility("public");
+        oldApi.setAccessControl("all");
         oldApi.setContext("/test");        
         oldApi.setEnvironments(environments);
         api.setUriTemplates(uriTemplates);
@@ -2204,6 +2206,7 @@ public class APIProviderImplTest {
         api.setStatus(APIStatus.PUBLISHED);
         api.setVisibility("private");
         api.setVisibleRoles("admin");
+        api.setAccessControl("all");
         api.setTransports("http,https");
         api.setContext("/test");
         api.setEnvironments(newEnvironments);
@@ -2212,10 +2215,10 @@ public class APIProviderImplTest {
         API oldApi = new API(identifier);
         oldApi.setStatus(APIStatus.PUBLISHED);
         oldApi.setVisibility("public");
+        oldApi.setAccessControl("all");
         oldApi.setContext("/test");        
         oldApi.setEnvironments(environments);
         api.setUriTemplates(uriTemplates);
-        
         
         PowerMockito.when(APIUtil.getApiStatus("PUBLISHED")).thenReturn(APIStatus.PUBLISHED);
         
@@ -2302,7 +2305,6 @@ public class APIProviderImplTest {
         apiProvider.updateAPI(api);
         Assert.assertEquals(1, api.getEnvironments().size());
         Assert.assertEquals(true, api.getEnvironments().contains("SANDBOX"));
-        
     }
     
     @Test(expected = APIManagementException.class)
@@ -2332,6 +2334,7 @@ public class APIProviderImplTest {
         final API api = new API(identifier);
         api.setStatus(APIStatus.CREATED);
         api.setVisibility("public");
+        api.setAccessControl("all");
         api.setTransports("http,https");
         api.setContext("/test");
         api.setEnvironments(environments);
@@ -2340,6 +2343,7 @@ public class APIProviderImplTest {
         API oldApi = new API(identifier);
         oldApi.setStatus(APIStatus.CREATED);
         oldApi.setVisibility("public");
+        oldApi.setAccessControl("all");
         oldApi.setContext("/test");        
         oldApi.setEnvironments(environments);
         api.setUriTemplates(uriTemplates);
@@ -2418,6 +2422,7 @@ public class APIProviderImplTest {
         final API api = new API(identifier);
         api.setStatus(APIStatus.PUBLISHED);
         api.setVisibility("public");
+        api.setAccessControl("all");
         api.setTransports("http,https");
         api.setContext("/test");
         api.setEnvironments(environments);
@@ -2426,6 +2431,7 @@ public class APIProviderImplTest {
         API oldApi = new API(identifier);
         oldApi.setStatus(APIStatus.PUBLISHED);
         oldApi.setVisibility("public");
+        oldApi.setAccessControl("all");
         oldApi.setContext("/test");        
         oldApi.setEnvironments(environments);
         api.setUriTemplates(uriTemplates);

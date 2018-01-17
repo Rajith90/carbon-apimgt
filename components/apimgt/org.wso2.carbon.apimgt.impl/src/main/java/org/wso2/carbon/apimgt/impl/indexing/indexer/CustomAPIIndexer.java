@@ -55,6 +55,8 @@ public class CustomAPIIndexer extends RXTIndexer {
         }
         if (resource != null) {
             String publisherAccessControl = resource.getProperty(APIConstants.PUBLISHER_ROLES);
+            String storeVisibility = resource.getProperty(APIConstants.API_OVERVIEW_VISIBILITY);
+            String storeVisibleRoles = resource.getProperty(APIConstants.API_OVERVIEW_VISIBLE_ROLES);
 
             if (publisherAccessControl == null || publisherAccessControl.trim().isEmpty()) {
                 if (log.isDebugEnabled()) {
@@ -63,6 +65,20 @@ public class CustomAPIIndexer extends RXTIndexer {
                 }
                 resource.setProperty(APIConstants.PUBLISHER_ROLES, "null");
                 resource.setProperty(APIConstants.ACCESS_CONTROL, APIConstants.NO_ACCESS_CONTROL);
+                resource.setProperty(CUSTOM_API_INDEXER_PROPERTY, "true");
+                registry.put(resourcePath, resource);
+            }
+
+            if (storeVisibility != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("API at " + resourcePath + "did not have property : " + APIConstants.STORE_VIEW_ROLES
+                            + ", hence adding the values for that API resource.");
+                }
+                if (storeVisibility.equals("public")) {
+                    resource.setProperty(APIConstants.STORE_VIEW_ROLES, "null" + publisherAccessControl);
+                } else if (storeVisibility.equals("restricted")){
+                    resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles + "," + publisherAccessControl);
+                }
                 resource.setProperty(CUSTOM_API_INDEXER_PROPERTY, "true");
                 registry.put(resourcePath, resource);
             }

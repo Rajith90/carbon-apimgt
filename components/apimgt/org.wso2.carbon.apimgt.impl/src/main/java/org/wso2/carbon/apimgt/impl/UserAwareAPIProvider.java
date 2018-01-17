@@ -449,7 +449,7 @@ public class UserAwareAPIProvider extends APIProviderImpl {
         return super.getApiSpecificMediationResourceFromUuid(uuid, resourcePath);
     }
 
-    @Override
+    /*@Override
     protected void checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
         if (identifier == null || !isAccessControlRestrictionEnabled) {
             if (!isAccessControlRestrictionEnabled && log.isDebugEnabled()) {
@@ -510,5 +510,5 @@ public class UserAwareAPIProvider extends APIProviderImpl {
                     "Registry Exception while trying to check the access control restriction of API " + identifier
                             .getApiName(), e);
         }
-    }
+    }*/
 }
