@@ -67,6 +67,7 @@ public class CustomAPIIndexer extends RXTIndexer {
                 storeVisibility = api.getVisibility();
                 storeVisibleRoles = api.getVisibleRoles();
             } catch (APIManagementException e) {
+                // We need to continue default indexing process although access control extension faces an error, so not throwing an exception here.
                 log.error("Error while retrieving API", e);
             }
 
