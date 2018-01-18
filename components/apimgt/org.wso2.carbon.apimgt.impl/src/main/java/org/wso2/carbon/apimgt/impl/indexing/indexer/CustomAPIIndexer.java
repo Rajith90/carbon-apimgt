@@ -21,7 +21,10 @@ package org.wso2.carbon.apimgt.impl.indexing.indexer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.common.SolrException;
+import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.governance.api.util.GovernanceUtils;
 import org.wso2.carbon.governance.registry.extensions.indexers.RXTIndexer;
 import org.wso2.carbon.registry.core.Registry;
@@ -33,6 +36,7 @@ import org.wso2.carbon.registry.indexing.IndexingManager;
 import org.wso2.carbon.registry.indexing.solr.IndexDocument;
 
 import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPERTY;
+import static org.wso2.carbon.apimgt.impl.utils.APIUtil.handleException;
 
 /**
  * This is the custom indexer to add the API properties, to existing APIs.
@@ -55,8 +59,16 @@ public class CustomAPIIndexer extends RXTIndexer {
         }
         if (resource != null) {
             String publisherAccessControl = resource.getProperty(APIConstants.PUBLISHER_ROLES);
-            String storeVisibility = resource.getProperty(APIConstants.API_OVERVIEW_VISIBILITY);
-            String storeVisibleRoles = resource.getProperty(APIConstants.API_OVERVIEW_VISIBLE_ROLES);
+            API api = null;
+            String storeVisibility = null;
+            String storeVisibleRoles = null;
+            try {
+                api = APIUtil.getAPI(APIUtil.getArtifactManager(registry, "api").getGenericArtifact(resource.getUUID()), registry);
+                storeVisibility = api.getVisibility();
+                storeVisibleRoles = api.getVisibleRoles();
+            } catch (APIManagementException e) {
+                log.error("Error while retrieving API", e);
+            }
 
             if (publisherAccessControl == null || publisherAccessControl.trim().isEmpty()) {
                 if (log.isDebugEnabled()) {
@@ -75,7 +87,7 @@ public class CustomAPIIndexer extends RXTIndexer {
                             + ", hence adding the values for that API resource.");
                 }
                 if (storeVisibility.equals("public")) {
-                    resource.setProperty(APIConstants.STORE_VIEW_ROLES, "null" + publisherAccessControl);
+                    resource.setProperty(APIConstants.STORE_VIEW_ROLES, "null");
                 } else if (storeVisibility.equals("restricted")){
                     resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles + "," + publisherAccessControl);
                 }
