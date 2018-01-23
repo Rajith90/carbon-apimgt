@@ -112,9 +112,9 @@ providerValUe = APIUtil.replaceEmailDomain(providerValUe);
 
 var swaggerAPI ;
 if (providerValUe.indexOf("/") > -1 || apiName.indexOf("/") > -1) {
-    swaggerAPI = jagg.url("/api-docs"+"?provider="+encodeURIComponent(providerValUe)+"&name="+encodeURIComponent(apiName)+"&version="+encodeURIComponent(version));
+    swaggerAPI = jagg.url("/api-docs" + "?provider=" + encodeURIComponent(providerValUe) + "&name=" + encodeURIComponent(apiName) + "&version=" + encodeURIComponent(version));
 } else {
-    swaggerAPI = jagg.url("/api-docs"+"/"+providerValUe+"/"+apiName+"/"+version);
+    swaggerAPI = jagg.url("/api-docs" + "/" + providerValUe + "/" + apiName + "/" + version);
 }
 
 var api = outputs.api;%>
