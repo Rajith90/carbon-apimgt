@@ -357,7 +357,7 @@ $(window).load(function(){
         if (!$(event.target).closest('.dropdown-menu').length) {
             if ($('#enjoyhint_label').length != 0) {
                var hintText = $('#enjoyhint_label').text();
-               if(hintText === "Let?s select NewApplication from drop-down list..") {
+               if(hintText.indexOf("from drop-down list..") != -1 || hintText.indexOf("from the drop-down list.") != -1) {
                    if (<%=subscribedToDefault%>) {
                        localStorage.setItem("isApplicationSubscribed", true);
                        runEnjoyHintScript(null, api_store_subscribe_to_default_application);
