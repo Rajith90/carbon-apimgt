@@ -40,8 +40,7 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPER
 /**
  * This is the custom indexer to add the API properties, to existing APIs.
  */
-@SuppressWarnings("unused")
-public class CustomAPIIndexer extends RXTIndexer {
+@SuppressWarnings("unused") public class CustomAPIIndexer extends RXTIndexer {
     public static final Log log = LogFactory.getLog(CustomAPIIndexer.class);
 
     public IndexDocument getIndexedDocument(AsyncIndexer.File2Index fileData) throws SolrException, RegistryException {
@@ -61,7 +60,8 @@ public class CustomAPIIndexer extends RXTIndexer {
             String storeVisibility = null;
             String storeVisibleRoles = null;
             try {
-                GenericArtifact artifact = APIUtil.getArtifactManager(registry, "api").getGenericArtifact(resource.getUUID());
+                GenericArtifact artifact = APIUtil.getArtifactManager(registry, "api")
+                        .getGenericArtifact(resource.getUUID());
                 storeVisibility = artifact.getAttribute(APIConstants.API_OVERVIEW_VISIBILITY);
                 storeVisibleRoles = artifact.getAttribute(APIConstants.API_OVERVIEW_VISIBLE_ROLES);
             } catch (APIManagementException e) {
@@ -87,8 +87,9 @@ public class CustomAPIIndexer extends RXTIndexer {
                 }
                 if (storeVisibility.equals(APIConstants.PUBLIC_STORE_VISIBILITY)) {
                     resource.setProperty(APIConstants.STORE_VIEW_ROLES, "null");
-                } else if (storeVisibility.equals(APIConstants.RESTRICTED_STORE_VISIBILITY)){
-                    resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles + "," + publisherAccessControl);
+                } else if (storeVisibility.equals(APIConstants.RESTRICTED_STORE_VISIBILITY)) {
+                    resource.setProperty(APIConstants.STORE_VIEW_ROLES,
+                            storeVisibleRoles + "," + publisherAccessControl);
                 }
                 resource.setProperty(CUSTOM_API_INDEXER_PROPERTY, "true");
                 registry.put(resourcePath, resource);
