@@ -107,9 +107,9 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPER
             // So not throwing an exception here.
             log.error("Error while retrieving API", e);
         }
-        if (storeVisibility.equals(APIConstants.PUBLIC_STORE_VISIBILITY)) {
+        if (APIConstants.PUBLIC_STORE_VISIBILITY.equals(storeVisibility)) {
             resource.setProperty(APIConstants.STORE_VIEW_ROLES, "null");
-        } else if (storeVisibility.equals(APIConstants.RESTRICTED_STORE_VISIBILITY)){
+        } else if (APIConstants.RESTRICTED_STORE_VISIBILITY.equals(storeVisibility)) {
             resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles + "," + publisherAccessControl);
         }
     }
