@@ -105,7 +105,7 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPER
         } catch (APIManagementException e) {
             // We need to continue default indexing process although access control extension faces an error,
             // So not throwing an exception here.
-            log.error("Error while retrieving API", e);
+            log.error("Error while retrieving API " + resource.getPath(), e);
         }
         if (APIConstants.PUBLIC_STORE_VISIBILITY.equals(storeVisibility)) {
             resource.setProperty(APIConstants.STORE_VIEW_ROLES, APIConstants.NULL_USER_ROLE_LIST);
