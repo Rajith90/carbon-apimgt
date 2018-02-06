@@ -3370,6 +3370,21 @@ public final class APIUtil {
     }
 
     /**
+     * Returns whether API Publisher Access Control is enabled or not
+     *
+     * @return true if publisher access control enabled
+     */
+    public static boolean isAccessControlEnabled() {
+        boolean accessControlEnabled = false;
+        APIManagerConfiguration config = ServiceReferenceHolder.getInstance().
+                getAPIManagerConfigurationService().getAPIManagerConfiguration();
+        if (config.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_ACCESS_CONTROL_LEVELS) != null && "true".equals(config.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_ACCESS_CONTROL_LEVELS))) {
+            accessControlEnabled = true;
+        }
+        return accessControlEnabled;
+    }
+
+    /**
      * Add all the custom sequences of given type to registry
      *
      * @param registry           Registry instance
