@@ -3381,7 +3381,7 @@ public final class APIUtil {
         if (config.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_ACCESS_CONTROL_LEVELS) != null && config.getFirstProperty(APIConstants.API_PUBLISHER_ENABLE_ACCESS_CONTROL_LEVELS).equals("true")) {
             accessControlEnabled = true;
         }
-            return accessControlEnabled;
+        return accessControlEnabled;
     }
 
     /**
