@@ -137,9 +137,9 @@ public class CertificateMgtDAO {
                 }
                 handleException("Error while retrieving certificates.", e);
             } finally {
+                connection.setAutoCommit(initialAutoCommit);
                 APIMgtDBUtil.closeStatement(preparedStatement);
                 APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
-                connection.setAutoCommit(initialAutoCommit);
             }
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
@@ -208,9 +208,9 @@ public class CertificateMgtDAO {
                 }
                 handleException("Error while persisting certificate metadata.", e);
             } finally {
+                connection.setAutoCommit(initialAutoCommit);
                 APIMgtDBUtil.closeStatement(preparedStatement);
                 APIMgtDBUtil.closeAllConnections(preparedStatement, connection, null);
-                connection.setAutoCommit(initialAutoCommit);
             }
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
@@ -257,9 +257,9 @@ public class CertificateMgtDAO {
             } catch (SQLException e) {
                 handleException("Error while retrieving certificate metadata.", e);
             } finally {
+                connection.setAutoCommit(initialAutoCommit);
                 APIMgtDBUtil.closeStatement(preparedStatement);
                 APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
-                connection.setAutoCommit(initialAutoCommit);
             }
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
@@ -306,9 +306,9 @@ public class CertificateMgtDAO {
             } catch (SQLException e) {
                 handleException("Error while retrieving certificate metadata.", e);
             } finally {
+                connection.setAutoCommit(initialAutoCommit);
                 APIMgtDBUtil.closeStatement(preparedStatement);
                 APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
-                connection.setAutoCommit(initialAutoCommit);
             }
         } catch (SQLException e) {
             if (log.isDebugEnabled()) {
