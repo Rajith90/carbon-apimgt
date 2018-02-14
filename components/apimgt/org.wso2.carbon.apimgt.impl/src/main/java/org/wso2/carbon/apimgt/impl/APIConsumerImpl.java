@@ -3363,9 +3363,9 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         try {
             String tenantDomain = MultitenantUtils.getTenantDomain(APIUtil.replaceEmailDomainBack(provider));
             if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-                isTenantFlowStarted = true;
                 PrivilegedCarbonContext.startTenantFlow();
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                isTenantFlowStarted = true;
             }
             RegistryService registryService = ServiceReferenceHolder.getInstance().getRegistryService();
             int tenantId;
@@ -3399,12 +3399,16 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 }
 
                 if (api != null) {
-                    apimwsdlReader.setServiceDefinition(definition, api, environmentName, environmentType);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Soap api with context:" + api.getContext() + " in " + environmentName
-                                + " with environment type" + environmentType);
+                    try {
+                        apimwsdlReader.setServiceDefinition(definition, api, environmentName, environmentType);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Soap api with context:" + api.getContext() + " in " + environmentName
+                                    + " with environment type" + environmentType);
+                        }
+                        updatedWSDLContent = apimwsdlReader.getWSDL(definition);
+                    } catch (APIManagementException e) {
+                        handleException("Error occurred while processing the wsdl for api: " + api.getId());
                     }
-                    updatedWSDLContent = apimwsdlReader.getWSDL(definition);
                 } else {
                     handleException("Error while getting API object for wsdl artifact");
                 }
