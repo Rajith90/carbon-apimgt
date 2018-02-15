@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.apimgt.gateway.threatprotection.analyzer;
 
-
 import org.wso2.carbon.apimgt.gateway.threatprotection.APIMThreatAnalyzerException;
 import org.wso2.carbon.apimgt.gateway.threatprotection.configuration.JSONConfig;
 import org.wso2.carbon.apimgt.gateway.threatprotection.configuration.XMLConfig;
