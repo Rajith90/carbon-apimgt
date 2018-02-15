@@ -24,13 +24,18 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.Pipe;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
 import org.wso2.carbon.apimgt.gateway.handlers.security.AuthenticationContext;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
+import org.wso2.carbon.apimgt.gateway.threatprotection.utils.ThreatProtectorConstants;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.mediation.registry.RegistryServiceHolder;
@@ -39,7 +44,7 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -261,5 +266,97 @@ public class GatewayUtils {
     public static String getAPIEndpointSecretAlias(String apiProviderName, String apiName, String version) {
         String secureVaultAlias = apiProviderName + "--" + apiName + version;
         return secureVaultAlias;
+    }
+
+    /**
+     * This method handles threat violations. If the request propagates a threat, this method generates
+     * an custom exception.
+     * @param messageContext contains the message properties of the relevant API request which was
+     *                       enabled the regexValidator message mediation in flow.
+     * @param errorCode      It depends on status of the error message.
+     * @param desc           Description of the error message.It describes the vulnerable type and where it happens.
+     * @return here return true to continue the sequence. No need to return any value from this method.
+     */
+    public static boolean handleThreat(org.apache.synapse.MessageContext messageContext,
+                                       String errorCode, String desc) {
+        messageContext.setProperty(APIMgtGatewayConstants.THREAT_FOUND, true);
+        messageContext.setProperty(APIMgtGatewayConstants.THREAT_CODE, errorCode);
+        messageContext.setProperty(APIMgtGatewayConstants.THREAT_MSG, APIMgtGatewayConstants.BAD_REQUEST);
+        messageContext.setProperty(APIMgtGatewayConstants.THREAT_DESC, desc);
+        Mediator sequence = messageContext.getSequence(APIMgtGatewayConstants.THREAT_FAULT);
+        // Invoke the custom error handler specified by the user
+        if (sequence != null && !sequence.mediate(messageContext)) {
+            // If needed user should be able to prevent the rest of the fault handling
+            // logic from getting executed
+        }
+        return true;
+    }
+
+    /**
+     * This method use to clone the InputStream from the the message context. Basically
+     * clone the request body.
+     * @param messageContext contains the message properties of the relevant API request which was
+     *                       enabled the regexValidator message mediation in flow.
+     * @return cloned InputStreams.
+     * @throws IOException this exception might occurred while cloning the inputStream.
+     */
+    public static Map<String,InputStream> cloneRequestMessage(org.apache.synapse.MessageContext messageContext)
+            throws IOException {
+        BufferedInputStream bufferedInputStream = null;
+        Map<String, InputStream> inputStreamMap = null;
+        InputStream inputStreamSchema;
+        InputStream inputStreamXml;
+        InputStream inputStreamJSON;
+        InputStream inputStreamOriginal;
+        int requestBufferSize = 1024;
+        org.apache.axis2.context.MessageContext axis2MC;
+        Pipe pipe;
+
+        axis2MC = ((Axis2MessageContext) messageContext).
+                getAxis2MessageContext();
+        Object bufferSize = messageContext.getProperty(ThreatProtectorConstants.REQUEST_BUFFER_SIZE);
+        if (bufferSize != null) {
+            requestBufferSize = Integer.parseInt(bufferSize.toString());
+        }
+        pipe = (Pipe) axis2MC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            bufferedInputStream = new BufferedInputStream(pipe.getInputStream());
+        }
+        if (bufferedInputStream != null) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] buffer = new byte[requestBufferSize];
+            int length;
+            while ((length = bufferedInputStream.read(buffer)) > -1) {
+                byteArrayOutputStream.write(buffer, 0, length);
+            }
+            byteArrayOutputStream.flush();
+            inputStreamMap = new HashMap<>();
+            inputStreamSchema = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            inputStreamXml = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            inputStreamOriginal = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            inputStreamJSON = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            inputStreamMap.put(ThreatProtectorConstants.SCHEMA, inputStreamSchema);
+            inputStreamMap.put(ThreatProtectorConstants.XML, inputStreamXml);
+            inputStreamMap.put(ThreatProtectorConstants.ORIGINAL, inputStreamOriginal);
+            inputStreamMap.put(ThreatProtectorConstants.JSON, inputStreamJSON);
+        }
+        return  inputStreamMap;
+    }
+
+    /**
+     *  This method use to set the originInput stream to the message Context
+     * @param inputStreams cloned InputStreams
+     * @param axis2MC axis2 message context
+     */
+    public static void setOriginalInputStream(Map <String, InputStream> inputStreams,
+                                              org.apache.axis2.context.MessageContext axis2MC) {
+        InputStream inputStreamOriginal;
+        if (inputStreams != null) {
+            inputStreamOriginal = inputStreams.get(ThreatProtectorConstants.ORIGINAL);
+            if (inputStreamOriginal != null) {
+                BufferedInputStream bufferedInputStreamOriginal = new BufferedInputStream(inputStreamOriginal);
+                axis2MC.setProperty(PassThroughConstants.BUFFERED_INPUT_STREAM, bufferedInputStreamOriginal);
+            }
+        }
     }
 }
