@@ -50,6 +50,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 
 public class GatewayUtils {
 
