@@ -46,7 +46,6 @@ import java.util.Map;
  * JSON schema.
  */
 public class JsonSchemaValidator extends AbstractMediator {
-
     private static final Log logger = LogFactory.getLog(JsonSchemaValidator.class);
 
     /**
