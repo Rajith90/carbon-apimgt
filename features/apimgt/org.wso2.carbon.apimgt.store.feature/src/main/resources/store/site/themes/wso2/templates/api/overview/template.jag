@@ -155,6 +155,7 @@
 		    		</p>
 		    <% } %>
 	   <%} %>
+	<div class="col-md-12 col-lg-9">
     <h4 class="add-margin-top-5x"><%=i18n.localize("Share")%></h4>
     <ul class="nav nav-pills">
       <li role="presentation" class="active"><a href="#" ref="social" class="share_links" title="<%=i18n.localize("Social Sites")%>"><%=i18n.localize("Social Sites")%></a></li>
