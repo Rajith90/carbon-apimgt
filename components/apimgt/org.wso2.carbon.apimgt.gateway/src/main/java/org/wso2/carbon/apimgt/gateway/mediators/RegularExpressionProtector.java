@@ -112,7 +112,8 @@ public class RegularExpressionProtector extends AbstractMediator {
                 return;
             }
             String payload = omElement.toString();
-            if (pattern != null && payload != null && pattern.matcher(payload).find()) {
+            if (pattern != null && payload != null && pattern.matcher(payload).find() &&
+                    !APIMgtGatewayConstants.FAULT.equals(soapBody.getFirstElementLocalName())) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("Threat detected in request payload [ %s ] by regex [ %s ]))",
                             payload, pattern));
