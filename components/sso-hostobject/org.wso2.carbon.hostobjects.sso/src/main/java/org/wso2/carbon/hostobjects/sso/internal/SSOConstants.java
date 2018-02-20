@@ -44,6 +44,7 @@ public class SSOConstants {
     public static final String TIMESTAMP_SKEW_IN_SECONDS = "timestampSkewInSeconds";
 
     public static final String LOGIN_USERNAME_ATTRIBUTE = "loginUserNameAttribute";
+    public static final String SAML_NAME_ATTRIBUTE = "Name";
 
     public SSOConstants() {
     }

@@ -498,7 +498,7 @@ public class Util {
                     List<Attribute> attributes = attributeStatement.getAttributes();
                     if (attributes != null) {
                         for (Attribute attribute : attributes) {
-                            String attributeName = attribute.getDOM().getAttribute("Name");
+                            String attributeName = attribute.getDOM().getAttribute(SSOConstants.SAML_NAME_ATTRIBUTE);
                             if (attributeName.equals(usernameAttribute)) {
                                 List<XMLObject> attributeValues = attribute.getAttributeValues();
                                 // There can be multiple attribute values in
