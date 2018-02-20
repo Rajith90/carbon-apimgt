@@ -490,25 +490,20 @@ public class Util {
     public static String getUsernameFromAssertion(Assertion assertion, String usernameAttribute) {
         if (usernameAttribute != null) {
             // There can be multiple AttributeStatements in Assertion
-                List<AttributeStatement> attributeStatements = assertion
-                            .getAttributeStatements();
+            List<AttributeStatement> attributeStatements = assertion.getAttributeStatements();
             if (attributeStatements != null) {
                 for (AttributeStatement attributeStatement : attributeStatements) {
                     // There can be multiple Attributes in a
-                            // attributeStatement
-                                    List<Attribute> attributes = attributeStatement
-                                    .getAttributes();
+                    // attributeStatement
+                    List<Attribute> attributes = attributeStatement.getAttributes();
                     if (attributes != null) {
                         for (Attribute attribute : attributes) {
-                            String attributeName = attribute.getDOM()
-                                            .getAttribute("Name");
+                            String attributeName = attribute.getDOM().getAttribute("Name");
                             if (attributeName.equals(usernameAttribute)) {
-                                List<XMLObject> attributeValues = attribute
-                                                .getAttributeValues();
+                                List<XMLObject> attributeValues = attribute.getAttributeValues();
                                 // There can be multiple attribute values in
                                         // a attribute, but get the first one
-                                                return attributeValues.get(0).getDOM()
-                                                .getTextContent();
+                                return attributeValues.get(0).getDOM().getTextContent();
                             }
                         }
                     }
