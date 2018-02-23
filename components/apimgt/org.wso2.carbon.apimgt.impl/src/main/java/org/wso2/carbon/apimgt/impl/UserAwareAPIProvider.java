@@ -154,6 +154,13 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     }
 
     @Override
+    public String getSequenceFile(APIIdentifier apiIdentifier, String sequenceType, String sequenceName)
+            throws APIManagementException {
+        checkAccessControlPermission(apiIdentifier);
+        return super.getSequenceFile(apiIdentifier, sequenceType, sequenceName);
+    }
+
+    @Override
     public void changeAPIStatus(API api, APIStatus status, String userId,
                                 boolean updateGatewayConfig) throws APIManagementException, FaultGatewaysException {
         checkPublishPermission();

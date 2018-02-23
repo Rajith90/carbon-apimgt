@@ -584,5 +584,7 @@
     "Add New Certificate": "Add New Certificate",
     "Manage Certificates": "Manage Certificates",
     "Endpoint": "Endpoint",
-    "This action cannot be undone": "This action cannot be undone"
+    "This action cannot be undone": "This action cannot be undone",
+    "You must select a mediation policy to download": "You must select a mediation policy to download.",
+    "Error while retrieving the selected mediation policy": "Error while retrieving the selected mediation policy."
 }

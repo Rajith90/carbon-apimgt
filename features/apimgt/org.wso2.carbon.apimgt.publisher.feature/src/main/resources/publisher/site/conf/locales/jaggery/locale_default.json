@@ -593,5 +593,7 @@
     "Visibility on Store": "Visibility on Store",
     "all": "All",
     "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify" : "<strong>All :</strong> The API is viewable, modifiable by all the publishers and creators.<br/><strong>Restricted by roles :</strong> The API can be viewable and modifiable by only specific publishers and creators with the roles that you specify",
-    "Restricted by roles, only viewable and modifiable by " : "Restricted by roles, only viewable and modifiable by "
+    "Restricted by roles, only viewable and modifiable by " : "Restricted by roles, only viewable and modifiable by ",
+    "You must select a mediation policy to download": "You must select a mediation policy to download.",
+    "Error while retrieving the selected mediation policy": "Error while retrieving the selected mediation policy."
 }
