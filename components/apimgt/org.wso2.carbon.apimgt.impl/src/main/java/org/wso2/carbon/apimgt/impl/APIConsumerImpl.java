@@ -54,6 +54,7 @@ import org.wso2.carbon.apimgt.api.model.SubscriptionResponse;
 import org.wso2.carbon.apimgt.api.model.Tag;
 import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.impl.caching.CacheInvalidator;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationRegistrationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.ApplicationWorkflowDTO;
 import org.wso2.carbon.apimgt.impl.dto.SubscriptionWorkflowDTO;
@@ -2988,18 +2989,161 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         return null;
     }
 
+    /**
+     * Returns all applications associated with given subscriber, groupingId and search criteria.
+     *
+     * @param subscriber Subscriber
+     * @param groupingId The groupId to which the applications must belong.
+     * @param offset The offset.
+     * @param search The search string.
+     * @param sortColumn The sort column.
+     * @param sortOrder The sort order.
+     * @return Application[] The Applications.
+     * @throws APIManagementException
+     */
     @Override
     public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId,int start , int offset
             , String search, String sortColumn, String sortOrder)
             throws APIManagementException {
-        return apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset, search,sortColumn,sortOrder);
+        Application [] applications = apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset,
+                search,sortColumn,sortOrder);
+        for(Application application:applications){
+            Set<APIKey> keys = getApplicationKeys(application.getId());
+
+            for (APIKey key : keys) {
+                application.addKey(key);
+            }
+        }
+        return applications;
     }
 
+    /**
+     * Returns all applications associated with given subscriber and groupingId.
+     *
+     * @param subscriber The subscriber.
+     * @param groupingId The groupId to which the applications must belong.
+     * @return Application[] Array of applications.
+     * @throws APIManagementException
+     */
     @Override
     public Application[] getApplications(Subscriber subscriber, String groupingId)
 			throws APIManagementException {
-		return apiMgtDAO.getApplications(subscriber, groupingId);
+        Application [] applications = apiMgtDAO.getApplications(subscriber, groupingId);
+        for(Application application:applications){
+            Set<APIKey> keys = getApplicationKeys(application.getId());
+
+            for (APIKey key : keys) {
+                application.addKey(key);
+            }
+        }
+        return applications;
 	}
+
+    /**
+     * Returns all API keys associated with given application id.
+     *
+     * @param applicationId The id of the application.
+     * @return Set<APIKey>  Set of API keys of the application.
+     * @throws APIManagementException
+     */
+    private Set<APIKey> getApplicationKeys(int applicationId) throws APIManagementException {
+        Set<APIKey> apiKeys = new HashSet<APIKey>();
+        APIKey productionKey = getProductionKeyOfApplication(applicationId);
+        if (productionKey != null) {
+            apiKeys.add(productionKey);
+        } else {
+            productionKey = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_PRODUCTION, applicationId);
+            if (productionKey != null) {
+                productionKey.setType(APIConstants.API_KEY_TYPE_PRODUCTION);
+                apiKeys.add(productionKey);
+            }
+        }
+
+        APIKey sandboxKey = getSandboxKeyOfApplication(applicationId);
+        if (sandboxKey != null) {
+            apiKeys.add(sandboxKey);
+        } else {
+            sandboxKey = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_SANDBOX, applicationId);
+            if (sandboxKey != null) {
+                sandboxKey.setType(APIConstants.API_KEY_TYPE_SANDBOX);
+                apiKeys.add(sandboxKey);
+            }
+        }
+        return apiKeys;
+    }
+
+    /**
+     * Returns the production key associated with given application id.
+     *
+     * @param applicationId
+     * @return APIKey The production key of the application.
+     * @throws APIManagementException
+     */
+    private APIKey getProductionKeyOfApplication(int applicationId) throws APIManagementException {
+        String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId),
+                APIConstants.API_KEY_TYPE_PRODUCTION);
+        if(StringUtils.isNotEmpty(consumerKey)) {
+            String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_PRODUCTION,
+                    applicationId).getState();
+            KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
+            AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
+            APIKey apiKey = new APIKey();
+            if (tokenInfo != null) {
+                apiKey.setConsumerKey(consumerKey);
+                apiKey.setType(APIConstants.API_KEY_TYPE_PRODUCTION);
+                apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
+                apiKey.setAccessToken(tokenInfo.getAccessToken());
+                apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
+                apiKey.setState(tokenInfo.getTokenState());
+                apiKey.setState(consumerKeyStatus);
+                apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
+            }
+            return apiKey;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the sandbox key associated with given application id.
+     *
+     * @param applicationId Id of the Application.
+     * @return APIKey The sandbox key of the application.
+     * @throws APIManagementException
+     */
+    private APIKey getSandboxKeyOfApplication(int applicationId) throws APIManagementException {
+
+        String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId),
+                APIConstants.API_KEY_TYPE_SANDBOX);
+        if(StringUtils.isNotEmpty(consumerKey)) {
+            String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_SANDBOX,
+                    applicationId).getState();
+            KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
+            AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
+            APIKey apiKey = new APIKey();
+            if (tokenInfo != null) {
+                apiKey.setConsumerKey(consumerKey);
+                apiKey.setType(APIConstants.API_KEY_TYPE_SANDBOX);
+                apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
+                apiKey.setAccessToken(tokenInfo.getAccessToken());
+                apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
+                apiKey.setState(tokenInfo.getTokenState());
+                apiKey.setState(consumerKeyStatus);
+                apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
+            }
+            return apiKey;
+        }
+        return null;
+    }
+
+    /**
+     * Returns a single string containing the provided array of scopes.
+     *
+     * @param scopes The array of scopes.
+     * @return String Single string containing the provided array of scopes.
+     */
+    private String getScopeString(String[] scopes) {
+        return StringUtils.join(scopes, " ");
+    }
 
     /**
      * @param userId Subscriber name.

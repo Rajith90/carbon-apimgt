@@ -1999,7 +1999,7 @@ public class ApiMgtDAO {
         return oAuthApplication;
     }
 
-    private APIKey getKeyStatusOfApplication(String keyType, int applicationId) throws APIManagementException {
+    public APIKey getKeyStatusOfApplication(String keyType, int applicationId) throws APIManagementException {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
@@ -3909,13 +3909,19 @@ public class ApiMgtDAO {
     /**
      * #TODO later we might need to use only this method.
      *
-     * @param subscriber
-     * @param groupingId
-     * @return
+     * @param subscriber The subscriber.
+     * @param groupingId The groupId to which the applications must belong.
+     * @param start The start index.
+     * @param offset The offset.
+     * @param search The search string.
+     * @param sortOrder The sort order.
+     * @param sortColumn The sort column.
+     * @return Application[] The array of applications.
      * @throws APIManagementException
      */
-    public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId, int start,
-                                                       int offset, String search, String sortColumn, String sortOrder) throws APIManagementException {
+    public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId, int start, int offset,
+                                                       String search, String sortColumn, String sortOrder)
+            throws APIManagementException {
 
         Connection connection = null;
         PreparedStatement prepStmt = null;
@@ -3925,15 +3931,19 @@ public class ApiMgtDAO {
         if (groupingId != null && !"null".equals(groupingId) && !groupingId.isEmpty()) {
             if (multiGroupIdEnabled) {
                 if (forceCaseInsensitiveComparisons) {
-                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_NONE_CASESENSITVE_WITH_MULTIGROUPID");
+                    sqlQuery = SQLConstantManagerFactory.
+                            getSQlString("GET_APPLICATIONS_PREFIX_NONE_CASESENSITVE_WITH_MULTIGROUPID");
                 } else {
-                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITH_MULTIGROUPID");
+                    sqlQuery = SQLConstantManagerFactory.
+                            getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITH_MULTIGROUPID");
                 }
             } else {
                 if (forceCaseInsensitiveComparisons) {
-                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITHGROUPID");
+                    sqlQuery = SQLConstantManagerFactory.
+                            getSQlString("GET_APPLICATIONS_PREFIX_CASESENSITVE_WITHGROUPID");
                 } else {
-                    sqlQuery = SQLConstantManagerFactory.getSQlString("GET_APPLICATIONS_PREFIX_NONE_CASESENSITVE_WITHGROUPID");
+                    sqlQuery = SQLConstantManagerFactory.
+                            getSQlString("GET_APPLICATIONS_PREFIX_NONE_CASESENSITVE_WITHGROUPID");
                 }
             }
         } else {
@@ -3994,16 +4004,13 @@ public class ApiMgtDAO {
                     application.setOwner(rs.getString("CREATED_BY"));
                     application.setGroupId(getGroupId(application.getId()));
                 }
-                Set<APIKey> keys = getApplicationKeys(subscriber.getName(), application.getId());
+
                 Map<String, OAuthApplicationInfo> keyMap = getOAuthApplications(application.getId());
 
                 for (Map.Entry<String, OAuthApplicationInfo> entry : keyMap.entrySet()) {
                     application.addOAuthApp(entry.getKey(), entry.getValue());
                 }
 
-                for (APIKey key : keys) {
-                    application.addKey(key);
-                }
                 applicationsList.add(application);
 
             }
@@ -4017,6 +4024,14 @@ public class ApiMgtDAO {
         return applications;
     }
 
+    /**
+     * Returns all the applications associated with given subscriber and group id.
+     *
+     * @param subscriber The subscriber.
+     * @param groupingId The groupId to which the applications must belong.
+     * @return Application[] Array of applications.
+     * @throws APIManagementException
+     */
     public Application[] getApplications(Subscriber subscriber, String groupingId) throws APIManagementException {
 
         Connection connection = null;
@@ -4065,10 +4080,10 @@ public class ApiMgtDAO {
             String blockingFilerSql = null;
             if (connection.getMetaData().getDriverName().contains("MS SQL") ||
                     connection.getMetaData().getDriverName().contains("Microsoft")) {
-                sqlQuery = sqlQuery.replaceAll("NAME", "cast(NAME as varchar(100)) collate SQL_Latin1_General_CP1_CI_AS "
-                        + "as NAME");
-                blockingFilerSql = " select distinct x.*,bl.ENABLED from ( " + sqlQuery + " )x left join AM_BLOCK_CONDITIONS bl "
-                        + "on  ( bl.TYPE = 'APPLICATION' AND bl.VALUE = (x.USER_ID + ':') + x.name)";
+                sqlQuery = sqlQuery.replaceAll("NAME", "cast(NAME as varchar(100)) " +
+                        "collate SQL_Latin1_General_CP1_CI_AS as NAME");
+                blockingFilerSql = " select distinct x.*,bl.ENABLED from ( " + sqlQuery + " )x left join " +
+                        "AM_BLOCK_CONDITIONS bl on  ( bl.TYPE = 'APPLICATION' AND bl.VALUE = (x.USER_ID + ':') + x.name)";
             } else {
                 blockingFilerSql = " select distinct x.*,bl.ENABLED from ( " + sqlQuery
                         + " )x left join AM_BLOCK_CONDITIONS bl on  ( bl.TYPE = 'APPLICATION' AND bl.VALUE = "
@@ -4106,16 +4121,12 @@ public class ApiMgtDAO {
                 application.setUUID(rs.getString("UUID"));
                 application.setIsBlackListed(rs.getBoolean("ENABLED"));
 
-                Set<APIKey> keys = getApplicationKeys(subscriber.getName(), application.getId());
                 Map<String, OAuthApplicationInfo> keyMap = getOAuthApplications(application.getId());
 
                 for (Map.Entry<String, OAuthApplicationInfo> entry : keyMap.entrySet()) {
                     application.addOAuthApp(entry.getKey(), entry.getValue());
                 }
 
-                for (APIKey key : keys) {
-                    application.addKey(key);
-                }
                 if (multiGroupIdEnabled) {
                     application.setGroupId(getGroupId(application.getId()));
                     application.setOwner(rs.getString("CREATED_BY"));
@@ -4134,6 +4145,90 @@ public class ApiMgtDAO {
             APIMgtDBUtil.closeAllConnections(prepStmt, connection, rs);
         }
         return applications;
+    }
+
+    /**
+     * Get access token information associated with the given consumer key.
+     *
+     * @param consumerKey The consumer key.
+     * @return APIKey The access token information.
+     * @throws SQLException
+     * @throws CryptoException
+     */
+    public APIKey getAccessTokenInfoByConsumerKey(String consumerKey) throws SQLException, CryptoException {
+
+        String accessTokenStoreTable = APIConstants.ACCESS_TOKEN_STORE_TABLE;
+
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        String statement = SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_PREFIX +
+                accessTokenStoreTable + SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_SUFFIX;
+
+
+        String oracleSQL = SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_PREFIX +
+                accessTokenStoreTable + SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_SUFFIX;
+
+        String mySQL = "SELECT" + statement;//+ " LIMIT 1";
+        String db2SQL = "SELECT" + statement; //+ " FETCH FIRST 1 ROWS ONLY";
+        String msSQL = "SELECT " + statement;
+        String postgreSQL = "SELECT * FROM (SELECT" + statement + ") AS TOKEN";
+
+        String authorizedDomains;
+        String accessToken;
+        String sql;
+
+        try {
+            connection = APIMgtDBUtil.getConnection();
+
+            if (connection.getMetaData().getDriverName().contains("MySQL") || connection.getMetaData().getDriverName
+                    ().contains("H2")) {
+                sql = mySQL;
+            } else if (connection.getMetaData().getDatabaseProductName().contains("DB2")) {
+                sql = db2SQL;
+            } else if (connection.getMetaData().getDriverName().contains("MS SQL")) {
+                sql = msSQL;
+            } else if (connection.getMetaData().getDriverName().contains("Microsoft")) {
+                sql = msSQL;
+            } else if (connection.getMetaData().getDriverName().contains("PostgreSQL")) {
+                sql = postgreSQL;
+            } else {
+                sql = oracleSQL;
+            }
+
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, consumerKey);
+            preparedStatement.setString(2, APIConstants.ACCESS_TOKEN_USER_TYPE_APPLICATION);
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                APIKey apiKey = new APIKey();
+                accessToken = APIUtil.decryptToken(resultSet.getString("ACCESS_TOKEN"));
+                apiKey.setConsumerKey(consumerKey);
+                String consumerSecret = resultSet.getString("CONSUMER_SECRET");
+                apiKey.setConsumerSecret(APIUtil.decryptToken(consumerSecret));
+                apiKey.setAccessToken(accessToken);
+                apiKey.setValidityPeriod(resultSet.getLong("VALIDITY_PERIOD") / 1000);
+                apiKey.setGrantTypes(resultSet.getString("GRANT_TYPES"));
+                apiKey.setCallbackUrl(resultSet.getString("CALLBACK_URL"));
+
+                // Load all the rows to in memory and build the scope string
+                List<String> scopes = new ArrayList<String>();
+                String tokenString = resultSet.getString("ACCESS_TOKEN");
+
+                do {
+                    String currentRowTokenString = resultSet.getString("ACCESS_TOKEN");
+                    if (tokenString.equals(currentRowTokenString)) {
+                        scopes.add(resultSet.getString(APIConstants.IDENTITY_OAUTH2_FIELD_TOKEN_SCOPE));
+                    }
+                } while (resultSet.next());
+                apiKey.setTokenScope(getScopeString(scopes));
+                return apiKey;
+            }
+            return null;
+        } finally {
+            APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
+        }
     }
 
     /**
