@@ -1879,28 +1879,29 @@ public abstract class AbstractAPIManager implements APIManager {
             policies = apiMgtDAO.getApplicationPolicies(tenantID);
         } else if (PolicyConstants.POLICY_LEVEL_SUB.equals(level)) {
             policies = apiMgtDAO.getSubscriptionPolicies(tenantID);
+
+            //Get the API Manager configurations and check whether the unlimited tier is disabled. If disabled, remove
+            // the tier from the array.
+            APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
+                    .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+            ThrottleProperties throttleProperties = apiManagerConfiguration.getThrottleProperties();
+
+            if (!throttleProperties.isEnableUnlimitedTier()) {
+                List<Policy> policiesWithoutUnlimitedTier = new ArrayList<Policy>();
+
+                if (policies != null) {
+                    for (Policy policy : policies) {
+                        if (!"unlimited".equalsIgnoreCase(policy.getPolicyName())) {
+                            policiesWithoutUnlimitedTier.add(policy);
+                        }
+                    }
+                }
+                policies = policiesWithoutUnlimitedTier.toArray(new Policy[0]);
+            }
         } else if (PolicyConstants.POLICY_LEVEL_GLOBAL.equals(level)) {
             policies = apiMgtDAO.getGlobalPolicies(tenantID);
         }
 
-        //Get the API Manager configurations and check whether the unlimited tier is disabled. If disabled, remove
-        // the tier from the array.
-        APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
-                .getAPIManagerConfigurationService().getAPIManagerConfiguration();
-        ThrottleProperties throttleProperties = apiManagerConfiguration.getThrottleProperties();
-
-        if (!throttleProperties.isEnableUnlimitedTier()) {
-            List<Policy> policiesWithoutUnlimitedTier = new ArrayList<Policy>();
-
-            if (policies != null) {
-                for (Policy policy : policies) {
-                    if (!"unlimited".equalsIgnoreCase(policy.getPolicyName())) {
-                        policiesWithoutUnlimitedTier.add(policy);
-                    }
-                }
-            }
-            return policiesWithoutUnlimitedTier.toArray(new Policy[0]);
-        }
         return policies;
     }
 

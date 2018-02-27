@@ -413,8 +413,6 @@ if(jagg.isCSRFTokenValid())
                     sequence:result.sequence
                 }
             }
-
-            new Log("").info(apiProvider + " " + apiName + " " + apiVersion + " " + seqType +" "+seqName);
             print(obj);
         } else {
             print({

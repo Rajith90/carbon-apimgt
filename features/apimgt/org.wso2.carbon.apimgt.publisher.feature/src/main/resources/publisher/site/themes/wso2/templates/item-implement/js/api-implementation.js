@@ -699,9 +699,9 @@ $(".btn-sequenceDownload").click(function (e) {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        } else {
+            jagg.message({content: i18n.t("Error while retrieving the selected mediation policy"), type: "error"});
         }
-    }, function (err) {
-        jagg.message({content: i18n.t("Error while retrieving the selected mediation policy"), type: "error"});
     });
 });
 

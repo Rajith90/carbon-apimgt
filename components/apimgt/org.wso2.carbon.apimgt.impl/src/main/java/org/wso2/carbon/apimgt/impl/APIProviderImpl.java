@@ -3926,7 +3926,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 }
                 if (requiredSequence == null) {
                     if (log.isDebugEnabled()) {
-                        log.info("Get the custom sequences.");
+                        log.debug("Get the custom sequences.");
                     }
                     requiredSequence = getCustomSequence(apiIdentifier, type, name);
                 }
@@ -3997,11 +3997,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 }
             }
         }  catch (RegistryException e) {
-            String msg = "Error while retrieving registry for tenant " + tenantId;
-            throw new APIManagementException(msg, e);
+            throw new APIManagementException("Error while retrieving registry for tenant " + tenantId, e);
         } catch (org.wso2.carbon.registry.api.RegistryException e) {
-            String msg = "Error while processing the " + defaultSequenceFileLocation + " in the registry";
-            throw new APIManagementException(msg, e);
+            throw new APIManagementException("Error while processing the " + defaultSequenceFileLocation +
+                    " in the registry", e);
         } catch (Exception e) {
             throw new APIManagementException(e.getMessage(), e);
         }
@@ -4067,12 +4066,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 }
             }
         } catch (RegistryException e) {
-            String msg = "Error while retrieving registry for tenant " + tenantId;
-            throw new APIManagementException(msg, e);
+            throw new APIManagementException("Error while retrieving registry for tenant " + tenantId, e);
         } catch (org.wso2.carbon.registry.api.RegistryException e) {
-            String msg = "Error while processing the " + type
-                    + " sequences of " + identifier + " in the registry";
-            throw new APIManagementException(msg, e);
+            throw new APIManagementException("Error while processing the " + type + " sequences of " + identifier +
+                    " in the registry", e);
         } catch (Exception e) {
             throw new APIManagementException(e.getMessage(), e);
         } finally {
