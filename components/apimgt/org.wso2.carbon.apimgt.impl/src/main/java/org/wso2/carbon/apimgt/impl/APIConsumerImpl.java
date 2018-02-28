@@ -2994,20 +2994,20 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      *
      * @param subscriber Subscriber
      * @param groupingId The groupId to which the applications must belong.
-     * @param offset The offset.
-     * @param search The search string.
+     * @param offset     The offset.
+     * @param search     The search string.
      * @param sortColumn The sort column.
-     * @param sortOrder The sort order.
+     * @param sortOrder  The sort order.
      * @return Application[] The Applications.
      * @throws APIManagementException
      */
     @Override
-    public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId,int start , int offset
-            , String search, String sortColumn, String sortOrder)
+    public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId, int start, int offset,
+                                                       String search, String sortColumn, String sortOrder)
             throws APIManagementException {
-        Application [] applications = apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset,
-                search,sortColumn,sortOrder);
-        for(Application application:applications){
+        Application[] applications = apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset,
+                search, sortColumn, sortOrder);
+        for (Application application : applications) {
             Set<APIKey> keys = getApplicationKeys(application.getId());
 
             for (APIKey key : keys) {
@@ -3046,9 +3046,9 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      * @return Set<APIKey>  Set of API keys of the application.
      * @throws APIManagementException
      */
-    private Set<APIKey> getApplicationKeys(int applicationId) throws APIManagementException {
+    protected Set<APIKey> getApplicationKeys(int applicationId) throws APIManagementException {
         Set<APIKey> apiKeys = new HashSet<APIKey>();
-        APIKey productionKey = getProductionKeyOfApplication(applicationId);
+        APIKey productionKey = getApplicationKey(applicationId, APIConstants.API_KEY_TYPE_PRODUCTION);
         if (productionKey != null) {
             apiKeys.add(productionKey);
         } else {
@@ -3059,7 +3059,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             }
         }
 
-        APIKey sandboxKey = getSandboxKeyOfApplication(applicationId);
+        APIKey sandboxKey = getApplicationKey(applicationId, APIConstants.API_KEY_TYPE_SANDBOX);
         if (sandboxKey != null) {
             apiKeys.add(sandboxKey);
         } else {
@@ -3073,63 +3073,29 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
     }
 
     /**
-     * Returns the production key associated with given application id.
-     *
-     * @param applicationId
-     * @return APIKey The production key of the application.
-     * @throws APIManagementException
-     */
-    private APIKey getProductionKeyOfApplication(int applicationId) throws APIManagementException {
-        String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId),
-                APIConstants.API_KEY_TYPE_PRODUCTION);
-        if(StringUtils.isNotEmpty(consumerKey)) {
-            String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_PRODUCTION,
-                    applicationId).getState();
-            KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
-            AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
-            APIKey apiKey = new APIKey();
-            if (tokenInfo != null) {
-                apiKey.setConsumerKey(consumerKey);
-                apiKey.setType(APIConstants.API_KEY_TYPE_PRODUCTION);
-                apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
-                apiKey.setAccessToken(tokenInfo.getAccessToken());
-                apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
-                apiKey.setState(tokenInfo.getTokenState());
-                apiKey.setState(consumerKeyStatus);
-                apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
-            }
-            return apiKey;
-        }
-        return null;
-    }
-
-    /**
-     * Returns the sandbox key associated with given application id.
+     * Returns the key associated with given application id and key type.
      *
      * @param applicationId Id of the Application.
-     * @return APIKey The sandbox key of the application.
+     * @param keyType The type of key.
+     * @return APIKey The key of the application.
      * @throws APIManagementException
      */
-    private APIKey getSandboxKeyOfApplication(int applicationId) throws APIManagementException {
-
-        String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId),
-                APIConstants.API_KEY_TYPE_SANDBOX);
+    protected APIKey getApplicationKey(int applicationId, String keyType) throws APIManagementException {
+        String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId), keyType);
         if(StringUtils.isNotEmpty(consumerKey)) {
-            String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_SANDBOX,
-                    applicationId).getState();
+            String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(keyType, applicationId).getState();
             KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
             AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
             APIKey apiKey = new APIKey();
             if (tokenInfo != null) {
-                apiKey.setConsumerKey(consumerKey);
-                apiKey.setType(APIConstants.API_KEY_TYPE_SANDBOX);
                 apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
                 apiKey.setAccessToken(tokenInfo.getAccessToken());
                 apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
-                apiKey.setState(tokenInfo.getTokenState());
-                apiKey.setState(consumerKeyStatus);
                 apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
             }
+            apiKey.setConsumerKey(consumerKey);
+            apiKey.setType(keyType);
+            apiKey.setState(consumerKeyStatus);
             return apiKey;
         }
         return null;

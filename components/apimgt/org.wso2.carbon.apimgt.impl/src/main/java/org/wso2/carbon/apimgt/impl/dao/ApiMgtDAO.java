@@ -4170,12 +4170,11 @@ public class ApiMgtDAO {
         String oracleSQL = SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_PREFIX +
                 accessTokenStoreTable + SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_SUFFIX;
 
-        String mySQL = "SELECT" + statement;//+ " LIMIT 1";
-        String db2SQL = "SELECT" + statement; //+ " FETCH FIRST 1 ROWS ONLY";
+        String mySQL = "SELECT" + statement;
+        String db2SQL = "SELECT" + statement;
         String msSQL = "SELECT " + statement;
         String postgreSQL = "SELECT * FROM (SELECT" + statement + ") AS TOKEN";
 
-        String authorizedDomains;
         String accessToken;
         String sql;
 
@@ -4187,9 +4186,8 @@ public class ApiMgtDAO {
                 sql = mySQL;
             } else if (connection.getMetaData().getDatabaseProductName().contains("DB2")) {
                 sql = db2SQL;
-            } else if (connection.getMetaData().getDriverName().contains("MS SQL")) {
-                sql = msSQL;
-            } else if (connection.getMetaData().getDriverName().contains("Microsoft")) {
+            } else if (connection.getMetaData().getDriverName().contains("MS SQL") || connection.getMetaData()
+                    .getDriverName().contains("Microsoft")) {
                 sql = msSQL;
             } else if (connection.getMetaData().getDriverName().contains("PostgreSQL")) {
                 sql = postgreSQL;

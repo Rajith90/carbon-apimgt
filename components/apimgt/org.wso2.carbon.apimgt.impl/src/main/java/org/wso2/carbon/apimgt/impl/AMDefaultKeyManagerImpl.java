@@ -617,18 +617,20 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
         AccessTokenInfo tokenInfo = new AccessTokenInfo();
         ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
 
-        APIKey apiKey = null;
+        APIKey apiKey;
         try {
             apiKey = apiMgtDAO.getAccessTokenInfoByConsumerKey(consumerKey);
             tokenInfo.setAccessToken(apiKey.getAccessToken());
             tokenInfo.setConsumerKey(consumerKey);
             tokenInfo.setConsumerSecret(apiKey.getConsumerSecret());
             tokenInfo.setValidityPeriod(apiKey.getValidityPeriod());
-            tokenInfo.setScope(apiKey.getTokenScope().split(" "));
+            tokenInfo.setScope(apiKey.getTokenScope().split("\\s"));
         } catch (SQLException e) {
-            handleException("Can not retrieve information of the access token", e);
+            handleException("Cannot retrieve information for the given consumer key : "
+                    + consumerKey, e);
         } catch (CryptoException e) {
-            handleException("Token decryption failed of an access token of consumerKey", e);
+            handleException("Token decryption failed of an access token for the given consumer key : "
+                    + consumerKey, e);
         }
         return tokenInfo;
     }
