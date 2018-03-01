@@ -3082,7 +3082,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      */
     protected APIKey getApplicationKey(int applicationId, String keyType) throws APIManagementException {
         String consumerKey = apiMgtDAO.getConsumerkeyByApplicationIdAndKeyType(String.valueOf(applicationId), keyType);
-        if(StringUtils.isNotEmpty(consumerKey)) {
+        if (StringUtils.isNotEmpty(consumerKey)) {
             String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(keyType, applicationId).getState();
             KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
             AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
