@@ -1885,6 +1885,14 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             if (originalSubscribedAPIs != null && !originalSubscribedAPIs.isEmpty()) {
                 Map<String, Tier> tiers = APIUtil.getTiers(tenantId);
                 for (SubscribedAPI subscribedApi : originalSubscribedAPIs) {
+                    Application application = subscribedApi.getApplication();
+                    if (application != null) {
+                        int applicationId = application.getId();
+                        Set<APIKey> keys = getApplicationKeys(applicationId);
+                        for (APIKey key : keys) {
+                            application.addKey(key);
+                        }
+                    }
                     Tier tier = tiers.get(subscribedApi.getTier().getName());
                     subscribedApi.getTier().setDisplayName(tier != null ? tier.getDisplayName() : subscribedApi.getTier().getName());
                     subscribedAPIs.add(subscribedApi);
@@ -2296,6 +2304,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         String uuid = application.getUUID();
         if (!StringUtils.isEmpty(uuid)) {
             existingApp = apiMgtDAO.getApplicationByUUID(uuid);
+            Set<APIKey> keys = getApplicationKeys(existingApp.getId());
+
+            for (APIKey key : keys) {
+                existingApp.addKey(key);
+            }
             application.setId(existingApp.getId());
         } else {
             existingApp = apiMgtDAO.getApplicationById(application.getId());
@@ -2385,6 +2398,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         String uuid = application.getUUID();
         if (application.getId() == 0 && !StringUtils.isEmpty(uuid)) {
             application = apiMgtDAO.getApplicationByUUID(uuid);
+            Set<APIKey> keys = getApplicationKeys(application.getId());
+
+            for (APIKey key : keys) {
+                application.addKey(key);
+            }
         }
         boolean isTenantFlowStarted = false;
         int applicationId = application.getId();

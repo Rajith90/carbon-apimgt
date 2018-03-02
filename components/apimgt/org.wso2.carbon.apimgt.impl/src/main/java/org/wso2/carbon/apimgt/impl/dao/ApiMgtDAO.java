@@ -1579,11 +1579,7 @@ public class ApiMgtDAO {
                     application.setId(result.getInt("APP_ID"));
                     application.setCallbackUrl(result.getString("CALLBACK_URL"));
                     application.setUUID(result.getString("APP_UUID"));
-                    String tenantAwareUserId = subscriber.getName();
-                    Set<APIKey> keys = getApplicationKeys(tenantAwareUserId, applicationId);
-                    for (APIKey key : keys) {
-                        application.addKey(key);
-                    }
+
                     Map<String, OAuthApplicationInfo> oauthApps = getOAuthApplications(applicationId);
 
                     for (Map.Entry<String, OAuthApplicationInfo> entry : oauthApps.entrySet()) {
@@ -1912,44 +1908,6 @@ public class ApiMgtDAO {
         return tokenDataMap;
     }
 
-
-    private Set<APIKey> getApplicationKeys(String username, int applicationId) throws APIManagementException {
-
-        String accessTokenStoreTable = APIConstants.ACCESS_TOKEN_STORE_TABLE;
-        accessTokenStoreTable = getAccessTokenStoreTableNameOfUserId(username, accessTokenStoreTable);
-
-        Set<APIKey> apiKeys = new HashSet<APIKey>();
-
-        try {
-            APIKey productionKey = getProductionKeyOfApplication(applicationId, accessTokenStoreTable);
-            if (productionKey != null) {
-                apiKeys.add(productionKey);
-            } else {
-                productionKey = getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_PRODUCTION, applicationId);
-                if (productionKey != null) {
-                    productionKey.setType(APIConstants.API_KEY_TYPE_PRODUCTION);
-                    apiKeys.add(productionKey);
-                }
-            }
-
-            APIKey sandboxKey = getSandboxKeyOfApplication(applicationId, accessTokenStoreTable);
-            if (sandboxKey != null) {
-                apiKeys.add(sandboxKey);
-            } else {
-                sandboxKey = getKeyStatusOfApplication(APIConstants.API_KEY_TYPE_SANDBOX, applicationId);
-                if (sandboxKey != null) {
-                    sandboxKey.setType(APIConstants.API_KEY_TYPE_SANDBOX);
-                    apiKeys.add(sandboxKey);
-                }
-            }
-        } catch (SQLException e) {
-            handleException("Failed to get keys for application: " + applicationId, e);
-        } catch (CryptoException e) {
-            handleException("Failed to get keys for application: " + applicationId, e);
-        }
-        return apiKeys;
-    }
-
     private Map<String, OAuthApplicationInfo> getOAuthApplications(int applicationId) throws APIManagementException {
         Map<String, OAuthApplicationInfo> map = new HashMap<String, OAuthApplicationInfo>();
         OAuthApplicationInfo prodApp = getClientOfApplication(applicationId, "PRODUCTION");
@@ -2057,163 +2015,6 @@ public class ApiMgtDAO {
         }
 
         return consumerKeys;
-    }
-
-    private APIKey getProductionKeyOfApplication(int applicationId, String accessTokenStoreTable)
-            throws SQLException, CryptoException, APIManagementException {
-
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-        //The part of the sql query that remain common across databases.
-        String statement = SQLConstants.GET_PRODUCTION_KEYS_OF_APPLICATION_PREFIX +
-                accessTokenStoreTable + SQLConstants.GET_PRODUCTION_KEYS_OF_APPLICATION_SUFFIX;
-
-
-        String oracleSQL = SQLConstants.GET_PRODUCTION_KEYS_OF_APPLICATION_ORACLE_PREFIX +
-                accessTokenStoreTable + SQLConstants.GET_PRODUCTION_KEYS_OF_APPLICATION_ORACLE_SUFFIX;
-
-        String mySQL = "SELECT" + statement;//+ " LIMIT 1";
-        String db2SQL = "SELECT" + statement; //+ " FETCH FIRST 1 ROWS ONLY";
-        String msSQL = "SELECT " + statement;
-        String postgreSQL = "SELECT * FROM (SELECT" + statement + ") AS TOKEN";
-
-        String authorizedDomains;
-        String accessToken;
-        String sql;
-
-        try {
-            connection = APIMgtDBUtil.getConnection();
-
-            if (connection.getMetaData().getDriverName().contains("MySQL") || connection.getMetaData().getDriverName
-                    ().contains("H2")) {
-                sql = mySQL;
-            } else if (connection.getMetaData().getDatabaseProductName().contains("DB2")) {
-                sql = db2SQL;
-            } else if (connection.getMetaData().getDriverName().contains("MS SQL")) {
-                sql = msSQL;
-            } else if (connection.getMetaData().getDriverName().contains("Microsoft")) {
-                sql = msSQL;
-            } else if (connection.getMetaData().getDriverName().contains("PostgreSQL")) {
-                sql = postgreSQL;
-            } else {
-                sql = oracleSQL;
-            }
-
-            preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setInt(1, applicationId);
-            preparedStatement.setString(2, APIConstants.ACCESS_TOKEN_USER_TYPE_APPLICATION);
-            resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                APIKey apiKey = new APIKey();
-                accessToken = APIUtil.decryptToken(resultSet.getString("ACCESS_TOKEN"));
-                String consumerKey = resultSet.getString("CONSUMER_KEY");
-                apiKey.setConsumerKey(consumerKey);
-                String consumerSecret = resultSet.getString("CONSUMER_SECRET");
-                apiKey.setConsumerSecret(APIUtil.decryptToken(consumerSecret));
-                apiKey.setAccessToken(accessToken);
-
-                //authorizedDomains = getAuthorizedDomains(accessToken);
-                apiKey.setType(resultSet.getString("TOKEN_TYPE"));
-                //apiKey.setAuthorizedDomains(authorizedDomains);
-                apiKey.setValidityPeriod(resultSet.getLong("VALIDITY_PERIOD") / 1000);
-                apiKey.setState(resultSet.getString("STATE"));
-                apiKey.setGrantTypes(resultSet.getString("GRANT_TYPES"));
-                apiKey.setCallbackUrl(resultSet.getString("CALLBACK_URL"));
-
-                // Load all the rows to in memory and build the scope string
-                List<String> scopes = new ArrayList<String>();
-                String tokenString = resultSet.getString("ACCESS_TOKEN");
-
-                do {
-                    String currentRowTokenString = resultSet.getString("ACCESS_TOKEN");
-                    if (tokenString.equals(currentRowTokenString)) {
-                        scopes.add(resultSet.getString(APIConstants.IDENTITY_OAUTH2_FIELD_TOKEN_SCOPE));
-                    }
-                } while (resultSet.next());
-                apiKey.setTokenScope(getScopeString(scopes));
-                return apiKey;
-            }
-            return null;
-        } finally {
-            APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
-        }
-    }
-
-    private APIKey getSandboxKeyOfApplication(int applicationId, String accessTokenStoreTable)
-            throws SQLException, CryptoException, APIManagementException {
-
-        Connection connection = null;
-        PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-
-        //The part of the sql query that remain common across databases.
-        String statement = SQLConstants.GET_SANDBOX_KEYS_OF_APPLICATION_PREFIX +
-                accessTokenStoreTable + SQLConstants.GET_SANDBOX_KEYS_OF_APPLICATION_SUFFIX;
-
-        //Construct database specific sql statements.
-        String oracleSQL = SQLConstants.GET_SANDBOX_KEYS_OF_APPLICATION_ORACLE_PREFIX +
-                accessTokenStoreTable + SQLConstants.GET_SANDBOX_KEYS_OF_APPLICATION_ORACLE_SUFFIX;
-
-        String mySQL = "SELECT" + statement;// + " LIMIT 1";
-        String db2SQL = "SELECT" + statement;// + " FETCH FIRST 1 ROWS ONLY";
-        String msSQL = "SELECT " + statement;
-        String postgreSQL = "SELECT * FROM (SELECT" + statement + ") AS TOKEN";
-
-        String authorizedDomains;
-        String accessToken;
-        String sql;
-        try {
-            connection = APIMgtDBUtil.getConnection();
-
-            if (connection.getMetaData().getDriverName().contains("MySQL") || connection.getMetaData().getDriverName
-                    ().contains("H2")) {
-                sql = mySQL;
-            } else if (connection.getMetaData().getDatabaseProductName().contains("DB2")) {
-                sql = db2SQL;
-            } else if (connection.getMetaData().getDriverName().contains("MS SQL")) {
-                sql = msSQL;
-            } else if (connection.getMetaData().getDriverName().contains("Microsoft")) {
-                sql = msSQL;
-            } else if (connection.getMetaData().getDriverName().contains("PostgreSQL")) {
-                sql = postgreSQL;
-            } else {
-                sql = oracleSQL;
-            }
-
-            preparedStatement = connection.prepareStatement(sql);
-            preparedStatement.setInt(1, applicationId);
-            preparedStatement.setString(2, APIConstants.ACCESS_TOKEN_USER_TYPE_APPLICATION);
-            resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                APIKey apiKey = new APIKey();
-                accessToken = APIUtil.decryptToken(resultSet.getString("ACCESS_TOKEN"));
-                String consumerKey = resultSet.getString("CONSUMER_KEY");
-                apiKey.setConsumerKey(consumerKey);
-                String consumerSecret = resultSet.getString("CONSUMER_SECRET");
-                apiKey.setConsumerSecret(APIUtil.decryptToken(consumerSecret));
-                apiKey.setAccessToken(accessToken);
-                apiKey.setType(resultSet.getString("TOKEN_TYPE"));
-                apiKey.setValidityPeriod(resultSet.getLong("VALIDITY_PERIOD") / 1000);
-                apiKey.setGrantTypes(resultSet.getString("GRANT_TYPES"));
-                apiKey.setCallbackUrl(resultSet.getString("CALLBACK_URL"));
-                // Load all the rows to in memory and build the scope string
-                List<String> scopes = new ArrayList<String>();
-                String tokenString = resultSet.getString("ACCESS_TOKEN");
-
-                do {
-                    String currentRowTokenString = resultSet.getString("ACCESS_TOKEN");
-                    if (tokenString.equals(currentRowTokenString)) {
-                        scopes.add(resultSet.getString(APIConstants.IDENTITY_OAUTH2_FIELD_TOKEN_SCOPE));
-                    }
-                } while (resultSet.next());
-                apiKey.setTokenScope(getScopeString(scopes));
-                return apiKey;
-            }
-            return null;
-        } finally {
-            APIMgtDBUtil.closeAllConnections(preparedStatement, connection, resultSet);
-        }
     }
 
     public Set<String> getApplicationKeys(int applicationId) throws APIManagementException {
@@ -4155,9 +3956,12 @@ public class ApiMgtDAO {
      * @throws SQLException
      * @throws CryptoException
      */
-    public APIKey getAccessTokenInfoByConsumerKey(String consumerKey) throws SQLException, CryptoException {
+    public APIKey getAccessTokenInfoByConsumerKey(String consumerKey) throws SQLException, CryptoException,
+            APIManagementException {
 
         String accessTokenStoreTable = APIConstants.ACCESS_TOKEN_STORE_TABLE;
+        String username = getUserIdFromConsumerKey(consumerKey);
+        accessTokenStoreTable = getAccessTokenStoreTableNameOfUserId(username, accessTokenStoreTable);
 
         Connection connection = null;
         PreparedStatement preparedStatement = null;
@@ -5559,11 +5363,6 @@ public class ApiMgtDAO {
                 } catch (SQLException e) {
                     // fixing Timestamp issue with default value '0000-00-00 00:00:00'for existing applications created
                     application.setLastUpdatedTime(application.getCreatedTime());
-                }
-
-                Set<APIKey> keys = getApplicationKeys(subscriber.getName(), application.getId());
-                for (APIKey key : keys) {
-                    application.addKey(key);
                 }
             }
         } catch (SQLException e) {
@@ -7972,6 +7771,38 @@ public class ApiMgtDAO {
             return APIUtil.getAccessTokenStoreTableFromAccessToken(accessToken);
         }
         return accessTokenStoreTable;
+    }
+
+    /**
+     * Returns the user id for the consumer key.
+     *
+     * @param consumerKey The consumer key.
+     * @return String The user id.
+     */
+    private String getUserIdFromConsumerKey (String consumerKey) throws APIManagementException {
+        Connection connection = null;
+        PreparedStatement prepStmt = null;
+        ResultSet rs = null;
+        String userId = null;
+
+        String sqlQuery = SQLConstants.GET_USER_ID_FROM_CONSUMER_KEY_SQL;
+
+        try {
+            connection = APIMgtDBUtil.getConnection();
+            prepStmt = connection.prepareStatement(sqlQuery);
+            prepStmt.setString(1, consumerKey);
+            rs = prepStmt.executeQuery();
+
+            while (rs.next()) {
+                userId = rs.getString("USER_ID");
+            }
+
+        } catch (SQLException e) {
+            handleException("Error when getting the user id for Consumer Key" + consumerKey, e);
+        } finally {
+            APIMgtDBUtil.closeAllConnections(prepStmt, connection, rs);
+        }
+        return userId;
     }
 
     /**

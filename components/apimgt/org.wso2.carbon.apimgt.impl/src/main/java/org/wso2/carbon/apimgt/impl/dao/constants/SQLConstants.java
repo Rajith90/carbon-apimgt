@@ -102,6 +102,18 @@ public class SQLConstants {
             " FROM IDN_OAUTH_CONSUMER_APPS " +
             " WHERE CONSUMER_KEY = ?";
 
+    public static final String GET_USER_ID_FROM_CONSUMER_KEY_SQL =
+            " SELECT " +
+            "   SUBS.USER_ID " +
+            " FROM " +
+            "   AM_SUBSCRIBER SUBS, " +
+            "   AM_APPLICATION APP, " +
+            "   AM_APPLICATION_KEY_MAPPING MAP " +
+            " WHERE " +
+            "   APP.SUBSCRIBER_ID   = SUBS.SUBSCRIBER_ID " +
+            "   AND MAP.APPLICATION_ID = APP.APPLICATION_ID " +
+            "   AND MAP.CONSUMER_KEY   = ? ";
+
     public static final String GET_SUBSCRIBED_APIS_OF_USER_SQL =
             " SELECT " +
             "   API.API_PROVIDER AS API_PROVIDER," +
@@ -764,33 +776,6 @@ public class SQLConstants {
             " FROM AM_APPLICATION_KEY_MAPPING " +
             " WHERE APPLICATION_ID = ?";
 
-    public static final String GET_PRODUCTION_KEYS_OF_APPLICATION_PREFIX =
-            "   ICA.CONSUMER_KEY AS CONSUMER_KEY," +
-            "   ICA.CONSUMER_SECRET AS CONSUMER_SECRET," +
-            "   ICA.GRANT_TYPES AS GRANT_TYPES," +
-            "   ICA.CALLBACK_URL AS CALLBACK_URL," +
-            "   IAT.ACCESS_TOKEN AS ACCESS_TOKEN," +
-            "   IAT.VALIDITY_PERIOD AS VALIDITY_PERIOD," +
-            "   ISAT.TOKEN_SCOPE AS TOKEN_SCOPE," +
-            "   AKM.KEY_TYPE AS TOKEN_TYPE, " +
-            "   AKM.STATE AS STATE " +
-            " FROM" +
-            "   AM_APPLICATION_KEY_MAPPING AKM,";
-
-    public static final String GET_PRODUCTION_KEYS_OF_APPLICATION_SUFFIX =
-            "   IAT, " +
-            APIConstants.TOKEN_SCOPE_ASSOCIATION_TABLE + " ISAT," +
-            "   IDN_OAUTH_CONSUMER_APPS ICA " +
-            " WHERE" +
-            "   AKM.APPLICATION_ID = ? " +
-            "   AND IAT.USER_TYPE = ? " +
-            "   AND ICA.CONSUMER_KEY = AKM.CONSUMER_KEY " +
-            "   AND IAT.CONSUMER_KEY_ID = ICA.ID " +
-            "   AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
-            "   AND AKM.KEY_TYPE = 'PRODUCTION' " +
-            "   AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
-            " ORDER BY IAT.TIME_CREATED DESC";
-
     public static final String GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_PREFIX =
             "   ICA.CONSUMER_KEY AS CONSUMER_KEY," +
             "   ICA.CONSUMER_SECRET AS CONSUMER_SECRET," +
@@ -812,45 +797,6 @@ public class SQLConstants {
             "   AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
             "   AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
             " ORDER BY IAT.TIME_CREATED DESC";
-
-    public static final String GET_PRODUCTION_KEYS_OF_APPLICATION_ORACLE_PREFIX =
-            " SELECT " +
-            "   CONSUMER_KEY, " +
-            "   CONSUMER_SECRET, " +
-            "   GRANT_TYPES, " +
-            "   CALLBACK_URL, " +
-            "   ACCESS_TOKEN, " +
-            "   VALIDITY_PERIOD, " +
-            "   TOKEN_SCOPE, " +
-            "   TOKEN_TYPE, " +
-            "   STATE " +
-            " FROM (" +
-            "   SELECT " +
-            "       ICA.CONSUMER_KEY AS CONSUMER_KEY, " +
-            "       ICA.CONSUMER_SECRET AS CONSUMER_SECRET, " +
-            "       ICA.GRANT_TYPES AS GRANT_TYPES, " +
-            "       ICA.CALLBACK_URL AS CALLBACK_URL, " +
-            "       IAT.ACCESS_TOKEN AS ACCESS_TOKEN, " +
-            "       IAT.VALIDITY_PERIOD AS VALIDITY_PERIOD, " +
-            "       ISAT.TOKEN_SCOPE AS TOKEN_SCOPE, " +
-            "       AKM.KEY_TYPE AS TOKEN_TYPE, " +
-            "       AKM.STATE AS STATE " +
-            "   FROM " +
-            "       AM_APPLICATION_KEY_MAPPING AKM, ";
-
-    public static final String GET_PRODUCTION_KEYS_OF_APPLICATION_ORACLE_SUFFIX =
-            "       IAT, " +
-            APIConstants.TOKEN_SCOPE_ASSOCIATION_TABLE + " ISAT," +
-            "       IDN_OAUTH_CONSUMER_APPS ICA " +
-            "   WHERE " +
-            "       AKM.APPLICATION_ID = ? " +
-            "       AND IAT.USER_TYPE = ? " +
-            "       AND ICA.CONSUMER_KEY = AKM.CONSUMER_KEY " +
-            "       AND IAT.CONSUMER_KEY_ID = ICA.ID " +
-            "       AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
-            "       AND AKM.KEY_TYPE = 'PRODUCTION' " +
-            "       AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
-            "   ORDER BY IAT.TIME_CREATED DESC) ";
 
     public static final String GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_PREFIX =
             " SELECT " +
@@ -883,59 +829,6 @@ public class SQLConstants {
             "       AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
             "       AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
             "   ORDER BY IAT.TIME_CREATED DESC) ";
-
-    public static final String GET_SANDBOX_KEYS_OF_APPLICATION_PREFIX =
-            "   ICA.CONSUMER_KEY AS CONSUMER_KEY," +
-            "   ICA.CONSUMER_SECRET AS CONSUMER_SECRET," +
-            "   ICA.GRANT_TYPES AS GRANT_TYPES," +
-            "   ICA.CALLBACK_URL AS CALLBACK_URL," +
-            "   IAT.ACCESS_TOKEN AS ACCESS_TOKEN," +
-            "   IAT.VALIDITY_PERIOD AS VALIDITY_PERIOD," +
-            "   ISAT.TOKEN_SCOPE AS TOKEN_SCOPE," +
-            "   AKM.KEY_TYPE AS TOKEN_TYPE " +
-            " FROM" +
-            "   AM_APPLICATION_KEY_MAPPING AKM,";
-
-    public static final String GET_SANDBOX_KEYS_OF_APPLICATION_SUFFIX =
-            "   IAT, " +
-            APIConstants.TOKEN_SCOPE_ASSOCIATION_TABLE + " ISAT," +
-            "   IDN_OAUTH_CONSUMER_APPS ICA " +
-            " WHERE" +
-            "   AKM.APPLICATION_ID = ? " +
-            "   AND IAT.USER_TYPE = ? " +
-            "   AND ICA.CONSUMER_KEY = AKM.CONSUMER_KEY " +
-            "   AND IAT.CONSUMER_KEY_ID = ICA.ID " +
-            "   AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
-            "   AND AKM.KEY_TYPE = 'SANDBOX' " +
-            "   AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
-            " ORDER BY IAT.TIME_CREATED DESC";
-
-    public static final String GET_SANDBOX_KEYS_OF_APPLICATION_ORACLE_PREFIX =
-            " SELECT " +
-            "   ICA.CONSUMER_KEY AS CONSUMER_KEY," +
-            "   ICA.CONSUMER_SECRET AS CONSUMER_SECRET," +
-            "   ICA.GRANT_TYPES AS GRANT_TYPES, " +
-            "   ICA.CALLBACK_URL AS CALLBACK_URL, " +
-            "   IAT.ACCESS_TOKEN AS ACCESS_TOKEN," +
-            "   IAT.VALIDITY_PERIOD AS VALIDITY_PERIOD," +
-            "   ISAT.TOKEN_SCOPE AS TOKEN_SCOPE," +
-            "   AKM.KEY_TYPE AS TOKEN_TYPE " +
-            " FROM" +
-            "   AM_APPLICATION_KEY_MAPPING AKM,";
-
-    public static final String GET_SANDBOX_KEYS_OF_APPLICATION_ORACLE_SUFFIX =
-            "   IAT, " +
-            APIConstants.TOKEN_SCOPE_ASSOCIATION_TABLE + " ISAT," +
-            "   IDN_OAUTH_CONSUMER_APPS ICA " +
-            " WHERE" +
-            "   AKM.APPLICATION_ID = ? " +
-            "   AND IAT.USER_TYPE = ? " +
-            "   AND ICA.CONSUMER_KEY = AKM.CONSUMER_KEY " +
-            "   AND IAT.CONSUMER_KEY_ID = ICA.ID " +
-            "   AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
-            "   AND AKM.KEY_TYPE = 'SANDBOX' " +
-            "   AND (IAT.TOKEN_STATE = 'ACTIVE' OR IAT.TOKEN_STATE = 'EXPIRED' OR IAT.TOKEN_STATE = 'REVOKED') " +
-            " ORDER BY IAT.TIME_CREATED DESC ";
 
     //--------------------New tier permission management
 
