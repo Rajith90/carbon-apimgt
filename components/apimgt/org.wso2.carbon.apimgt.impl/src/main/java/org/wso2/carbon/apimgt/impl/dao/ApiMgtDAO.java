@@ -4166,7 +4166,6 @@ public class ApiMgtDAO {
         String statement = SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_PREFIX +
                 accessTokenStoreTable + SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_SUFFIX;
 
-
         String oracleSQL = SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_PREFIX +
                 accessTokenStoreTable + SQLConstants.GET_ACCESS_TOKEN_INFO_BY_CONSUMER_KEY_ORACLE_SUFFIX;
 
