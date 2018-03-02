@@ -1891,7 +1891,7 @@ public abstract class AbstractAPIManager implements APIManager {
 
                 if (policies != null) {
                     for (Policy policy : policies) {
-                        if (!"unlimited".equalsIgnoreCase(policy.getPolicyName())) {
+                        if (!APIConstants.UNLIMITED_TIER_NAME.equalsIgnoreCase(policy.getPolicyName())) {
                             policiesWithoutUnlimitedTier.add(policy);
                         }
                     }

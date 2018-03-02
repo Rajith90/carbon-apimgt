@@ -376,6 +376,9 @@ public final class APIConstants {
     public static final String LC_CHECK_ITEM_ORDER = "order:";
 
     public static final String APIM_CONFIG_ENABLE_UNLIMITED_TIER = "EnableUnlimitedTier";
+    public static final String FAULT_SEQUENCE = "fault";
+    public static final String OUT_SEQUENCE = "out";
+    public static final String UNLIMITED_TIER_NAME = "unlimited";
 
     public static final String SUPER_TENANT_DOMAIN = "carbon.super";
     public static final String TENANT_PREFIX = "/t/";

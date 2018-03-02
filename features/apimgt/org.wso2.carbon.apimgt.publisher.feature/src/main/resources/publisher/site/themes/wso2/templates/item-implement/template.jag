@@ -662,7 +662,7 @@
                                                                     <span class="input-group-btn" >
                                                                         <a href="#sequenceDownload" role="button"
                                                                         class="btn btn-sequenceDownload"
-                                                                        data-id="out" data-name="Fault Flow"
+                                                                        data-id="out" data-name="Out Flow"
                                                                         id="out-seq-download"
                                                                         title="Download" >
                                                                             <i class="fw fw-download"></i>
