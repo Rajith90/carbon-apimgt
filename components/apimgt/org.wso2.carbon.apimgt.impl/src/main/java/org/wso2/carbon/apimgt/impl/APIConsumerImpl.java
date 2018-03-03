@@ -3110,6 +3110,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 apiKey.setAccessToken(tokenInfo.getAccessToken());
                 apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
                 apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
+            } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Access token does not exist for Consumer Key: " + consumerKey);
                 }
