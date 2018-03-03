@@ -194,3 +194,16 @@ input.ep-field{
     margin-bottom: 3px;
     padding: 6px 12px;
 }
+
+/* Styles for sequence download button. */
+.btn-sequenceDownload:hover {
+    color: white; !important;
+    background-color: #5b5b5b !important;
+}
+
+.btn-sequenceDownload {
+    border: none;
+    color: white;
+    background-color: #888888;
+}
+/*---------------------------------------*/

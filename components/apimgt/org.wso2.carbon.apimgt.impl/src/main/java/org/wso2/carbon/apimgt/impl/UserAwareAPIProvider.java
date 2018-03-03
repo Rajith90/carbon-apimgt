@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.wso2.carbon.apimgt.impl.APIConstants.UN_AUTHORIZED_ERROR_MESSAGE;
-
 /**
  * User aware APIProvider implementation which ensures that the invoking user has the
  * necessary privileges to execute the operations. Users can use this class as an
@@ -151,6 +149,13 @@ public class UserAwareAPIProvider extends APIProviderImpl {
     public List<String> getCustomFaultSequences(APIIdentifier apiIdentifier) throws APIManagementException {
         checkAccessControlPermission(apiIdentifier);
         return super.getCustomFaultSequences(apiIdentifier);
+    }
+
+    @Override
+    public String getSequenceFileContent(APIIdentifier apiIdentifier, String sequenceType, String sequenceName)
+            throws APIManagementException {
+        checkAccessControlPermission(apiIdentifier);
+        return super.getSequenceFileContent(apiIdentifier, sequenceType, sequenceName);
     }
 
     @Override
