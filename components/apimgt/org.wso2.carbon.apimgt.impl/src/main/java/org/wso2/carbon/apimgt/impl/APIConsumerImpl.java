@@ -3250,7 +3250,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         StringBuilder rolesQuery = new StringBuilder();
         rolesQuery.append('(');
         rolesQuery.append(APIConstants.NULL_USER_ROLE_LIST);
-        String[] userRoles = APIUtil.getListOfRoles((userNameWithoutChange != null)? userNameWithoutChange: username);
+        String[] userRoles = APIUtil.getListOfRoles((userNameWithoutChange != null) ? userNameWithoutChange : username);
         if (userRoles != null) {
             for (String userRole : userRoles) {
                 rolesQuery.append(" OR ");
