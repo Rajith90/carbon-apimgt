@@ -2244,17 +2244,6 @@ public final class APIUtil {
         }
     }
 
-    /**
-     * Checks whether the specified user has the specified permission.
-     *
-     * @param userNameWithoutChange A username
-     * @param permission            A valid Carbon permission
-     * @throws APIManagementException If the user does not have the specified permission or if an error occurs
-     */
-    public static boolean hasPermission(String userNameWithoutChange, String permission) throws
-            APIManagementException {
-        return hasPermission(userNameWithoutChange, permission, false);
-    }
 
     /**
      * Checks whether the specified user has the specified permission.
@@ -2263,7 +2252,7 @@ public final class APIUtil {
      * @param permission            A valid Carbon permission
      * @throws APIManagementException If the user does not have the specified permission or if an error occurs
      */
-    public static boolean hasPermission(String userNameWithoutChange, String permission, boolean isFromPublisher)
+    public static boolean hasPermission(String userNameWithoutChange, String permission)
             throws APIManagementException {
         boolean authorized = false;
         if (userNameWithoutChange == null) {
@@ -2277,7 +2266,7 @@ public final class APIUtil {
             return authorized;
         }
 
-        if (isFromPublisher && APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+        if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
             Integer value = getValueFromCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange);
             if (value != null) {
                 return value == 1;
@@ -2315,7 +2304,7 @@ public final class APIUtil {
                                 .isUserAuthorized(MultitenantUtils.getTenantAwareUsername(userNameWithoutChange),
                                         permission);
             }
-            if (isFromPublisher && APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
+            if (APIConstants.Permissions.APIM_ADMIN.equals(permission)) {
                 addToRolesCache(APIConstants.API_PUBLISHER_ADMIN_PERMISSION_CACHE, userNameWithoutChange,
                         authorized ? 1 : 2);
             }
@@ -2426,24 +2415,14 @@ public final class APIUtil {
         return null;
     }
 
-    /**
-     * Retrieves the role list of a user
-     *
-     * @param username Name of the username
-     * @throws APIManagementException If an error occurs
-     */
-    public static String[] getListOfRoles(String username) throws APIManagementException {
-        return getListOfRoles(username, false);
-    }
 
     /**
      * Retrieves the role list of a user
      *
      * @param username A username
-     * @param isFromPublisher To specify whether this call is from publisher
      * @throws APIManagementException If an error occurs
      */
-    public static String[] getListOfRoles(String username, boolean isFromPublisher) throws APIManagementException {
+    public static String[] getListOfRoles(String username) throws APIManagementException {
         if (username == null) {
             throw new APIManagementException("Attempt to execute privileged operation as" +
                     " the anonymous user");
@@ -2451,9 +2430,7 @@ public final class APIUtil {
 
         String[] roles = null;
 
-        if (isFromPublisher) {
-            roles = getValueFromCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username);
-        }
+        roles = getValueFromCache(APIConstants.API_USER_ROLE_CACHE, username);
         if (roles != null) {
             return roles;
         }
@@ -2470,9 +2447,7 @@ public final class APIUtil {
                 roles = AuthorizationManager.getInstance()
                         .getRolesOfUser(MultitenantUtils.getTenantAwareUsername(username));
             }
-            if (isFromPublisher) {
-                addToRolesCache(APIConstants.API_PUBLISHER_USER_ROLE_CACHE, username, roles);
-            }
+            addToRolesCache(APIConstants.API_USER_ROLE_CACHE, username, roles);
             return roles;
         } catch (UserStoreException e) {
             throw new APIManagementException("UserStoreException while trying the role list of the user " + username,
@@ -2886,6 +2861,9 @@ public final class APIUtil {
 
                 if (visibility.equalsIgnoreCase(APIConstants.API_GLOBAL_VISIBILITY)) {
                     registryResource.setProperty(APIConstants.STORE_VIEW_ROLES, APIConstants.NULL_USER_ROLE_LIST);
+                    publisherAccessRoles = new StringBuilder(APIConstants.NULL_USER_ROLE_LIST); // set publisher
+                    // access roles null since store visibility is global. We do not need to add any roles to
+                    // store_view_role property.
                 } else {
                     registryResource.setProperty(APIConstants.STORE_VIEW_ROLES, publisherAccessRoles.toString());
                 }
@@ -2909,12 +2887,21 @@ public final class APIUtil {
                             authManager.authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
                             isRoleEveryOne = true;
                         } else {
+                            // If there are store visibility roles no need to append null to the set of roles.
+                            if (roles.length > 0 && !roles[0].isEmpty() && APIConstants.NULL_USER_ROLE_LIST
+                                    .equals(publisherAccessRoles.toString())) {
+                                publisherAccessRoles = new StringBuilder();
+                            }
                             for (String role : roles) {
                                 if (APIConstants.EVERYONE_ROLE.equalsIgnoreCase(role)) {
                                     isRoleEveryOne = true;
                                 }
                                 authManager.authorizeRole(role, resourcePath, ActionConstants.GET);
-                                publisherAccessRoles.append(",").append(role.toLowerCase());
+                                if (!publisherAccessRoles.toString().isEmpty()) {
+                                    publisherAccessRoles.append(",").append(role.toLowerCase());
+                                } else {
+                                    publisherAccessRoles.append(role.toLowerCase());
+                                }
                             }
                         }
                     }
@@ -2948,12 +2935,21 @@ public final class APIUtil {
                 if (visibility != null && APIConstants.API_RESTRICTED_VISIBILITY.equalsIgnoreCase(visibility)) {
                     boolean isRoleEveryOne = false;
                     if (roles != null) {
+                        // If there are store visibility roles no need to append null to the set of roles.
+                        if (roles.length > 0 && !roles[0].isEmpty() && APIConstants.NULL_USER_ROLE_LIST
+                                .equals(publisherAccessRoles.toString())) {
+                            publisherAccessRoles = new StringBuilder();
+                        }
                         for (String role : roles) {
                             if (APIConstants.EVERYONE_ROLE.equalsIgnoreCase(role)) {
                                 isRoleEveryOne = true;
                             }
                             authorizationManager.authorizeRole(role, resourcePath, ActionConstants.GET);
-                            publisherAccessRoles.append(",").append(role.toLowerCase());
+                            if (!publisherAccessRoles.toString().isEmpty()) {
+                                publisherAccessRoles.append(",").append(role.toLowerCase());
+                            } else {
+                                publisherAccessRoles.append(role.toLowerCase());
+                            }
                         }
                     }
                     if (!isRoleEveryOne) {
@@ -6843,7 +6839,7 @@ public final class APIUtil {
             Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIConstants
                     .API_PUBLISHER_ADMIN_PERMISSION_CACHE).remove(userName);
             Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIConstants
-                    .API_PUBLISHER_USER_ROLE_CACHE).remove(userName);
+                    .API_USER_ROLE_CACHE).remove(userName);
         }
     }
 
