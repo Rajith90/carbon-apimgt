@@ -47,6 +47,7 @@ import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.DocumentationType;
 import org.wso2.carbon.apimgt.api.model.Mediation;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
 import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.Subscriber;
@@ -1619,9 +1620,11 @@ public abstract class AbstractAPIManager implements APIManager {
      */
     public Application getApplicationByUUID(String uuid) throws APIManagementException {
         Application application = apiMgtDAO.getApplicationByUUID(uuid);
-        Set<APIKey> keys = getApplicationKeys(application.getId());
-        for (APIKey key : keys) {
-            application.addKey(key);
+        if (application != null) {
+            Set<APIKey> keys = getApplicationKeys(application.getId());
+            for (APIKey key : keys) {
+                application.addKey(key);
+            }
         }
         return application;
     }
@@ -2583,10 +2586,18 @@ public abstract class AbstractAPIManager implements APIManager {
         if (StringUtils.isNotEmpty(consumerKey)) {
             String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(keyType, applicationId).getState();
             KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
+            OAuthApplicationInfo oAuthApplicationInfo = keyManager.retrieveApplication(consumerKey);
             AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
             APIKey apiKey = new APIKey();
+            apiKey.setConsumerKey(consumerKey);
+            apiKey.setType(keyType);
+            apiKey.setState(consumerKeyStatus);
+            if (oAuthApplicationInfo != null) {
+                apiKey.setConsumerSecret(oAuthApplicationInfo.getClientSecret());
+                apiKey.setCallbackUrl(oAuthApplicationInfo.getCallBackURL());
+                apiKey.setGrantTypes(oAuthApplicationInfo.getParameter(APIConstants.JSON_GRANT_TYPES).toString());
+            }
             if (tokenInfo != null) {
-                apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
                 apiKey.setAccessToken(tokenInfo.getAccessToken());
                 apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
                 apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
@@ -2595,9 +2606,6 @@ public abstract class AbstractAPIManager implements APIManager {
                     log.debug("Access token does not exist for Consumer Key: " + consumerKey);
                 }
             }
-            apiKey.setConsumerKey(consumerKey);
-            apiKey.setType(keyType);
-            apiKey.setState(consumerKeyStatus);
             return apiKey;
         }
         if (log.isDebugEnabled()) {

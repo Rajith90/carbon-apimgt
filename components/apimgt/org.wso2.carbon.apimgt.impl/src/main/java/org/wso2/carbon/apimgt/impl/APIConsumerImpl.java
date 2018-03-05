@@ -2304,10 +2304,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         String uuid = application.getUUID();
         if (!StringUtils.isEmpty(uuid)) {
             existingApp = apiMgtDAO.getApplicationByUUID(uuid);
-            Set<APIKey> keys = getApplicationKeys(existingApp.getId());
+            if (existingApp != null) {
+                Set<APIKey> keys = getApplicationKeys(existingApp.getId());
 
-            for (APIKey key : keys) {
-                existingApp.addKey(key);
+                for (APIKey key : keys) {
+                    existingApp.addKey(key);
+                }
             }
             application.setId(existingApp.getId());
         } else {
@@ -2398,10 +2400,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         String uuid = application.getUUID();
         if (application.getId() == 0 && !StringUtils.isEmpty(uuid)) {
             application = apiMgtDAO.getApplicationByUUID(uuid);
-            Set<APIKey> keys = getApplicationKeys(application.getId());
+            if (application != null) {
+                Set<APIKey> keys = getApplicationKeys(application.getId());
 
-            for (APIKey key : keys) {
-                application.addKey(key);
+                for (APIKey key : keys) {
+                    application.addKey(key);
+                }
             }
         }
         boolean isTenantFlowStarted = false;
@@ -3103,10 +3107,18 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         if (StringUtils.isNotEmpty(consumerKey)) {
             String consumerKeyStatus = apiMgtDAO.getKeyStatusOfApplication(keyType, applicationId).getState();
             KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance();
+            OAuthApplicationInfo oAuthApplicationInfo = keyManager.retrieveApplication(consumerKey);
             AccessTokenInfo tokenInfo = keyManager.getAccessTokenByConsumerKey(consumerKey);
             APIKey apiKey = new APIKey();
+            apiKey.setConsumerKey(consumerKey);
+            apiKey.setType(keyType);
+            apiKey.setState(consumerKeyStatus);
+            if (oAuthApplicationInfo != null) {
+                apiKey.setConsumerSecret(oAuthApplicationInfo.getClientSecret());
+                apiKey.setCallbackUrl(oAuthApplicationInfo.getCallBackURL());
+                apiKey.setGrantTypes(oAuthApplicationInfo.getParameter(APIConstants.JSON_GRANT_TYPES).toString());
+            }
             if (tokenInfo != null) {
-                apiKey.setConsumerSecret(tokenInfo.getConsumerSecret());
                 apiKey.setAccessToken(tokenInfo.getAccessToken());
                 apiKey.setValidityPeriod(tokenInfo.getValidityPeriod());
                 apiKey.setTokenScope(getScopeString(tokenInfo.getScopes()));
@@ -3115,9 +3127,6 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     log.debug("Access token does not exist for Consumer Key: " + consumerKey);
                 }
             }
-            apiKey.setConsumerKey(consumerKey);
-            apiKey.setType(keyType);
-            apiKey.setState(consumerKeyStatus);
             return apiKey;
         }
         if (log.isDebugEnabled()) {
