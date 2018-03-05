@@ -193,7 +193,7 @@
         });
 
         function redirectFunction() {
-            window.location = <%=requestedURI%>;
+            window.location = '<%=requestedURI%>';
         }
         </script>
 
