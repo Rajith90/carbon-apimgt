@@ -440,6 +440,12 @@ public class APIMWSDLReader {
 		if (log.isDebugEnabled()) {
 			log.debug("Reading  the WSDL. Base uri is " + baseURI);
 		}
+
+		//To avoid fetching external references (XSDs,WSDLs) defined in the WSDL
+		if (reader instanceof WSDLReaderImpl) {
+			((WSDLReaderImpl)reader).setIgnoreSchemaContent(true);
+		}
+
 		return reader.readWSDL(null, getSecuredParsedDocumentFromURL(baseURI));
     }
 
