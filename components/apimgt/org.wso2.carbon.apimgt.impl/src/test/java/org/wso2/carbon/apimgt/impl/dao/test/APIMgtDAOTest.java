@@ -1314,7 +1314,7 @@ public class APIMgtDAOTest {
 
     @Test
     public void testAddAndGetApi() throws Exception {
-        Subscriber subscriber = new Subscriber("testCreateApplicationRegistrationEntry");
+        Subscriber subscriber = new Subscriber("testCreateApplicationRegistrationEntry1");
         subscriber.setTenantId(-1234);
         subscriber.setEmail("abc@wso2.com");
         subscriber.setSubscribedDate(new Date(System.currentTimeMillis()));
