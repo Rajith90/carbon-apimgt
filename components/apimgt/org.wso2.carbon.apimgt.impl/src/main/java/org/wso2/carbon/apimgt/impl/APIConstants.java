@@ -375,6 +375,11 @@ public final class APIConstants {
     public static final String LC_CHECK_ITEM_VALUE = "value:";
     public static final String LC_CHECK_ITEM_ORDER = "order:";
 
+    public static final String APIM_CONFIG_ENABLE_UNLIMITED_TIER = "EnableUnlimitedTier";
+    public static final String FAULT_SEQUENCE = "fault";
+    public static final String OUT_SEQUENCE = "out";
+    public static final String UNLIMITED_TIER_NAME = "unlimited";
+
     public static final String SUPER_TENANT_DOMAIN = "carbon.super";
     public static final String TENANT_PREFIX = "/t/";
 
@@ -760,7 +765,7 @@ public final class APIConstants {
     public static final String CLAIMS_APIM_CACHE = "claimsLocalCache";
     public static final String APP_SUBSCRIPTION_SCOPE_CACHE = "appSubscriptionScopeCache";
     public static final String APP_SUBSCRIPTION_FILTERED_SCOPE_CACHE = "appSubscriptionFilteredScopeCache";
-    public static final String API_PUBLISHER_USER_ROLE_CACHE = "appPublisherUserRoleCache";
+    public static final String API_USER_ROLE_CACHE = "appPublisherUserRoleCache";
     public static final String API_PUBLISHER_ADMIN_PERMISSION_CACHE = "apimAdminPermissionCache";
 
     //URI Authentication Schemes
@@ -1206,6 +1211,7 @@ public final class APIConstants {
     public static final String TAG_SEARCH_TYPE_PREFIX = "tags";
     public static final String TAG_SEARCH_TYPE_PREFIX2 = "tags=";
     public static final String TAG_SEARCH_TYPE_PREFIX3 = "tag";
+    public static final String TAG_SEARCH_TYPE_PREFIX4 = "tag:";
     public static final String NAME_TYPE_PREFIX = "name";
 
     public static class AdvancedThrottleConstants {

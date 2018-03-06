@@ -59,6 +59,7 @@ import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.definitions.APIDefinitionFromSwagger20;
+import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.utils.APINameComparator;
@@ -336,7 +337,16 @@ public abstract class AbstractAPIManager implements APIManager {
                 try {
                     api = APIUtil.getAPI(artifact);
                     if (api != null) {
-                        checkAccessControlPermission(api.getId());
+                        try {
+                            checkAccessControlPermission(api.getId());
+                        } catch (APIManagementException e) {
+                            // This is a second level of filter to get apis based on access control and visibility.
+                            // Hence log is set as debug and continued.
+                            if(log.isDebugEnabled()) {
+                                log.debug("User is not authorized to view the api " + api.getId().getApiName(), e);
+                            }
+                            continue;
+                        }
                     }
                 } catch (APIManagementException e) {
                     //log and continue since we want to load the rest of the APIs.
@@ -368,67 +378,9 @@ public abstract class AbstractAPIManager implements APIManager {
      * @throws APIManagementException APIManagementException
      */
     protected void checkAccessControlPermission(APIIdentifier identifier) throws APIManagementException {
-        // Not implemented. This is needed specifically for API Provider, for API store, we do not need to anything.
-        if (identifier == null || !isAccessControlRestrictionEnabled) {
-            if (!isAccessControlRestrictionEnabled && log.isDebugEnabled()) {
-                log.debug("Publisher access control restriction is not enabled. Hence the API " + identifier
-                        + " can be editable and viewable by all the API publishers and creators.");
-            }
-            return;
-        }
-        String apiPath = APIUtil.getAPIPath(identifier);
-        try {
-            if (!registry.resourceExists(apiPath)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Resource does not exist in the path : " + apiPath + " this can happen if this in the "
-                            + "middle of the new API creation, hence not checking the access control");
-                }
-                return;
-            }
-            Resource apiResource = registry.get(apiPath);
-            if (apiResource == null) {
-                return;
-            }
-            String accessControlProperty = apiResource.getProperty(APIConstants.ACCESS_CONTROL);
-            if (accessControlProperty == null || accessControlProperty.trim().isEmpty() || accessControlProperty
-                    .equalsIgnoreCase(APIConstants.NO_ACCESS_CONTROL)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("API in the path  " + apiPath + " does not have any access control restriction");
-                }
-                return;
-            }
-            if (APIUtil.hasPermission(username, APIConstants.Permissions.APIM_ADMIN, true)) {
-                return;
-            }
-            String publisherAccessControlRoles = apiResource.getProperty(APIConstants.PUBLISHER_ROLES);
-            if (publisherAccessControlRoles != null && !publisherAccessControlRoles.trim().isEmpty()) {
-                String[] accessControlRoleList = publisherAccessControlRoles.replaceAll("\\s+", "").split(",");
-                if (log.isDebugEnabled()) {
-                    log.debug("API has restricted access to creators and publishers with the roles : " + Arrays
-                            .toString(accessControlRoleList));
-                }
-                String[] userRoleList = APIUtil.getListOfRoles(username, true);
-                if (log.isDebugEnabled()) {
-                    log.debug("User " + username + " has roles " + Arrays.toString(userRoleList));
-                }
-                for (String role : accessControlRoleList) {
-                    if (!role.equalsIgnoreCase(APIConstants.NULL_USER_ROLE_LIST) && APIUtil
-                            .compareRoleList(userRoleList, role)) {
-                        return;
-                    }
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("API " + identifier + " cannot be accessed by user '" + username + "'. It "
-                            + "has a publisher access control restriction");
-                }
-                throw new APIManagementException(UN_AUTHORIZED_ERROR_MESSAGE + " view or modify the API " + identifier);
-            }
-        } catch (RegistryException e) {
-            throw new APIManagementException(
-                    "Registry Exception while trying to check the access control restriction of API " + identifier
-                            .getApiName(), e);
-        }
+       // Implementation different based on invocation come from publisher or store
     }
+
 
     protected API getApi(GovernanceArtifact artifact) throws APIManagementException {
         return APIUtil.getAPI(artifact);
@@ -1899,12 +1851,31 @@ public abstract class AbstractAPIManager implements APIManager {
             policies = apiMgtDAO.getApplicationPolicies(tenantID);
         } else if (PolicyConstants.POLICY_LEVEL_SUB.equals(level)) {
             policies = apiMgtDAO.getSubscriptionPolicies(tenantID);
+
+            //Get the API Manager configurations and check whether the unlimited tier is disabled. If disabled, remove
+            // the tier from the array.
+            APIManagerConfiguration apiManagerConfiguration = ServiceReferenceHolder.getInstance()
+                    .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+            ThrottleProperties throttleProperties = apiManagerConfiguration.getThrottleProperties();
+
+            if (!throttleProperties.isEnableUnlimitedTier()) {
+                List<Policy> policiesWithoutUnlimitedTier = new ArrayList<Policy>();
+
+                if (policies != null) {
+                    for (Policy policy : policies) {
+                        if (!APIConstants.UNLIMITED_TIER_NAME.equalsIgnoreCase(policy.getPolicyName())) {
+                            policiesWithoutUnlimitedTier.add(policy);
+                        }
+                    }
+                }
+                policies = policiesWithoutUnlimitedTier.toArray(new Policy[0]);
+            }
         } else if (PolicyConstants.POLICY_LEVEL_GLOBAL.equals(level)) {
             policies = apiMgtDAO.getGlobalPolicies(tenantID);
         }
+
         return policies;
     }
-
 
     @Override
     public Map<String, Object> searchPaginatedAPIs(String searchQuery, String requestedTenantDomain,
