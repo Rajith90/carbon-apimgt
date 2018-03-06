@@ -94,14 +94,6 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPER
                                 + APIConstants.NULL_USER_ROLE_LIST + ". Hence setting the correct value");
                     }
                     updateStoreVisibilityProperties(registry, resourcePath, resource, publisherAccessControl);
-                } else if (APIConstants.RESTRICTED_STORE_VISIBILITY.equals(storeVisibility) && storeViewRoles
-                        .contains(APIConstants.NULL_USER_ROLE_LIST)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("API at " + resourcePath + "has the restricted visibility, but  : "
-                                + APIConstants.STORE_VIEW_ROLES + " property contains null role value as well . Hence"
-                                + " removing the null value through re indexing ");
-                    }
-                    updateStoreVisibilityProperties(registry, resourcePath, resource, publisherAccessControl);
                 }
             } catch (APIManagementException e) {
                 log.error("Error while getting generic artifact for resource path : " + resourcePath, e);
@@ -139,12 +131,7 @@ import static org.wso2.carbon.apimgt.impl.APIConstants.CUSTOM_API_INDEXER_PROPER
         }
         if (APIConstants.PUBLIC_STORE_VISIBILITY.equals(storeVisibility)) {
             resource.setProperty(APIConstants.STORE_VIEW_ROLES, APIConstants.NULL_USER_ROLE_LIST);
-        } else if (APIConstants.RESTRICTED_STORE_VISIBILITY.equals(storeVisibility)) {
-            if(!APIConstants.NULL_USER_ROLE_LIST.equals(publisherAccessControl)) {
-                resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles + "," + publisherAccessControl);
-            } else {
-                resource.setProperty(APIConstants.STORE_VIEW_ROLES, storeVisibleRoles);
-            }
         }
+
     }
 }

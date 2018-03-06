@@ -2887,21 +2887,12 @@ public final class APIUtil {
                             authManager.authorizeRole(APIConstants.EVERYONE_ROLE, resourcePath, ActionConstants.GET);
                             isRoleEveryOne = true;
                         } else {
-                            // If there are store visibility roles no need to append null to the set of roles.
-                            if (roles.length > 0 && !roles[0].isEmpty() && APIConstants.NULL_USER_ROLE_LIST
-                                    .equals(publisherAccessRoles.toString())) {
-                                publisherAccessRoles = new StringBuilder();
-                            }
                             for (String role : roles) {
                                 if (APIConstants.EVERYONE_ROLE.equalsIgnoreCase(role)) {
                                     isRoleEveryOne = true;
                                 }
                                 authManager.authorizeRole(role, resourcePath, ActionConstants.GET);
-                                if (!publisherAccessRoles.toString().isEmpty()) {
-                                    publisherAccessRoles.append(",").append(role.toLowerCase());
-                                } else {
-                                    publisherAccessRoles.append(role.toLowerCase());
-                                }
+                                publisherAccessRoles.append(",").append(role.toLowerCase());
                             }
                         }
                     }
@@ -2935,21 +2926,12 @@ public final class APIUtil {
                 if (visibility != null && APIConstants.API_RESTRICTED_VISIBILITY.equalsIgnoreCase(visibility)) {
                     boolean isRoleEveryOne = false;
                     if (roles != null) {
-                        // If there are store visibility roles no need to append null to the set of roles.
-                        if (roles.length > 0 && !roles[0].isEmpty() && APIConstants.NULL_USER_ROLE_LIST
-                                .equals(publisherAccessRoles.toString())) {
-                            publisherAccessRoles = new StringBuilder();
-                        }
                         for (String role : roles) {
                             if (APIConstants.EVERYONE_ROLE.equalsIgnoreCase(role)) {
                                 isRoleEveryOne = true;
                             }
                             authorizationManager.authorizeRole(role, resourcePath, ActionConstants.GET);
-                            if (!publisherAccessRoles.toString().isEmpty()) {
-                                publisherAccessRoles.append(",").append(role.toLowerCase());
-                            } else {
-                                publisherAccessRoles.append(role.toLowerCase());
-                            }
+                            publisherAccessRoles.append(",").append(role.toLowerCase());
                         }
                     }
                     if (!isRoleEveryOne) {
