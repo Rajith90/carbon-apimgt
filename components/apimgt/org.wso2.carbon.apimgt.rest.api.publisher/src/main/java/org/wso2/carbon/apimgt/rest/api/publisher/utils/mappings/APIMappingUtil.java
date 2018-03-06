@@ -249,7 +249,13 @@ public class APIMappingUtil {
             tiersToReturn.add(tier.getName());
         }
         dto.setTiers(tiersToReturn);
-        dto.setType(APIDTO.TypeEnum.valueOf(model.getType()));
+
+        //APIs created with type set to "NULL" will be considered as "HTTP"
+        if (model.getType() == null || model.getType().toLowerCase().equals("null")) {
+            dto.setType(APIDTO.TypeEnum.HTTP);
+        } else {
+            dto.setType(APIDTO.TypeEnum.valueOf(model.getType()));
+        }
 
         if (!model.getType().equals(APIConstants.APIType.WS)) {
             dto.setTransport(Arrays.asList(model.getTransports().split(",")));
