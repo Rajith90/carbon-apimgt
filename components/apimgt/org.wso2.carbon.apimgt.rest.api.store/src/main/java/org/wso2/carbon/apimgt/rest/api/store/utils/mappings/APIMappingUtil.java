@@ -23,6 +23,7 @@ import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
@@ -34,12 +35,7 @@ import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class APIMappingUtil {
 
@@ -72,7 +68,7 @@ public class APIMappingUtil {
         return  apiIdentifier;
     }
 
-    public static APIDTO fromAPItoDTO(API model) throws APIManagementException {
+    public static APIDTO fromAPItoDTO(API model, String tenantDomain) throws APIManagementException {
 
         APIConsumer apiConsumer = RestApiUtil.getLoggedInUserConsumer();
 
@@ -108,7 +104,7 @@ public class APIMappingUtil {
 
         dto.setTransport(Arrays.asList(model.getTransports().split(",")));
 
-        dto.setEndpointURLs(extractEnpointURLs(model));
+        dto.setEndpointURLs(extractEnpointURLs(model, tenantDomain));
 
         APIBusinessInformationDTO apiBusinessInformationDTO = new APIBusinessInformationDTO();
         apiBusinessInformationDTO.setBusinessOwner(model.getBusinessOwner());
@@ -242,7 +238,7 @@ public class APIMappingUtil {
     }
 
 
-    private static List<APIEndpointURLsDTO> extractEnpointURLs(API api) {
+    private static List<APIEndpointURLsDTO> extractEnpointURLs(API api, String tenantDomain) throws APIManagementException {
         List<APIEndpointURLsDTO> apiEndpointsList = new ArrayList<>();
 
         APIManagerConfiguration config = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
@@ -260,11 +256,26 @@ public class APIMappingUtil {
                 APIEnvironmentURLsDTO environmentURLsDTO = new APIEnvironmentURLsDTO();
                 String[] gwEndpoints = environment.getApiGatewayEndpoint().split(",");
 
+                APIConsumer apiConsumer = RestApiUtil.getLoggedInUserConsumer();
+                Map<String, String> domains = new HashMap<String, String>();
+                if (tenantDomain != null) {
+                    domains = apiConsumer.getTenantDomainMappings(tenantDomain, APIConstants.API_DOMAIN_MAPPINGS_GATEWAY);
+                }
+
+                String customGatewayUrl = null;
+                if (domains != null) {
+                    customGatewayUrl = domains.get("customUrl");
+                }
+
                 for (String gwEndpoint : gwEndpoints) {
                     StringBuilder endpointBuilder = new StringBuilder(gwEndpoint);
-                    endpointBuilder.append('/');
-                    endpointBuilder.append(api.getContext());
-
+                    if (customGatewayUrl != null) {
+                        int index = endpointBuilder.indexOf("//");
+                        endpointBuilder.replace(index + 2, endpointBuilder.length(), customGatewayUrl);
+                        endpointBuilder.append(api.getContext().replace("/t/" + tenantDomain, ""));
+                    } else {
+                        endpointBuilder.append(api.getContext());
+                    }
                     if (gwEndpoint.contains("http:") && apiTransports.contains("http")) {
                         environmentURLsDTO.setHttp(endpointBuilder.toString());
                     }
