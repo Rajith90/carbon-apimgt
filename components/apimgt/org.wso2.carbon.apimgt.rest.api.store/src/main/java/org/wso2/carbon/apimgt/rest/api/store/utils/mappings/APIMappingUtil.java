@@ -91,10 +91,12 @@ public class APIMappingUtil {
         dto.setStatus(model.getStatus().getStatus());
 
         //Get Swagger definition which has URL templates, scopes and resource details
-        String apiSwaggerDefinition;
+        String apiSwaggerDefinition = null;
 
-        apiSwaggerDefinition = apiConsumer.getSwagger20Definition(model.getId());
-        apiSwaggerDefinition = RestAPIStoreUtils.removeXMediationScriptsFromSwagger(apiSwaggerDefinition);
+        if (!APIConstants.APIType.WS.toString().equals(model.getType())) {
+            apiSwaggerDefinition = apiConsumer.getSwagger20Definition(model.getId());
+            apiSwaggerDefinition = RestAPIStoreUtils.removeXMediationScriptsFromSwagger(apiSwaggerDefinition);
+        }
         dto.setApiDefinition(apiSwaggerDefinition);
 
         Set<String> apiTags = model.getTags();
