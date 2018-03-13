@@ -159,7 +159,7 @@ public class APIManagerCacheExtensionHandler extends AbstractHandler {
     }
 
     protected void putInvalidTokenEntryIntoInvalidTokenCache(String cachedToken, String tenantDomain) {
-        Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIConstants
+        Caching.getCacheManager(APIConstants.API_MANAGER_CACHE_MANAGER).getCache(APIMgtGatewayConstants
                 .GATEWAY_INVALID_TOKEN_CACHE_NAME).put(cachedToken, tenantDomain);
     }
 
