@@ -30,6 +30,7 @@ import org.apache.synapse.rest.RESTUtils;
 import org.apache.synapse.rest.Resource;
 import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
 import org.wso2.carbon.apimgt.gateway.handlers.security.keys.APIKeyDataStore;
 import org.wso2.carbon.apimgt.gateway.handlers.security.keys.WSAPIKeyDataStore;
 import org.wso2.carbon.apimgt.gateway.handlers.security.thrift.ThriftAPIDataStore;
@@ -63,7 +64,7 @@ import java.util.Set;
  */
 public class APIKeyValidator {
 
-    private APIKeyDataStore dataStore;
+    protected APIKeyDataStore dataStore;
 
     private boolean gatewayKeyCacheEnabled = true;
 
@@ -144,6 +145,25 @@ public class APIKeyValidator {
         return getCacheFromCacheManager(APIConstants.GATEWAY_TOKEN_CACHE_NAME);
     }
 
+    protected Cache getInvalidTokenCache() {
+        String apimGWCacheExpiry = getApiManagerConfiguration().
+                getFirstProperty(APIConstants.TOKEN_CACHE_EXPIRY);
+
+        if (!gatewayTokenCacheInit) {
+            gatewayTokenCacheInit = true;
+            if (apimGWCacheExpiry != null) {
+                return getCache(APIConstants.API_MANAGER_CACHE_MANAGER, APIMgtGatewayConstants
+                        .GATEWAY_INVALID_TOKEN_CACHE_NAME, Long.parseLong(apimGWCacheExpiry), Long.parseLong
+                        (apimGWCacheExpiry));
+            } else {
+                long defaultCacheTimeout = getDefaultCacheTimeout();
+                return getCache(APIConstants.API_MANAGER_CACHE_MANAGER, APIMgtGatewayConstants
+                        .GATEWAY_INVALID_TOKEN_CACHE_NAME, defaultCacheTimeout, defaultCacheTimeout);
+            }
+        }
+        return getCacheFromCacheManager(APIMgtGatewayConstants.GATEWAY_INVALID_TOKEN_CACHE_NAME);
+    }
+
     protected Cache getResourceCache() {
 
         if (!resourceCacheInit) {
@@ -206,8 +226,21 @@ public class APIKeyValidator {
 
                         //Remove from the first level token cache as well.
                         getGatewayTokenCache().remove(apiKey);
+                        // Put into invalid token cache
+                        getInvalidTokenCache().put(apiKey, cachedToken);
                     }
                     return info;
+                }
+            } else {
+                // Check token available in invalidToken Cache
+                String revokedCachedToken = (String) getInvalidTokenCache().get(apiKey);
+                if (revokedCachedToken != null) {
+                    // Token is revoked/invalid or expired
+                    APIKeyValidationInfoDTO apiKeyValidationInfoDTO = new APIKeyValidationInfoDTO();
+                    apiKeyValidationInfoDTO.setAuthorized(false);
+                    apiKeyValidationInfoDTO.setValidationStatus(APIConstants.KeyValidationStatus
+                            .API_AUTH_INVALID_CREDENTIALS);
+                    return apiKeyValidationInfoDTO;
                 }
             }
         }
@@ -228,10 +261,14 @@ public class APIKeyValidator {
                 //Get the tenant domain of the API that is being invoked.
                 String tenantDomain = getTenantDomain();
 
-                //Add to first level Token Cache.
-                getGatewayTokenCache().put(apiKey, tenantDomain);
-                //Add to Key Cache.
-                getGatewayKeyCache().put(cacheKey, info);
+                if (info.getValidationStatus() == APIConstants.KeyValidationStatus.API_AUTH_INVALID_CREDENTIALS) {
+                    // if Token is not valid token (expired,invalid,revoked) put into invalid token cache
+                    getInvalidTokenCache().put(apiKey, tenantDomain);
+                } else {
+                    // Add into 1st level cache and Key cache
+                    getGatewayTokenCache().put(apiKey, tenantDomain);
+                    getGatewayKeyCache().put(cacheKey, info);
+                }
 
                 //If this is NOT a super-tenant API that is being invoked
                 if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
@@ -240,7 +277,15 @@ public class APIKeyValidator {
                     try {
                         startTenantFlow();
 
-                        getGatewayTokenCache().put(apiKey, tenantDomain);
+                        if (info.getValidationStatus() == APIConstants.KeyValidationStatus
+                                .API_AUTH_INVALID_CREDENTIALS) {
+                            // if Token is not valid token (expired,invalid,revoked) put into invalid token cache in
+                            // tenant cache
+                            getInvalidTokenCache().put(apiKey, tenantDomain);
+                        } else {
+                            // add into to tenant token cache
+                            getGatewayTokenCache().put(apiKey, tenantDomain);
+                        }
                     } finally {
                         endTenantFlow();
                     }

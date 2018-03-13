@@ -45,6 +45,7 @@ public class APIMgtGatewayConstants {
     public static final String SCOPES = "Scopes";
     public static final String REQUEST_EXECUTION_START_TIME ="request.execution.start.time";
     public static final String SYNAPSE_ENDPOINT_ADDRESS = "ENDPOINT_ADDRESS";
+    public static final String GATEWAY_INVALID_TOKEN_CACHE_NAME = "GATEWAY_INVALID_TOKEN_CACHE";
 
     public static final String RESOURCE_PATTERN = "^/.+?/.+?([/?].+)$";
 
