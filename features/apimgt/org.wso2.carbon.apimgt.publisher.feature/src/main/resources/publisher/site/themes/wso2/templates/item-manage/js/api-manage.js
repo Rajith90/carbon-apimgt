@@ -124,7 +124,7 @@ function validateGatewaysSelected(){
 }
 
 function validateSubscription() {
-    var subscriptionType = $('#subscriptions').val();
+    var subscriptionType = $('select#subscriptions').val();
     if (subscriptionType == 'specific_tenants') {
         var tenants = $('#tenants').val().trim();
         $("#subscriptions_error").remove();
@@ -169,8 +169,8 @@ $(document).ready(function(){
       e.preventDefault();
     });
 
-    $('#subscriptions').change(function(e){
-        var subscription = $('#subscriptions').find(":selected").val();
+    $('select#subscriptions').change(function(e){
+        var subscription = $('select#subscriptions').find(":selected").val();
         if (subscription == "current_tenant" || subscription == "all_tenants"){
             $('#tenantsDiv').hide();
         } else {
@@ -180,9 +180,9 @@ $(document).ready(function(){
     
     $('.default_version_check').change(function(){
         if($(this).is(":checked")){
-            $(default_version_checked).val($(this).val());
+            $('#default_version_checked').val($(this).val());
         }else{
-            $(default_version_checked).val("");
+            $('#default_version_checked').val("");
         }
     });
 
