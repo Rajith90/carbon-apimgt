@@ -87,7 +87,7 @@ public class DataBridgeFaultPublisherDTO extends FaultPublisherDTO{
     }
 
     public Object createMetaData() {
-        String jsonString = "{\"keyType\":\"" + getKeyType() + "\",\"correlationID\", \"" + getCorrelationID() + "\"}";
+        String jsonString = "{\"keyType\":\"" + getKeyType() + "\",\"correlationID\": \"" + getCorrelationID() + "\"}";
         return new Object[] { jsonString };
     }
 }
