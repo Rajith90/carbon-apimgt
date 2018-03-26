@@ -823,7 +823,7 @@ public class SQLConstants {
             APIConstants.TOKEN_SCOPE_ASSOCIATION_TABLE + " ISAT," +
             "       IDN_OAUTH_CONSUMER_APPS ICA " +
             "   WHERE " +
-            "       AND ICA.CONSUMER_KEY = ? " +
+            "       ICA.CONSUMER_KEY = ? " +
             "       AND IAT.USER_TYPE = ? " +
             "       AND IAT.CONSUMER_KEY_ID = ICA.ID " +
             "       AND IAT.TOKEN_ID = ISAT.TOKEN_ID " +
