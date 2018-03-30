@@ -345,7 +345,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                                                             APIConstants.API_RXT_MEDIA_TYPE);
             for (GovernanceArtifact genericArtifact : genericArtifacts) {
                 try {
-                    String apiStatus = genericArtifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+                    String apiStatus = genericArtifact.getLifecycleState();
                     if (genericArtifact != null && (APIConstants.PUBLISHED.equals(apiStatus)
                          || APIConstants.PROTOTYPED.equals(apiStatus))) {
                         API api = APIUtil.getAPI(genericArtifact);
@@ -398,7 +398,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 Boolean displayAPIsWithMultipleStatus = APIUtil.isAllowDisplayAPIsWithMultipleStatus();
                 for (GenericArtifact artifact : genericArtifacts) {
                     // adding the API provider can mark the latest API .
-                    String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+                    String status = artifact.getLifecycleState();
 
                     API api = null;
                     //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
@@ -1136,7 +1136,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 return apiSortedSet;
             }
             for (GenericArtifact genericArtifact : genericArtifacts) {
-                String status = genericArtifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+                String status = genericArtifact.getLifecycleState();
                 if (APIConstants.PUBLISHED.equals(status)) {
                     String artifactPath = genericArtifact.getPath();
 
@@ -1206,7 +1206,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 if (recentlyAddedAPI != null) {
                     for (API api : recentlyAddedAPI) {
                         try {
-                            if (!APIConstants.PUBLISHED.equalsIgnoreCase(userRegistry.get(APIUtil.getAPIPath(api.getId())).getProperty(APIConstants.API_OVERVIEW_STATUS))) {
+                            if (!APIConstants.PUBLISHED.equalsIgnoreCase(userRegistry.get(APIUtil.getAPIPath(api.getId())).getProperty(APIConstants.API_STATUS))) {
                                 isStatusChanged = true;
                                 break;
                             }
@@ -1531,7 +1531,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 if (apiArtifactId != null) {
                     GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
                     // check the API status
-                    String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+                    String status = artifact.getLifecycleState();
 
                     API api = null;
                     //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
@@ -1712,7 +1712,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
 
             // check the API status
-            String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
+            String status = artifact.getLifecycleState();
 
             API api = null;
             //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
