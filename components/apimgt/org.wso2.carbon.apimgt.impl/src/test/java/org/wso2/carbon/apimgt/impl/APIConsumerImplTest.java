@@ -1378,9 +1378,15 @@ public class APIConsumerImplTest {
                 .thenReturn(true);
         Resource resource = new ResourceImpl();
         resource.setUUID(UUID.randomUUID().toString());
+        resource.setProperty("registry.lifecycle." + APIConstants.API_LIFE_CYCLE + ".state", APIConstants.PUBLISHED);
+        resource.setProperty("registry.LC.name", APIConstants.API_LIFE_CYCLE);
         Mockito.when(userRegistry.get(Mockito.anyString())).thenReturn(resource);
-        GenericArtifact genericArtifact = new GenericArtifactImpl(new QName("local"), "artifact");
+        Mockito.when(userRegistry.resourceExists("/path1")).thenReturn(true);
+        GenericArtifactImpl genericArtifact = new GenericArtifactImpl(new QName("local"), "artifact");
+        genericArtifact.associateRegistry(userRegistry);
+        genericArtifact.setLcName(APIConstants.API_LIFE_CYCLE);
         genericArtifact.setAttribute(APIConstants.API_OVERVIEW_STATUS, APIConstants.PUBLISHED);
+        genericArtifact.setLcState(APIConstants.PUBLISHED);
         Mockito.when(genericArtifactManager.getGenericArtifact(Mockito.anyString())).thenReturn(genericArtifact);
         Assert.assertEquals(1,
                 apiConsumer.getPublishedAPIsByProvider("1", "test_user", 1, API_PROVIDER, "John").size());
@@ -1453,9 +1459,14 @@ public class APIConsumerImplTest {
         }
         Resource resource = new ResourceImpl();
         resource.setUUID(UUID.randomUUID().toString());
+        resource.setProperty("registry.lifecycle." + APIConstants.API_LIFE_CYCLE + ".state", APIConstants.PUBLISHED);
+        resource.setProperty("registry.LC.name", APIConstants.API_LIFE_CYCLE);
         Mockito.when(userRegistry.get(Mockito.anyString())).thenReturn(resource);
-        GenericArtifact genericArtifact = new GenericArtifactImpl(new QName("local"), "artifact");
+        GenericArtifactImpl genericArtifact = new GenericArtifactImpl(new QName("local"), "artifact");
         genericArtifact.setAttribute(APIConstants.API_OVERVIEW_STATUS, APIConstants.PUBLISHED);
+        Mockito.when(userRegistry.resourceExists("/path1")).thenReturn(true);
+        genericArtifact.associateRegistry(userRegistry);
+        genericArtifact.setLcName(APIConstants.API_LIFE_CYCLE);
         Mockito.when(genericArtifactManager.getGenericArtifact(Mockito.anyString())).thenReturn(genericArtifact);
         Assert.assertEquals(1, apiConsumer.getPublishedAPIsByProvider("1", "test_user", 1, API_PROVIDER, "").size());
         PowerMockito.when(APIUtil.getAPI((GenericArtifact) Mockito.any())).thenReturn(api, api1);

@@ -47,7 +47,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -133,13 +132,6 @@ import org.wso2.carbon.utils.NetworkUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import javax.cache.Cache;
-import javax.cache.CacheBuilder;
-import javax.cache.CacheConfiguration;
-import javax.cache.CacheManager;
-import javax.cache.Caching;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -166,8 +158,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import javax.cache.Cache;
+import javax.cache.CacheBuilder;
+import javax.cache.CacheConfiguration;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION;
 
@@ -540,6 +538,7 @@ public class APIUtilTest {
         Mockito.when(artifact.getAttribute(APIConstants.API_OVERVIEW_VERSION)).
                 thenReturn(expectedAPI.getId().getVersion());
         Mockito.when(artifact.getId()).thenReturn(expectedAPI.getUUID());
+        Mockito.when(artifact.getLifecycleState()).thenReturn(APIConstants.PUBLISHED);
 
         API api = APIUtil.getAPIInformation(artifact, registry);
 
@@ -550,7 +549,7 @@ public class APIUtilTest {
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_NAME);
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_VERSION);
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_THUMBNAIL_URL);
-        Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_STATUS);
+        Mockito.verify(artifact, Mockito.atLeastOnce()).getLifecycleState();
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_CONTEXT);
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_VISIBILITY);
         Mockito.verify(artifact, Mockito.atLeastOnce()).getAttribute(APIConstants.API_OVERVIEW_VISIBLE_ROLES);
@@ -3637,8 +3636,8 @@ public class APIUtilTest {
         PowerMockito.when(GovernanceUtils.findGovernanceArtifactConfiguration(APIConstants.API_KEY, userRegistry))
                 .thenReturn(governanceArtifactConfiguration);
         Assert.assertEquals(0, APIUtil.searchAPIsByURLPattern(userRegistry, "pizza", 1, 5).get("length"));
-        GenericArtifact genericArtifact = new GenericArtifactImpl(new QName("sample"), "API");
-        GenericArtifact genericArtifact1 = new GenericArtifactImpl(new QName("sample1"), "API1");
+        GenericArtifactImpl genericArtifact = new GenericArtifactImpl(new QName("sample"), "API");
+        GenericArtifactImpl genericArtifact1 = new GenericArtifactImpl(new QName("sample1"), "API1");
         genericArtifact.setAttribute(APIConstants.API_OVERVIEW_NAME, "pizza_api");
         genericArtifact1.setAttribute(APIConstants.API_OVERVIEW_NAME, "calculator_api");
         GenericArtifact[] genericArtifacts = new GenericArtifact[] { genericArtifact, genericArtifact1 };
@@ -3680,6 +3679,9 @@ public class APIUtilTest {
             PowerMockito.when(ApiMgtDAO.getInstance()).thenReturn(apiMgtDAO);
             Mockito.when(apiMgtDAO.getAPIID((APIIdentifier) Mockito.any(), (Connection) Mockito.any())).thenReturn(1);
             Resource resource = new ResourceImpl();
+            resource.setProperty("registry.lifecycle." + APIConstants.API_LIFE_CYCLE + ".state",
+                    APIConstants.PUBLISHED);
+            resource.setProperty("registry.LC.name", APIConstants.API_LIFE_CYCLE);
             Mockito.when(userRegistry.get(Mockito.anyString())).thenReturn(resource);
             PowerMockito.mockStatic(MultitenantUtils.class);
             PowerMockito.when(MultitenantUtils.getTenantDomain(Mockito.anyString())).thenReturn("test.com");
@@ -3691,6 +3693,13 @@ public class APIUtilTest {
             Mockito.when(apiManagerConfiguration.getThrottleProperties()).thenReturn(throttleProperties);
             Mockito.when(userRegistry.getTags(Mockito.anyString())).thenReturn(new Tag[0]);
             String corsJsonString = "{corsConfigurationEnabled:false}";
+            Mockito.when(userRegistry.resourceExists("/path1")).thenReturn(true);
+            PowerMockito.when(GovernanceUtils.getArtifactPath((Registry) Mockito.any(), Mockito.anyString()))
+                    .thenReturn("/path1");
+            genericArtifact.associateRegistry(userRegistry);
+            genericArtifact.setLcName(APIConstants.API_LIFE_CYCLE);
+            genericArtifact1.associateRegistry(userRegistry);
+            genericArtifact1.setLcName(APIConstants.API_LIFE_CYCLE);
             genericArtifact.setAttribute(APIConstants.API_OVERVIEW_CORS_CONFIGURATION, corsJsonString);
             genericArtifact.setAttribute(APIConstants.API_OVERVIEW_PROVIDER, "admin");
             genericArtifact.setAttribute(APIConstants.API_OVERVIEW_VERSION, "1.0.0");
