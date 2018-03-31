@@ -382,6 +382,10 @@ public final class APIConstants {
 
     public static final String SUPER_TENANT_DOMAIN = "carbon.super";
     public static final String TENANT_PREFIX = "/t/";
+    public static final String CHECK_ORGANIZATION_FROM_SAML_ASSERTION = "checkOrganizationFromSamlAssertion";
+    public static final String SAML2_SSO_AUTHENTICATOR_NAME = "SAML2SSOAuthenticator";
+    public static final String ORGANIZATION_CLAIM_ATTRIBUTE = "OrganizationClaimAttribute";
+    public static final String ORGANIZATION_ATTRIBUTE_NAME = "http://wso2.org/claims/organization";
 
     public static class TokenStatus {
         public static final String ACTIVE = "ACTIVE";
