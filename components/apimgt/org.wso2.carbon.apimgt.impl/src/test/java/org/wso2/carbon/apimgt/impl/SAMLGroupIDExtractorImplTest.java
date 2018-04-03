@@ -220,9 +220,7 @@ public class SAMLGroupIDExtractorImplTest {
         PowerMockito.when(mockedAuthenticatorsConfiguration
                 .getAuthenticatorConfig(APIConstants.SAML2_SSO_AUTHENTICATOR_NAME))
                 .thenReturn(mockedAuthenticatorConfig);
-
         PowerMockito.when(mockAttribute.getName()).thenReturn(claim);
-
 
         String[] organizations = samlGroupIDExtractor.
                 getGroupingIdentifierList("test");
