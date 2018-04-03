@@ -24,19 +24,26 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.opensaml.saml2.core.Assertion;
+import org.opensaml.saml2.core.Attribute;
+import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.Subject;
+import org.opensaml.ws.wssecurity.impl.AttributedStringImpl;
 import org.opensaml.xml.Configuration;
+import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
+import org.opensaml.xml.schema.impl.XSAnyImpl;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.core.security.AuthenticatorsConfiguration;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
@@ -51,14 +58,19 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DocumentBuilderFactory.class, Configuration.class, ServiceReferenceHolder.class})
+@PrepareForTest({ DocumentBuilderFactory.class, Configuration.class,
+        ServiceReferenceHolder.class, PrivilegedCarbonContext.class, AuthenticatorsConfiguration.class })
 public class SAMLGroupIDExtractorImplTest {
 
     private DocumentBuilder documentBuilder;
@@ -131,6 +143,88 @@ public class SAMLGroupIDExtractorImplTest {
         //Normal Path
         Assert.assertEquals("carbon.super/organization", samlGroupIDExtractor.
                 getGroupingIdentifiers("test"));
+    }
+
+    @Test
+    public void getGroupingIdentifierListTestCase() throws ParserConfigurationException, IOException, SAXException,
+            UnmarshallingException, UserStoreException {
+
+        String claim = "http://wso2.org/claims/organization";
+        String organizationValue = "organization";
+        SAMLGroupIDExtractorImpl samlGroupIDExtractor = new SMALGroupIDExtractorImplWrapper();
+        Mockito.when(DocumentBuilderFactory.newInstance()).thenReturn(documentBuilderFactory);
+        Mockito.when(documentBuilderFactory.newDocumentBuilder()).
+                thenReturn(documentBuilder);
+        Mockito.when(documentBuilder.parse(samlGroupIDExtractor.getByteArrayInputStream("test"))).
+                thenReturn(document);
+        Mockito.when(document.getDocumentElement()).thenReturn(element);
+
+        PowerMockito.mockStatic(Configuration.class);
+        Response response = Mockito.mock(Response.class);
+        List<Assertion> assertion = new ArrayList();
+        Subject subject = Mockito.mock(Subject.class);
+        NameID nameID = Mockito.mock(NameID.class);
+        Assertion assertion1 = Mockito.mock(Assertion.class);
+        assertion.add(assertion1);
+        Mockito.when(Configuration.getUnmarshallerFactory()).thenReturn(unmarshallerFactory);
+        Mockito.when(unmarshallerFactory.getUnmarshaller(element)).thenReturn(unmarshaller);
+        Mockito.when(unmarshaller.unmarshall(element)).thenReturn(response);
+        Mockito.when(response.getAssertions()).thenReturn(assertion);
+        Mockito.when(assertion.get(0).getSubject()).thenReturn(subject);
+        Mockito.when(subject.getNameID()).thenReturn(nameID);
+        Mockito.when(nameID.getValue()).thenReturn("user");
+        System.setProperty(APIConstants.READ_ORGANIZATION_FROM_SAML_ASSERTION, "true");
+
+        System.setProperty("carbon.home", "");
+        PrivilegedCarbonContext carbonContext;
+        carbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        PowerMockito.mockStatic(PrivilegedCarbonContext.class);
+
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext()).thenReturn(carbonContext);
+        PowerMockito.when(PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId()).thenReturn(-1234);
+        PowerMockito.doNothing().when(carbonContext).setTenantDomain("carbon.super", true);
+
+        AttributeStatement mockAttributeStatement = PowerMockito.mock(AttributeStatement.class);
+        List<AttributeStatement> attributeStatementList = Collections.singletonList(mockAttributeStatement);
+        PowerMockito.when(assertion1.getAttributeStatements()).thenReturn(attributeStatementList);
+
+        Attribute mockAttribute = PowerMockito.mock(Attribute.class);
+        List<Attribute> attributesList = Collections.singletonList(mockAttribute);
+        PowerMockito.when(mockAttributeStatement.getAttributes()).thenReturn(attributesList);
+
+        XMLObject rawAttribute = PowerMockito.mock(XMLObject.class);
+        PowerMockito.when(rawAttribute.toString()).thenReturn(organizationValue);
+        List<XMLObject> mockedAttributeValues = Collections.singletonList(rawAttribute);
+        AttributedStringImpl mockedAttributedStringImpl = new AttributedStringImpl("nameSpaceURI", "elementLocalName",
+                "namespacePrefix");
+        String sampleAttrValue = "MockedAuthParamSampleAttribute";
+        mockedAttributedStringImpl.setValue(sampleAttrValue);
+        List<XMLObject> mockedXSSAttributeValues = Collections.singletonList((XMLObject) mockedAttributedStringImpl);
+        XSAnyImpl mockedXSAnyImpl = Mockito.mock(XSAnyImpl.class);
+        PowerMockito.when(mockedXSAnyImpl.getTextContent()).thenReturn(sampleAttrValue);
+        List<XMLObject> mockedXSAnyImplAttributeValues = Collections.singletonList((XMLObject) mockedXSAnyImpl);
+        List<XMLObject> multiMockedAttributeValues = Arrays.asList(rawAttribute, PowerMockito.mock(XMLObject.class));
+        AuthenticatorsConfiguration.AuthenticatorConfig mockedAuthenticatorConfig = Mockito
+                .mock(AuthenticatorsConfiguration.AuthenticatorConfig.class);
+        PowerMockito.when(mockAttribute.getAttributeValues())
+                .thenReturn(mockedAttributeValues, multiMockedAttributeValues, mockedXSSAttributeValues,
+                        mockedXSAnyImplAttributeValues);
+
+        PowerMockito.mockStatic(AuthenticatorsConfiguration.class);
+        AuthenticatorsConfiguration mockedAuthenticatorsConfiguration = PowerMockito
+                .mock(AuthenticatorsConfiguration.class);
+        PowerMockito.when(AuthenticatorsConfiguration.getInstance()).thenReturn(mockedAuthenticatorsConfiguration);
+        Map<String, String> mockedConfigParameters = new HashMap<String, String>();
+        mockedConfigParameters.put(APIConstants.ORGANIZATION_CLAIM_ATTRIBUTE, claim);
+        PowerMockito.when(mockedAuthenticatorConfig.getParameters()).thenReturn(mockedConfigParameters);
+        PowerMockito.when(mockedAuthenticatorsConfiguration
+                .getAuthenticatorConfig(APIConstants.SAML2_SSO_AUTHENTICATOR_NAME))
+                .thenReturn(mockedAuthenticatorConfig);
+        PowerMockito.when(mockAttribute.getName()).thenReturn(claim);
+
+        String[] organizations = samlGroupIDExtractor.
+                getGroupingIdentifierList("test");
+        Assert.assertEquals(organizationValue, organizations[0]);
     }
 
     @Test
