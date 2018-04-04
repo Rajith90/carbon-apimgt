@@ -3429,8 +3429,9 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
     @Override
     protected String getSearchQuery(String searchQuery) throws APIManagementException {
-        if (!isAccessControlRestrictionEnabled || APIUtil.hasPermission(userNameWithoutChange, APIConstants.Permissions
-                .APIM_ADMIN)) {
+        if (!isAccessControlRestrictionEnabled || ( userNameWithoutChange != null &&
+                APIUtil.hasPermission(userNameWithoutChange, APIConstants.Permissions
+                .APIM_ADMIN))) {
             return searchQuery;
         }
         String criteria = getUserRoleListQuery();
