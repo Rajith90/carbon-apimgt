@@ -3040,16 +3040,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
     public Application[] getApplicationsWithPagination(Subscriber subscriber, String groupingId, int start, int offset,
                                                        String search, String sortColumn, String sortOrder)
             throws APIManagementException {
-        Application[] applications = apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset,
+        return apiMgtDAO.getApplicationsWithPagination(subscriber, groupingId, start, offset,
                 search, sortColumn, sortOrder);
-        for (Application application : applications) {
-            Set<APIKey> keys = getApplicationKeys(application.getId());
-
-            for (APIKey key : keys) {
-                application.addKey(key);
-            }
-        }
-        return applications;
     }
 
     /**
