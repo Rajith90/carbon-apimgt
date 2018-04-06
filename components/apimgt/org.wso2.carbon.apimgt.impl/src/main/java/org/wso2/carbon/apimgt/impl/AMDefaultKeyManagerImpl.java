@@ -620,11 +620,13 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
         APIKey apiKey;
         try {
             apiKey = apiMgtDAO.getAccessTokenInfoByConsumerKey(consumerKey);
-            tokenInfo.setAccessToken(apiKey.getAccessToken());
+            if (apiKey != null) {
+                tokenInfo.setAccessToken(apiKey.getAccessToken());
+                tokenInfo.setConsumerSecret(apiKey.getConsumerSecret());
+                tokenInfo.setValidityPeriod(apiKey.getValidityPeriod());
+                tokenInfo.setScope(apiKey.getTokenScope().split("\\s"));
+            }
             tokenInfo.setConsumerKey(consumerKey);
-            tokenInfo.setConsumerSecret(apiKey.getConsumerSecret());
-            tokenInfo.setValidityPeriod(apiKey.getValidityPeriod());
-            tokenInfo.setScope(apiKey.getTokenScope().split("\\s"));
         } catch (SQLException e) {
             handleException("Cannot retrieve information for the given consumer key : "
                     + consumerKey, e);
