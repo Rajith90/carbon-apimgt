@@ -198,7 +198,7 @@ var api_store_select_one_api = [
     },
     {
         selector: '.page-content',
-        selectNextElement : '.white-wrapper',
+        selectNextElement : '.square-element',
         targetNext : 'INSIDE_PARENT',
         event: 'click',
         description: 'Shown here is an API that is published in  our API Store. Click this API to open it.',
