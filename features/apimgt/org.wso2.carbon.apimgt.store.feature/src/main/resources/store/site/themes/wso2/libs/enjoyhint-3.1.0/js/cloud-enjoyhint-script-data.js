@@ -276,7 +276,7 @@ var api_store_view_application_subscriptions = [
     {
         selector: '#subscription-table',
         event: 'click',
-        description: 'You can see the list of APIs which was subscribed to this application. Next Click the <b class="enjoy_hint_emphasize_text" id="selectedAPIName"> ' + getSelectedAPIName() + '</b> API link to move forward.',
+        description: 'You can see the list of APIs which was subscribed to this application. Next Click the <b class="enjoy_hint_emphasize_text" id="selectedAPIName"> ' + getSelectedAPIName() + '</b> API link.',
         'showSkip' : false
     }
 ];
@@ -307,7 +307,7 @@ var api_store_view_application_subscriptions_for_generated_keys = [
     {
         selector: '#subscription-table',
         event: 'click',
-        description: 'You can see the list of APIs which was subscribed to this application. Next Click the <b class="enjoy_hint_emphasize_text">' + getSelectedAPIName() + '</b> API link to move forward.',
+        description: 'You can see the list of APIs which was subscribed to this application. Next Click the <b class="enjoy_hint_emphasize_text">' + getSelectedAPIName() + '</b> API link.',
         'showSkip' : false
     }
 ];
