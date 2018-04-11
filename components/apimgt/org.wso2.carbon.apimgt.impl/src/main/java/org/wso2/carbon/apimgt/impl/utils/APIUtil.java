@@ -6877,6 +6877,7 @@ public final class APIUtil {
 
     /**
      * Used to get the custom pagination limit for store
+     *
      * @return returns the store pagination value from api-manager.xml
      */
     public static int getApisPerPageInStore() {
@@ -6890,6 +6891,7 @@ public final class APIUtil {
 
     /**
      * Used to get the custom pagination limit for publisher
+     * 
      * @return returns the publisher pagination value from api-manager.xml
      */
     public static int getApisPerPageInPublisher() {
