@@ -6880,13 +6880,11 @@ public final class APIUtil {
      * @return returns the store pagination value from api-manager.xml
      */
     public static int getApisPerPageInStore() {
-
         String paginationLimit = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
                 .getAPIManagerConfiguration().getFirstProperty(APIConstants.API_STORE_APIS_PER_PAGE);
         if (paginationLimit != null) {
             return Integer.parseInt(paginationLimit);
         }
-
         return 0;
     }
 
@@ -6895,13 +6893,11 @@ public final class APIUtil {
      * @return returns the publisher pagination value from api-manager.xml
      */
     public static int getApisPerPageInPublisher() {
-
         String paginationLimit = ServiceReferenceHolder.getInstance().getAPIManagerConfigurationService()
                 .getAPIManagerConfiguration().getFirstProperty(APIConstants.API_PUBLISHER_APIS_PER_PAGE);
         if (paginationLimit != null) {
             return Integer.parseInt(paginationLimit);
         }
-
         return 0;
     }
 }
