@@ -451,6 +451,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     apiVersionsSortedSet.addAll(multiVersionedAPIs);
                     return apiVersionsSortedSet;
                 }
+            } else {
+                String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
+                        " when retrieving APIs for store.";
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -564,6 +569,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     result.put("totalLength", totalLength);
                     return result;
                 }
+            } else {
+                String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
+                        " when retrieving all Published APIs.";
+                log.error(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -725,6 +734,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                         return result;
                     }
                 }
+            } else {
+                String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
+                        " when retrieving all paginated APIs by status.";
+                log.error(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -906,6 +919,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     result.put("isMore", isMore);
                     return result;
                 }
+            } else {
+                String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
+                        " when retrieving APIs by status.";
+                log.error(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -1113,6 +1130,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     result.put("totalLength",totalLength);
                     return result;
                 }
+            } else {
+                String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
+                        " when retrieving all paginated APIs.";
+                log.error(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -1132,6 +1153,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         SortedSet<API> apiSortedSet = new TreeSet<API>(new APINameComparator());
         try {
             GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
+            if (artifactManager == null) {
+                String errorMessage = "Artifact manager is null when retrieving top rated APIs.";
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
+            }
             GenericArtifact[] genericArtifacts = artifactManager.getAllGenericArtifacts();
             if (genericArtifacts == null || genericArtifacts.length == 0) {
                 return apiSortedSet;
@@ -1286,7 +1312,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 					}
         			return recentlyAddedAPIsWithMultipleVersions;
         		}
-        	 }
+            } else {
+                String errorMessage = "Artifact manager is null when retrieving recently added APIs for tenant domain "
+                        + tenantDomain;
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
+            }
         } catch (RegistryException e) {
         	handleException("Failed to get all published APIs", e);
         } catch (UserStoreException e) {
@@ -1521,6 +1552,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             Boolean displayAPIsWithMultipleStatus = APIUtil.isAllowDisplayAPIsWithMultipleStatus();
             String providerPath = APIConstants.API_ROOT_LOCATION + RegistryConstants.PATH_SEPARATOR + providerId;
             GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry, APIConstants.API_KEY);
+            if (artifactManager == null) {
+                String errorMessage = "Artifact manager is null when retrieving published APIs by provider ID " +
+                        providerId;
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
+            }
             Association[] associations = registry.getAssociations(providerPath, APIConstants.PROVIDER_ASSOCIATION);
             if (associations.length < limit || limit == -1) {
                 limit = associations.length;
@@ -1600,6 +1637,12 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
             GenericArtifactManager artifactManager = APIUtil.getArtifactManager(registry,
                     APIConstants.API_KEY);
+            if (artifactManager == null) {
+                String errorMessage = "Artifact manager is null when retrieving all published APIs by provider ID " +
+                        providerId;
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
+            }
             int publishedAPICount = 0;
             Map<String, API> apiCollection = new HashMap<String, API>();
 
