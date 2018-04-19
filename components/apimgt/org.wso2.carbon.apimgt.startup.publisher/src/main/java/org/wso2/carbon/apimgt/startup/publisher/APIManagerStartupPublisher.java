@@ -346,6 +346,11 @@ public class APIManagerStartupPublisher implements ServerStartupHandler {
 	private void createAPIArtifact(API api) throws APIManagementException {
 		GenericArtifactManager artifactManager = APIUtil.getArtifactManager(
 				registry, APIConstants.API_KEY);
+		if (artifactManager == null) {
+			String errorMessage = "Artifact manager is null when creating API " + api.getId().getApiName();
+			log.error(errorMessage);
+			throw new APIManagementException(errorMessage);
+		}
 		try {
 			registry.beginTransaction();
 			GenericArtifact genericArtifact = artifactManager
