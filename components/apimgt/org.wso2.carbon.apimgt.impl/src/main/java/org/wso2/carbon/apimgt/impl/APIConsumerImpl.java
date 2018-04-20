@@ -535,6 +535,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 }
 
                 for (GenericArtifact artifact : genericArtifacts) {
+                    if (artifact == null) {
+                        log.error("Failed to retrieve artifact when getting paginated published API.");
+                        continue;
+                    }
                     // adding the API provider can mark the latest API .
                     API api = APIUtil.getAPI(artifact);
                     if (api != null) {
@@ -863,6 +867,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 int tempLength=0;
                 for (GenericArtifact artifact : genericArtifacts) {
 
+                    if (artifact == null) {
+                        log.error("Failed to retrieve artifact when getting all paginated APIs by status.");
+                        continue;
+                    }
                     API api  = null;
                     try {
                         api = APIUtil.getAPI(artifact);
@@ -1031,6 +1039,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 int publishedAPICount;
                 if (genericArtifacts != null) {
                     for (GenericArtifact artifact : genericArtifacts) {
+                        if (artifact == null) {
+                            log.error("Failed to retrieve artifact when getting all paginated APIs.");
+                            continue;
+                        }
                         // adding the API provider can mark the latest API .
 //                        String status = artifact.getAttribute(APIConstants.API_OVERVIEW_STATUS);
                         API api  = APIUtil.getAPI(artifact);
@@ -1089,6 +1101,10 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
                     if (genericArtifactsForDeprecatedAPIs != null) {
                         for (GenericArtifact artifact : genericArtifactsForDeprecatedAPIs) {
+                            if (artifact == null) {
+                                log.error("Failed to retrieve artifact when getting deprecated APIs.");
+                                continue;
+                            }
                             // adding the API provider can mark the latest API .
 
                             API api  = APIUtil.getAPI(artifact);
