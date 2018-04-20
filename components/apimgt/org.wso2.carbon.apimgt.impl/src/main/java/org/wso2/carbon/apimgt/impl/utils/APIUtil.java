@@ -4925,7 +4925,8 @@ public final class APIUtil {
                 StringBuilder apiNames = new StringBuilder();
                 for (GenericArtifact artifact : genericArtifacts) {
                     if (artifact == null) {
-                        log.error("Failed to retrieve artifact when searching APIs by URL pattern : " + searchTerm);
+                        log.error("Failed to retrieve an artifact when searching APIs by URL pattern : " + searchTerm +
+                                " , continuing with next artifact.");
                         continue;
                     }
                     if (apiNames.indexOf(artifact.getAttribute(APIConstants.API_OVERVIEW_NAME)) < 0) {

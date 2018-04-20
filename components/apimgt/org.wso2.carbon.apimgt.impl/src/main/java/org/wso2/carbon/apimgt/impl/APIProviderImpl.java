@@ -625,7 +625,9 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         .getName() + '\"';
                 tierArtifacts = artifactManager.findGovernanceArtifacts(query);
                 if (tierArtifacts == null) {
-                    String errorMessage = "Tier artifact is null when removing tier " + tier.getName();
+                    String errorMessage = "Tier artifact is null when removing tier " + tier.getName() +
+                            " by user : " + PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername() +
+                            " in domain : " + tenantDomain;
                     log.error(errorMessage);
                 }
             } catch (GovernanceException e) {

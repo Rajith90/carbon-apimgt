@@ -453,7 +453,8 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 }
             } else {
                 String errorMessage = "Artifact manager is null for tenant domain " + tenantDomain +
-                        " when retrieving APIs for store.";
+                        " when retrieving APIs for store. User : " +
+                        PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
                 log.error(errorMessage);
                 throw new RegistryException(errorMessage);
             }
@@ -1332,7 +1333,6 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 String errorMessage = "Artifact manager is null when retrieving recently added APIs for tenant domain "
                         + tenantDomain;
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
             }
         } catch (RegistryException e) {
         	handleException("Failed to get all published APIs", e);
