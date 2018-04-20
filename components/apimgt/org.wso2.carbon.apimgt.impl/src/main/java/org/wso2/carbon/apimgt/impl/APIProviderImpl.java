@@ -624,6 +624,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 String query = "tier=\"" + tier.getName() + "\\||\" \"\\||" + tier.getName() + "\\||\" \"\\||" + tier
                         .getName() + '\"';
                 tierArtifacts = artifactManager.findGovernanceArtifacts(query);
+                if (tierArtifacts == null) {
+                    String errorMessage = "Tier artifact is null when removing tier " + tier.getName();
+                    log.error(errorMessage);
+                }
             } catch (GovernanceException e) {
                 handleException("Unable to check the usage of the tier ", e);
             }
@@ -2521,6 +2525,11 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             registry.beginTransaction();
             GenericArtifact genericArtifact =
                     artifactManager.newGovernanceArtifact(new QName(api.getId().getApiName()));
+            if (genericArtifact == null){
+                String errorMessage = "Generic artifact is null when creating API " + api.getId().getApiName();
+                log.error(errorMessage);
+                throw new RegistryException(errorMessage);
+            }
             GenericArtifact artifact = APIUtil.createAPIArtifactContent(genericArtifact, api);
             artifactManager.addGenericArtifact(artifact);
             //Attach the API lifecycle
@@ -4627,6 +4636,12 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(this.username);
             PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(this.tenantDomain, true);
             GenericArtifact apiArtifact = APIUtil.getAPIArtifact(apiIdentifier, registry);
+            if (apiArtifact == null) {
+                String errorMessage = "API artifact is null when retrieving lifecycle status of API " +
+                        apiIdentifier.getApiName();
+                log.error(errorMessage);
+                throw new GovernanceException(errorMessage);
+            }
             return apiArtifact.getLifecycleState();
         } catch (GovernanceException e) {
             handleException("Failed to get the life cycle status : " + e.getMessage(), e);
