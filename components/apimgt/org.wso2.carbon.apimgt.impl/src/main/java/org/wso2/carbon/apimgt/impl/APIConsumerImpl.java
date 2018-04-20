@@ -456,7 +456,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                         " when retrieving APIs for store. User : " +
                         PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
         } catch (RegistryException e) {
             handleException("Failed to get all published APIs", e);
@@ -1173,7 +1173,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when retrieving top rated APIs.";
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifact[] genericArtifacts = artifactManager.getAllGenericArtifacts();
             if (genericArtifacts == null || genericArtifacts.length == 0) {
@@ -1572,7 +1572,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 String errorMessage = "Artifact manager is null when retrieving published APIs by provider ID " +
                         providerId;
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             Association[] associations = registry.getAssociations(providerPath, APIConstants.PROVIDER_ASSOCIATION);
             if (associations.length < limit || limit == -1) {
@@ -1657,7 +1657,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 String errorMessage = "Artifact manager is null when retrieving all published APIs by provider ID " +
                         providerId;
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             int publishedAPICount = 0;
             Map<String, API> apiCollection = new HashMap<String, API>();

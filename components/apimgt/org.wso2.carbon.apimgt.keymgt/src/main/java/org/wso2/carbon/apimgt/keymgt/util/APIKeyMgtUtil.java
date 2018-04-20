@@ -202,7 +202,7 @@ public class APIKeyMgtUtil {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when retrieving API " + identifier.getApiName();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             Resource apiResource = registry.get(apiPath);
             String artifactId = apiResource.getUUID();

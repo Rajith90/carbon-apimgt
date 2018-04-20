@@ -212,7 +212,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (artifactManager == null) {
                 String errorMessage = "Failed to retrieve artifact manager when fetching providers.";
                 log.error(errorMessage);
-                throw new GovernanceException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifact[] genericArtifact = artifactManager.getAllGenericArtifacts();
             if (genericArtifact == null || genericArtifact.length == 0) {
@@ -617,7 +617,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 if (artifactManager == null) {
                     String errorMessage = "Failed to retrieve artifact manager when removing tier " + tier.getName();
                     log.error(errorMessage);
-                    throw new GovernanceException(errorMessage);
+                    throw new APIManagementException(errorMessage);
                 }
                 // The search name pattern is this
                 // tier=Gold|| OR ||Gold||
@@ -784,7 +784,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when updating WSDL of API " + api.getId().getApiName();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
             GenericArtifact apiArtifact = APIUtil.createAPIArtifactContent(artifact, api);
@@ -1090,7 +1090,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when updating API artifact ID " + api.getId();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
 
             //This is a fix for broken APIs after migrating from 1.10 to 2.0.0.
@@ -1786,7 +1786,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when updating default API " + apiIdentifier.getApiName();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             String defaultAPIPath = APIConstants.API_LOCATION + RegistryConstants.PATH_SEPARATOR +
                     apiIdentifier.getProviderName() +
@@ -2421,7 +2421,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 String errorMessage = "Artifact manager is null when updating documentation of API " +
                         apiId.getApiName();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
             String docVisibility = documentation.getVisibility().name();
@@ -2530,7 +2530,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             if (genericArtifact == null){
                 String errorMessage = "Generic artifact is null when creating API " + api.getId().getApiName();
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifact artifact = APIUtil.createAPIArtifactContent(genericArtifact, api);
             artifactManager.addGenericArtifact(artifact);
@@ -4642,7 +4642,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 String errorMessage = "API artifact is null when retrieving lifecycle status of API " +
                         apiIdentifier.getApiName();
                 log.error(errorMessage);
-                throw new GovernanceException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             return apiArtifact.getLifecycleState();
         } catch (GovernanceException e) {
@@ -5628,7 +5628,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                 String errorMessage = "Failed to retrieve artifact manager when searching APIs by URL pattern " +
                         searchTerm;
                 log.error(errorMessage);
-                throw new GovernanceException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
         } catch (APIManagementException e) {
             handleException("Failed to search APIs with input url-pattern", e);

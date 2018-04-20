@@ -4781,7 +4781,7 @@ public final class APIUtil {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when searching APIs by docs in tenant ID " + tenantID;
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             GenericArtifactManager docArtifactManager = APIUtil.getArtifactManager(registry,
                     APIConstants.DOCUMENTATION_KEY);
@@ -4789,7 +4789,7 @@ public final class APIUtil {
                 String errorMessage = "Doc artifact manager is null when searching APIs by docs in tenant ID " +
                         tenantID;
                 log.error(errorMessage);
-                throw new RegistryException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             SolrClient client = SolrClient.getInstance();
             Map<String, String> fields = new HashMap<String, String>();
@@ -4901,7 +4901,7 @@ public final class APIUtil {
             if (artifactManager == null) {
                 String errorMessage = "Artifact manager is null when searching APIs by URL pattern " + searchTerm;
                 log.error(errorMessage);
-                throw new GovernanceException(errorMessage);
+                throw new APIManagementException(errorMessage);
             }
             PaginationContext.init(0, 10000, "ASC", APIConstants.API_OVERVIEW_NAME, Integer.MAX_VALUE);
             if (artifactManager != null) {
