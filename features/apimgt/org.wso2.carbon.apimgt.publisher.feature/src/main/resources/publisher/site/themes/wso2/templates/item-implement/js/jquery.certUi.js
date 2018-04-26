@@ -96,8 +96,8 @@
                             return containInCertUrl;
                         }
                     }
+                // Skip if productionEndpoints is `undefined`
                 } else if (productionEndpoints) {
-                    // Skip if productionEndpoints is `undefined`
                     return productionEndpoints.url.toLowerCase().indexOf(certUrl) !== -1;
                 }
                 if (Array.isArray(sandboxEndpoints)) {
@@ -107,8 +107,8 @@
                             return containInCertUrl;
                         }
                     }
+                // Skip if sandboxEndpoints is `undefined`
                 } else if (sandboxEndpoints) {
-                    // Skip if sandboxEndpoints is `undefined`
                     return sandboxEndpoints.url.toLowerCase().indexOf(certUrl) !== -1;
                 }
             });
