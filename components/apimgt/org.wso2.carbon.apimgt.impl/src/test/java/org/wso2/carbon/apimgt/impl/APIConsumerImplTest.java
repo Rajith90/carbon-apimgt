@@ -1204,6 +1204,8 @@ public class APIConsumerImplTest {
         APIIdentifier identifier = new APIIdentifier(API_PROVIDER, SAMPLE_API_NAME, SAMPLE_API_VERSION);
         SubscribedAPI subscribedAPIOld = new SubscribedAPI(subscriber, identifier);
         subscribedAPIOld.setApplication(application);
+        Mockito.when(apiMgtDAO.isAppAllowed(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).
+                thenReturn(true);
         Mockito.when(apiMgtDAO.getSubscriptionByUUID(uuid)).thenReturn(null, subscribedAPIOld);
         SubscribedAPI subscribedAPINew = new SubscribedAPI(uuid);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(apiMgtDAO);
@@ -1245,6 +1247,8 @@ public class APIConsumerImplTest {
     @Test
     public void testAddSubscription() throws APIManagementException {
         APIIdentifier identifier = new APIIdentifier(API_PROVIDER, "published_api", SAMPLE_API_VERSION);
+        Mockito.when(apiMgtDAO.isAppAllowed(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).
+                thenReturn(true);
         Mockito.when(apiMgtDAO.addSubscription((APIIdentifier) Mockito.any(), Mockito.anyString(), Mockito.anyInt(),
                 Mockito.anyString(), Mockito.anyString())).thenReturn(1);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(apiMgtDAO);
