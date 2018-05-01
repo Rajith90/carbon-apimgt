@@ -2147,7 +2147,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      * @return true if the application is accessible by the specified user
      */
     public boolean validateApplication(String userId, int applicationId) {
-        org.json.JSONObject obj = new org.json.JSONObject();
+        JSONObject obj = new JSONObject();
         try {
             obj.put(APIConstants.USER, userId);
             obj.put(APIConstants.IS_SUPER_TENANT, MultitenantUtils.getTenantDomain(userId)
@@ -2161,8 +2161,6 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 groupIDList.deleteCharAt(groupIDList.length() - 1);
             }
             return apiMgtDAO.isAppAllowed(applicationId, userId, groupIDList.toString());
-        } catch (JSONException e) {
-            log.error("Error occurred while getting user group ids", e);
         } catch (APIManagementException e) {
             log.error("Error occurred while getting user group ids", e);
         }

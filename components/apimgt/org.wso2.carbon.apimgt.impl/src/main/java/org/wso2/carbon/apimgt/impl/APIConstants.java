@@ -1360,4 +1360,5 @@ public final class APIConstants {
 
     public static final String USER = "user";
     public static final String IS_SUPER_TENANT = "isSuperTenant";
+    public static final String NULL_GROUP_ID_LIST = "null";
 }

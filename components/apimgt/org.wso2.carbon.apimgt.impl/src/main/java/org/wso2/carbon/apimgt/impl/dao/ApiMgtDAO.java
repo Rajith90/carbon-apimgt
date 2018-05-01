@@ -5190,6 +5190,7 @@ public class ApiMgtDAO {
      * @param applicationID ID of the Application
      * @param userId        Name of the User.
      * @param groupId       Group IDs
+     * @return true if the user has access to application, otherwise false
      * @throws APIManagementException
      */
     public boolean isAppAllowed(int applicationID, String userId, String groupId)
@@ -5214,7 +5215,7 @@ public class ApiMgtDAO {
                     "OR (APP.APPLICATION_ID IN (SELECT APPLICATION_ID FROM AM_APPLICATION WHERE GROUP_ID = ?))) " +
                     "AND APP.APPLICATION_ID = ? AND SUB.SUBSCRIBER_ID = APP.SUBSCRIBER_ID";
 
-            if (!StringUtils.isEmpty(groupId) && !"null".equals(groupId)) {
+            if (!StringUtils.isEmpty(groupId) && !APIConstants.NULL_GROUP_ID_LIST.equals(groupId)) {
                 if (multiGroupIdEnabled) {
                     Subscriber subscriber = getSubscriber(userId);
                     String tenantDomain = MultitenantUtils.getTenantDomain(subscriber.getName());
