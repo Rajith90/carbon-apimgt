@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
@@ -111,6 +112,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.support.membermodification.MemberMatcher.method;
 import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 
 
@@ -118,7 +120,7 @@ import static org.wso2.carbon.base.CarbonBaseConstants.CARBON_HOME;
 @PrepareForTest({WorkflowExecutorFactory.class, APIUtil.class, GovernanceUtils.class, ApplicationUtils.class,
         KeyManagerHolder.class, WorkflowExecutorFactory.class, AbstractApplicationRegistrationWorkflowExecutor.class,
         PrivilegedCarbonContext.class, ServiceReferenceHolder.class, MultitenantUtils.class, CacheInvalidator.class,
-        RegistryUtils.class, Caching.class })
+        RegistryUtils.class, Caching.class, APIConsumerImpl.class })
 @SuppressStaticInitializationFor("org.wso2.carbon.apimgt.impl.utils.ApplicationUtils")
 public class APIConsumerImplTest {
 
@@ -1204,6 +1206,8 @@ public class APIConsumerImplTest {
         APIIdentifier identifier = new APIIdentifier(API_PROVIDER, SAMPLE_API_NAME, SAMPLE_API_VERSION);
         SubscribedAPI subscribedAPIOld = new SubscribedAPI(subscriber, identifier);
         subscribedAPIOld.setApplication(application);
+        Mockito.when(apiMgtDAO.isAppAllowed(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).
+                thenReturn(true);
         Mockito.when(apiMgtDAO.getSubscriptionByUUID(uuid)).thenReturn(null, subscribedAPIOld);
         SubscribedAPI subscribedAPINew = new SubscribedAPI(uuid);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(apiMgtDAO);
@@ -1245,6 +1249,8 @@ public class APIConsumerImplTest {
     @Test
     public void testAddSubscription() throws APIManagementException {
         APIIdentifier identifier = new APIIdentifier(API_PROVIDER, "published_api", SAMPLE_API_VERSION);
+        Mockito.when(apiMgtDAO.isAppAllowed(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString())).
+                thenReturn(true);
         Mockito.when(apiMgtDAO.addSubscription((APIIdentifier) Mockito.any(), Mockito.anyString(), Mockito.anyInt(),
                 Mockito.anyString(), Mockito.anyString())).thenReturn(1);
         APIConsumerImpl apiConsumer = new APIConsumerImplWrapper(apiMgtDAO);

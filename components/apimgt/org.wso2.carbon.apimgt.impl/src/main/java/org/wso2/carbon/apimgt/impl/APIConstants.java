@@ -1357,4 +1357,7 @@ public final class APIConstants {
     public static final String RESTRICTED_STORE_VISIBILITY = "restricted";
 
     public static final String CREATED_DATE = "createdDate";
+
+    public static final String USER = "user";
+    public static final String IS_SUPER_TENANT = "isSuperTenant";
 }
