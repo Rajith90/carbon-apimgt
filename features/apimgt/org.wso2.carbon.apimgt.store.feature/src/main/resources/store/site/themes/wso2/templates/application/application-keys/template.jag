@@ -112,7 +112,7 @@
 			<%=i18n.localize("And the token has")%> ( <strong>{{KeyScope}}</strong> ) <%=i18n.localize("scopes.")%>
 		  {{/if}}
 		  </p>
-	  	<form class="add-margin-top-5x well">
+	  	<form class="add-margin-top-5x well scope-selection-form">
 	  	    <div class="form-group">
                 <label for="" class="control-label"><%=i18n.localize("Scopes")%></label>
                   <select class="selectpicker scope_select dropup form-control"  multiple title="{{#if Scopes}}Select..{{else}}No Scopes Found..{{/if}}" {{#if Scopes}}{{else}}disabled{{/if}}>
