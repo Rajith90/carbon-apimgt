@@ -2820,10 +2820,6 @@ public class ApiMgtDAO {
 
             Map<String, UserApplicationAPIUsage> userApplicationUsages = new TreeMap<String, UserApplicationAPIUsage>();
             while (result.next()) {
-                int subId = result.getInt("SUBSCRIPTION_ID");
-                Map<String, String> keyData = getAccessTokenData(subId);
-                String accessToken = keyData.get("token");
-                String tokenStatus = keyData.get("status");
                 String userId = result.getString("USER_ID");
                 String application = result.getString("APPNAME");
                 int appId = result.getInt("APPLICATION_ID");
@@ -2836,8 +2832,6 @@ public class ApiMgtDAO {
                     usage.setUserId(userId);
                     usage.setApplicationName(application);
                     usage.setAppId(appId);
-                    usage.setAccessToken(accessToken);
-                    usage.setAccessTokenStatus(tokenStatus);
                     userApplicationUsages.put(key, usage);
                 }
                 APIIdentifier apiId = new APIIdentifier(result.getString("API_PROVIDER"), result.getString
