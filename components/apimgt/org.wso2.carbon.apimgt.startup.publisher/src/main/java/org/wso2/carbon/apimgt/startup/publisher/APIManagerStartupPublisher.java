@@ -24,7 +24,6 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.Documentation;
 import org.wso2.carbon.apimgt.api.model.DocumentationType;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
@@ -240,7 +239,7 @@ public class APIManagerStartupPublisher implements ServerStartupHandler {
 			api.setVisibility(APIConstants.API_GLOBAL_VISIBILITY);
 			api.addAvailableTiers(provider.getTiers());
 			api.setEndpointSecured(false);
-			api.setStatus(APIStatus.PUBLISHED);
+			api.setStatus(APIConstants.PUBLISHED);
             api.setTransports(Constants.TRANSPORT_HTTP+","+Constants.TRANSPORT_HTTPS);
             
             /* Adding Icon*/
@@ -381,7 +380,7 @@ public class APIManagerStartupPublisher implements ServerStartupHandler {
 			// write API Status to a separate property. This is done to support
 			// querying APIs using custom query (SQL)
 			// to gain performance
-			String apiStatus = api.getStatus().getStatus();
+			String apiStatus = api.getStatus();
 			saveAPIStatus(artifactPath, apiStatus);
 			String visibleRolesList = api.getVisibleRoles();
 			String[] visibleRoles = new String[0];

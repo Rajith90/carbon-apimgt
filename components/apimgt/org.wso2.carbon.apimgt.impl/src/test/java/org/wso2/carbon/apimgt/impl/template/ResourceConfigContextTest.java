@@ -28,8 +28,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.registry.core.service.RegistryService;
@@ -49,7 +49,7 @@ public class ResourceConfigContextTest {
     public void testResourceConfigContext() throws Exception {
 
         API api = new API(new APIIdentifier("admin", "TestAPI", "1.0.0"));
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContextTemplate("/");
         api.setUriTemplates(setAPIUriTemplates());
         ConfigContext configcontext = new APIConfigContext(api);
@@ -98,7 +98,7 @@ public class ResourceConfigContextTest {
     @Test
     public void testValidateWithoutURITemplates() throws  Exception {
         API api = new API(new APIIdentifier("admin", "TestAPI", "1.0.0"));
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContextTemplate("/");
         ConfigContext configcontext = new APIConfigContext(api);
         ResourceConfigContext resourceConfigContext = new ResourceConfigContext(configcontext, api);
@@ -117,7 +117,7 @@ public class ResourceConfigContextTest {
     public void testValidatewhenFaultSequenceIsDefined() throws Exception {
         APIIdentifier apiIdentifier = new APIIdentifier("admin", "TestAPI", "1.0.0");
         API api = new API(apiIdentifier);
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContextTemplate("/");
         Set<URITemplate> uriTemplates = new LinkedHashSet<URITemplate>();
         URITemplate template = new URITemplate();
@@ -164,7 +164,7 @@ public class ResourceConfigContextTest {
     public void testValidatewhenIsPerAPISequenceTrue() throws Exception {
         APIIdentifier apiIdentifier = new APIIdentifier("admin", "TestAPI", "1.0.0");
         API api = new API(apiIdentifier);
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContextTemplate("/");
         Set<URITemplate> uriTemplates = new LinkedHashSet<URITemplate>();
         URITemplate template = new URITemplate();
@@ -216,7 +216,7 @@ public class ResourceConfigContextTest {
     public void testValidatewhenProviderNameContainsAT() throws Exception {
         APIIdentifier apiIdentifier = new APIIdentifier("admin-AT-carbon.super", "TestAPI", "1.0.0");
         API api = new API(apiIdentifier);
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContextTemplate("/");
         Set<URITemplate> uriTemplates = new LinkedHashSet<URITemplate>();
         URITemplate template = new URITemplate();
