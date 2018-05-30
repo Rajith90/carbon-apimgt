@@ -397,7 +397,7 @@ public class APIMappingUtil {
         model.setThumbnailUrl(dto.getThumbnailUri());
 
         if (dto.getStatus() != null) {
-            model.setStatus(mapStatusFromDTOToAPI(dto.getStatus()));
+            model.setStatus((dto.getStatus() != null) ? dto.getStatus().toUpperCase() : null);
         }
         model.setAsDefaultVersion(dto.getIsDefaultVersion());
         model.setResponseCache(dto.getResponseCaching());
@@ -671,23 +671,6 @@ public class APIMappingUtil {
         }
     }
 
-    private static String mapStatusFromDTOToAPI(String apiStatus) {
-        // switch case statements are not working as APIStatus.<STATUS>.toString() or APIStatus.<STATUS>.getStatus()
-        //  is not a constant
-        if (APIConstants.BLOCKED.equals(apiStatus)) {
-            return APIConstants.BLOCKED;
-        } else if (APIConstants.CREATED.equals(apiStatus)) {
-            return APIConstants.CREATED;
-        } else if (APIConstants.PUBLISHED.equals(apiStatus)) {
-            return APIConstants.PUBLISHED;
-        } else if (APIConstants.DEPRECATED.equals(apiStatus)) {
-            return APIConstants.DEPRECATED;
-        } else if (APIConstants.PROTOTYPED.equals(apiStatus)) {
-            return APIConstants.PROTOTYPED;
-        } else {
-            return null; // how to handle this?
-        }
-    }
 
     private static String mapVisibilityFromDTOtoAPI(APIDTO.VisibilityEnum visibility) {
         switch (visibility) {
