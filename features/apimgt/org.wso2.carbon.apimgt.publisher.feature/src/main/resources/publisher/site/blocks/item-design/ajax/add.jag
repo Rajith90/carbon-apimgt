@@ -609,7 +609,7 @@ if(jagg.isCSRFTokenValid())
             if (swaggerErrors.size() > 0) {
                 print({
                     error: true,
-                    message: "API swagger definition is invalid. Please fix the suggested validation failures"
+                    message: "API swagger definition is invalid. Please fix the suggested validation issues"
                 });
                 return;
             } else {
