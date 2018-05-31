@@ -30,8 +30,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
@@ -262,7 +262,7 @@ public class APITemplateBuilderImplTest {
         String version = "1.0.0";
         APIIdentifier apiIdentifier = new APIIdentifier(apiProviderName, apiName, version);
         API api = new API(apiIdentifier);
-        api.setStatus(APIStatus.PUBLISHED);
+        api.setStatus(APIConstants.PUBLISHED);
         api.setTransports("http,https");
         Set<URITemplate> uriTemplates = new HashSet<URITemplate>();
         uriTemplates.add(getUriTemplate("GET", "Any", "/*"));

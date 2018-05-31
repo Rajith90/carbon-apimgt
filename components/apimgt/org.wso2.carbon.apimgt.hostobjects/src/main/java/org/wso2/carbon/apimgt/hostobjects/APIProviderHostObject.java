@@ -59,7 +59,6 @@ import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIKey;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.APIStore;
 import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
 import org.wso2.carbon.apimgt.api.model.Documentation;
@@ -1001,7 +1000,7 @@ public class APIProviderHostObject extends ScriptableObject {
         }
 
         API api = new API(apiId);
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setType(type);
         // This is to support the new Pluggable version strategy
         // if the context does not contain any {version} segment, we use the default version strategy.
@@ -1525,7 +1524,7 @@ public class APIProviderHostObject extends ScriptableObject {
 
             api.addAvailableTiers(availableTier);
         }
-        api.setStatus(APIStatus.CREATED);
+        api.setStatus(APIConstants.CREATED);
         api.setContext(context);
         api.setType(type);
         api.setContextTemplate(contextTemplate);
@@ -2209,13 +2208,13 @@ public class APIProviderHostObject extends ScriptableObject {
             APIIdentifier apiId = new APIIdentifier(provider, name, version);
             API api = apiProvider.getAPI(apiId);
             if (api != null) {
-                APIStatus oldStatus = api.getStatus();
-                APIStatus newStatus = getApiStatus(status);
+                String oldStatus = api.getStatus();
+                String newStatus = status.toUpperCase();
                 String currentUser = ((APIProviderHostObject) thisObj).getUsername();
                 apiProvider.changeAPIStatus(api, newStatus, currentUser, publishToGateway);
 
-                if ((oldStatus.equals(APIStatus.CREATED) || oldStatus.equals(APIStatus.PROTOTYPED))
-                        && newStatus.equals(APIStatus.PUBLISHED)) {
+                if ((APIConstants.CREATED.equals(oldStatus) || APIConstants.PROTOTYPED.equals(oldStatus))
+                        && APIConstants.PUBLISHED.equals(newStatus)) {
                     if (makeKeysForwardCompatible) {
                         apiProvider.makeAPIKeysForwardCompatible(api);
                     }
@@ -2226,8 +2225,8 @@ public class APIProviderHostObject extends ScriptableObject {
                         for (API oldAPI : apiList) {
                             if (oldAPI.getId().getApiName().equals(name) &&
                                 versionComparator.compare(oldAPI, api) < 0 &&
-                                (oldAPI.getStatus().equals(APIStatus.PUBLISHED))) {
-                                apiProvider.changeAPIStatus(oldAPI, APIStatus.DEPRECATED,
+                                (oldAPI.getStatus().equals(APIConstants.PUBLISHED))) {
+                                apiProvider.changeAPIStatus(oldAPI, APIConstants.DEPRECATED,
                                                                              currentUser, publishToGateway);
                             }
                         }
@@ -2631,7 +2630,7 @@ public class APIProviderHostObject extends ScriptableObject {
                 }
 
                 myn.put(6, myn, checkValue(tiersSet.toString()));
-                myn.put(7, myn, checkValue(api.getStatus().toString()));
+                myn.put(7, myn, checkValue(api.getStatus()));
                 myn.put(8, myn, getWebContextRoot(api.getThumbnailUrl()));
                 myn.put(9, myn, api.getContext());
                 myn.put(10, myn, checkValue(Long.valueOf(api.getLastUpdated().getTime()).toString()));
@@ -2807,7 +2806,7 @@ public class APIProviderHostObject extends ScriptableObject {
 
                 Map<String, Long> subscriptions = new TreeMap<String, Long>();
                 for (API api : apiSet) {
-                    if (api.getStatus() == APIStatus.CREATED) {
+                    if (APIConstants.CREATED.equals(api.getStatus())) {
                         continue;
                     }
                     long count = apiProvider.getAPISubscriptionCountByAPI(api.getId());
@@ -2912,7 +2911,7 @@ public class APIProviderHostObject extends ScriptableObject {
                 for (String version : versions) {
                     APIIdentifier id = new APIIdentifier(providerName, apiName, version);
                     API api = apiProvider.getAPI(id);
-                    if (api == null || api.getStatus() == APIStatus.CREATED) {
+                    if (api == null || APIConstants.CREATED.equals(api.getStatus())) {
                         continue;
                     }
                     long count = apiProvider.getAPISubscriptionCountByAPI(api.getId());
@@ -3000,7 +2999,7 @@ public class APIProviderHostObject extends ScriptableObject {
                     row.put("name", row, apiIdentifier.getApiName());
                     row.put("version", row, apiIdentifier.getVersion());
                     row.put("provider", row, APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
-                    row.put("status", row, checkValue(api.getStatus().toString()));
+                    row.put("status", row, checkValue(api.getStatus()));
                     row.put("thumb", row, getWebContextRoot(api.getThumbnailUrl()));
                     row.put("subs", row, getSubscriberCount(apiIdentifier, thisObj));
                     myn.put(i, myn, row);
@@ -3590,17 +3589,6 @@ public class APIProviderHostObject extends ScriptableObject {
     }
 
 
-    private static APIStatus getApiStatus(String status) {
-        APIStatus apiStatus = null;
-        for (APIStatus aStatus : APIStatus.values()) {
-            if (aStatus.getStatus().equalsIgnoreCase(status)) {
-                apiStatus = aStatus;
-            }
-
-        }
-        return apiStatus;
-    }
-    
     public static NativeObject jsFunction_searchPaginatedAPIs(Context cx, Scriptable thisObj,
                                                     Object[] args,
                                                     Function funObj) throws APIManagementException {
@@ -3644,7 +3632,7 @@ public class APIProviderHostObject extends ScriptableObject {
                                 APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
                         currentApi.put("version", currentApi,
                                 apiIdentifier.getVersion());
-                        currentApi.put("status", currentApi, checkValue(api.getStatus().toString()));
+                        currentApi.put("status", currentApi, checkValue(api.getStatus()));
                         currentApi.put("thumb", currentApi, getWebContextRoot(api.getThumbnailUrl()));
                         currentApi.put("subs", currentApi, apiProvider.getSubscribersOfAPI(api.getId()).size());
                         if (providerName != null) {
@@ -3676,7 +3664,7 @@ public class APIProviderHostObject extends ScriptableObject {
                     row.put("name", row, apiIdentifier.getApiName());
                     row.put("provider", row, APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
                     row.put("version", row, apiIdentifier.getVersion());
-                    row.put("status", row, checkValue(api.getStatus().toString()));
+                    row.put("status", row, checkValue(api.getStatus()));
                     row.put("thumb", row, getWebContextRoot(api.getThumbnailUrl()));
                     row.put("subs", row, apiProvider.getSubscribersOfAPI(api.getId()).size());
                     if (providerName != null) {
@@ -3751,7 +3739,7 @@ public class APIProviderHostObject extends ScriptableObject {
                                 APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
                         currentApi.put("version", currentApi,
                                 apiIdentifier.getVersion());
-                        currentApi.put("status", currentApi, checkValue(api.getStatus().toString()));
+                        currentApi.put("status", currentApi, checkValue(api.getStatus()));
                         currentApi.put("thumb", currentApi, getWebContextRoot(api.getThumbnailUrl()));
                         currentApi.put("subs", currentApi, apiProvider.getSubscribersOfAPI(api.getId()).size());
                         if (providerName != null) {
@@ -3780,7 +3768,7 @@ public class APIProviderHostObject extends ScriptableObject {
 	                row.put("name", row, apiIdentifier.getApiName());
 	                row.put("provider", row, APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
 	                row.put("version", row, apiIdentifier.getVersion());
-	                row.put("status", row, checkValue(api.getStatus().toString()));
+	                row.put("status", row, checkValue(api.getStatus()));
 	                row.put("thumb", row, getWebContextRoot(api.getThumbnailUrl()));
 	                row.put("subs", row, apiProvider.getSubscribersOfAPI(api.getId()).size());
 	                if (providerName != null) {
@@ -5155,7 +5143,7 @@ public class APIProviderHostObject extends ScriptableObject {
                     row.put("name", row, apiIdentifier.getApiName());
                     row.put("version", row, apiIdentifier.getVersion());
                     row.put("provider", row, APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
-                    row.put("status", row, checkValue(api.getStatus().toString()));
+                    row.put("status", row, checkValue(api.getStatus()));
                     row.put("thumb", row, getWebContextRoot(api.getThumbnailUrl()));
                     row.put("subs", row, getSubscriberCount(apiIdentifier, thisObj));
                     myn.put(i, myn, row);

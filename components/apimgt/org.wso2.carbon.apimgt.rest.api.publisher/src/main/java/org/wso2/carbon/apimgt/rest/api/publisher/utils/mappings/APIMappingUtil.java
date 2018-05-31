@@ -26,7 +26,6 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.CORSConfiguration;
 import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.Tier;
@@ -51,7 +50,6 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -220,7 +218,7 @@ public class APIMappingUtil {
 
         dto.setSequences(sequences);
 
-        dto.setStatus(model.getStatus().getStatus());
+        dto.setStatus(model.getStatus());
 
         String subscriptionAvailability = model.getSubscriptionAvailability();
         if (subscriptionAvailability != null) {
@@ -399,7 +397,7 @@ public class APIMappingUtil {
         model.setThumbnailUrl(dto.getThumbnailUri());
 
         if (dto.getStatus() != null) {
-            model.setStatus(mapStatusFromDTOToAPI(dto.getStatus()));
+            model.setStatus((dto.getStatus() != null) ? dto.getStatus().toUpperCase() : null);
         }
         model.setAsDefaultVersion(dto.getIsDefaultVersion());
         model.setResponseCache(dto.getResponseCaching());
@@ -673,23 +671,6 @@ public class APIMappingUtil {
         }
     }
 
-    private static APIStatus mapStatusFromDTOToAPI(String apiStatus) {
-        // switch case statements are not working as APIStatus.<STATUS>.toString() or APIStatus.<STATUS>.getStatus()
-        //  is not a constant
-        if (apiStatus.equals(APIStatus.BLOCKED.toString())) {
-            return APIStatus.BLOCKED;
-        } else if (apiStatus.equals(APIStatus.CREATED.toString())) {
-            return APIStatus.CREATED;
-        } else if (apiStatus.equals(APIStatus.PUBLISHED.toString())) {
-            return APIStatus.PUBLISHED;
-        } else if (apiStatus.equals(APIStatus.DEPRECATED.toString())) {
-            return APIStatus.DEPRECATED;
-        } else if (apiStatus.equals(APIStatus.PROTOTYPED.toString())) {
-            return APIStatus.PROTOTYPED;
-        } else {
-            return null; // how to handle this?
-        }
-    }
 
     private static String mapVisibilityFromDTOtoAPI(APIDTO.VisibilityEnum visibility) {
         switch (visibility) {

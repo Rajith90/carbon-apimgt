@@ -26,7 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.gateway.dto.stub.APIData;
 import org.wso2.carbon.apimgt.gateway.dto.stub.ResourceData;
 import org.wso2.carbon.apimgt.impl.dto.Environment;
@@ -458,7 +457,7 @@ public class APIGatewayManager {
                 didn't throw this exception to check api available in all the environments
                 therefore we didn't throw exception to avoid if gateway unreachable affect
                 */
-                if (api.getStatus() != APIStatus.CREATED) {
+                if (!APIConstants.CREATED.equals(api.getStatus())) {
                     log.error("Error occurred when check api is published on gateway" + environment.getName(), axisFault);
                 }
             }
@@ -490,7 +489,7 @@ public class APIGatewayManager {
             } catch (AxisFault axisFault) {
                 // didn't throw this exception to check api available in all the environments
                 // therefore we didn't throw exception to avoid if gateway unreachable affect
-                if (api.getStatus() != APIStatus.CREATED) {
+                if (!APIConstants.CREATED.equals(api.getStatus())) {
                     log.error("Error occurred when check api endpoint security type on gateway"
                                     + environment.getName(), axisFault);
                 }

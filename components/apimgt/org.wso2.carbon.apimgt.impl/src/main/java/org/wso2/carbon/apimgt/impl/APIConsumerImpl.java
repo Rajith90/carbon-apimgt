@@ -39,7 +39,6 @@ import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIKey;
 import org.wso2.carbon.apimgt.api.model.APIRating;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
 import org.wso2.carbon.apimgt.api.model.AccessTokenRequest;
 import org.wso2.carbon.apimgt.api.model.Application;
@@ -345,8 +344,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                                                             APIConstants.API_RXT_MEDIA_TYPE);
             for (GovernanceArtifact genericArtifact : genericArtifacts) {
                 try {
-                    APIStatus apiLcStatus = APIUtil.getApiStatus(genericArtifact.getLifecycleState());
-                    String apiStatus = (apiLcStatus != null) ? apiLcStatus.getStatus() : null;
+                    String apiStatus = APIUtil.getLcStateFromArtifact(genericArtifact);
                     if (genericArtifact != null && (APIConstants.PUBLISHED.equals(apiStatus)
                          || APIConstants.PROTOTYPED.equals(apiStatus))) {
                         API api = APIUtil.getAPI(genericArtifact);
@@ -399,8 +397,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 Boolean displayAPIsWithMultipleStatus = APIUtil.isAllowDisplayAPIsWithMultipleStatus();
                 for (GenericArtifact artifact : genericArtifacts) {
                     // adding the API provider can mark the latest API .
-                    APIStatus apiLcStatus = APIUtil.getApiStatus(artifact.getLifecycleState());
-                    String status = (apiLcStatus != null) ? apiLcStatus.getStatus() : null;
+                    String status = APIUtil.getLcStateFromArtifact(artifact);
 
                     API api = null;
                     //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
@@ -1181,8 +1178,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 return apiSortedSet;
             }
             for (GenericArtifact genericArtifact : genericArtifacts) {
-                APIStatus apiLcStatus = APIUtil.getApiStatus(genericArtifact.getLifecycleState());
-                String status = (apiLcStatus != null) ? apiLcStatus.getStatus() : null;
+                String status = APIUtil.getLcStateFromArtifact(genericArtifact);
                 if (APIConstants.PUBLISHED.equals(status)) {
                     String artifactPath = genericArtifact.getPath();
 
@@ -1587,8 +1583,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                 if (apiArtifactId != null) {
                     GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
                     // check the API status
-                    APIStatus apiLcStatus = APIUtil.getApiStatus(artifact.getLifecycleState());
-                    String status = (apiLcStatus != null) ? apiLcStatus.getStatus() : null;
+                    String status = APIUtil.getLcStateFromArtifact(artifact);
 
                     API api = null;
                     //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
@@ -1775,8 +1770,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             GenericArtifact artifact = artifactManager.getGenericArtifact(apiArtifactId);
 
             // check the API status
-            APIStatus apiLcStatus = APIUtil.getApiStatus(artifact.getLifecycleState());
-            String status = (apiLcStatus != null) ? apiLcStatus.getStatus() : null;
+            String status = APIUtil.getLcStateFromArtifact(artifact);
 
             API api = null;
             //Check the api-manager.xml config file entry <DisplayAllAPIs> value is false
@@ -2066,7 +2060,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         API api = getAPI(identifier);
         WorkflowResponse workflowResponse = null;
         int subscriptionId;
-        if (api.getStatus().equals(APIStatus.PUBLISHED)) {
+        if (APIConstants.PUBLISHED.equals(api.getStatus())) {
             subscriptionId = apiMgtDAO.addSubscription(identifier, api.getContext(), applicationId,
                     APIConstants.SubscriptionStatus.ON_HOLD, userId);
 
@@ -2135,7 +2129,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     workflowResponse);
         } else {
             throw new APIMgtResourceNotFoundException("Subscriptions not allowed on APIs in the state: " +
-                    api.getStatus().getStatus());
+                    api.getStatus());
         }
     }
 

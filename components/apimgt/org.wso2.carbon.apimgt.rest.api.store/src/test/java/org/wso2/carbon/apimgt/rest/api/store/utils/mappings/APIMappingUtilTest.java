@@ -28,7 +28,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIStatus;
 import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
@@ -81,7 +80,7 @@ public class APIMappingUtilTest {
         Mockito.doReturn(environmentMap).when(apiManagerConfiguration).getApiGatewayEnvironments();
 
         API api = new API(new APIIdentifier("admin-AT-abc.com", "API1", "1.0.0"));
-        api.setStatus(APIStatus.PUBLISHED);
+        api.setStatus(APIConstants.PUBLISHED);
         api.setTransports("https,http");
         api.setContext("/test");
         Set<String> environments = new HashSet<>();
