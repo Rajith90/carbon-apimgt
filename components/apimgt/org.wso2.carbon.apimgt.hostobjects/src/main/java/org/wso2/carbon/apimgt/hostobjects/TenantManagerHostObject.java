@@ -125,6 +125,12 @@ public class TenantManagerHostObject extends ScriptableObject {
 
                 String fileName = ze.getName();
                 File newFile = new File(outputFolder + File.separator + fileName);
+                String canonicalFileDestinationPath = newFile.getCanonicalPath();
+                String canonicalDestinationPath = new File(outputFolder).getCanonicalPath();
+                if (!canonicalFileDestinationPath.startsWith(canonicalDestinationPath)) {
+                    handleException("Attempt to upload invalid zip archive with file at " + fileName + ". File path is "
+                            + "outside target directory");
+                }
                 if(ze.isDirectory()){
                     if(!newFile.exists()){
                          boolean status = newFile.mkdir();
@@ -132,8 +138,7 @@ public class TenantManagerHostObject extends ScriptableObject {
                             //todo handle exception
                          }
                     }
-                }
-                else{
+                } else {
                     ext = FilenameUtils.getExtension(ze.getName());
                     if(TenantManagerHostObject.EXTENTION_WHITELIST.contains(ext)){
                         //create all non exists folders
