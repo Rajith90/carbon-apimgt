@@ -131,12 +131,12 @@ public class TenantManagerHostObject extends ScriptableObject {
                     handleException("Attempt to upload invalid zip archive with file at " + fileName + ". File path is "
                             + "outside target directory");
                 }
-                if(ze.isDirectory()){
-                    if(!newFile.exists()){
-                         boolean status = newFile.mkdir();
-                         if(status){
+                if (ze.isDirectory()) {
+                    if (!newFile.exists()) {
+                        boolean status = newFile.mkdir();
+                        if (status) {
                             //todo handle exception
-                         }
+                        }
                     }
                 } else {
                     ext = FilenameUtils.getExtension(ze.getName());
