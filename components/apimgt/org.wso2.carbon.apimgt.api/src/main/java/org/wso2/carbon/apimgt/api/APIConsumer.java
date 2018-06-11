@@ -257,7 +257,7 @@ public interface APIConsumer extends APIManager {
      * @return SubscriptionResponse subscription response object
      * @throws APIManagementException if failed to add subscription details to database
      */
-    SubscriptionResponse addSubscription(APIIdentifier identifier, String userId, int applicationId,String groupId)
+    SubscriptionResponse addSubscription(APIIdentifier identifier, String userId, int applicationId, String groupId)
             throws APIManagementException;
 
     /**
