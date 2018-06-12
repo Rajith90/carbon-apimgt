@@ -20,6 +20,7 @@ package org.wso2.carbon.apimgt.impl;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.URL;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -93,6 +94,8 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
         String userId = (String) oAuthApplicationInfo.getParameter(ApplicationConstants.
                 OAUTH_CLIENT_USERNAME);
         String applicationName = oAuthApplicationInfo.getClientName();
+        /*String clientId = oAuthApplicationInfo.getClientId();
+        String clientSecret = oAuthApplicationInfo.getClientSecret();*/
         String keyType = (String) oAuthApplicationInfo.getParameter(ApplicationConstants.APP_KEY_TYPE);
         String callBackURL = (String) oAuthApplicationInfo.getParameter(ApplicationConstants.APP_CALLBACK_URL);
         if (keyType != null) {
@@ -118,6 +121,13 @@ public class AMDefaultKeyManagerImpl extends AbstractKeyManager {
             applicationToCreate.setCallBackURL(callBackURL);
             applicationToCreate.setClientName(applicationName);
             applicationToCreate.setAppOwner(userId);
+            //Read client_id and client_secret from the application creation request.
+            /*if(StringUtils.isNotEmpty(clientId) ){
+                applicationToCreate.setClientId(clientId);
+                if(StringUtils.isNotEmpty(clientSecret)){
+                    applicationToCreate.setClientSecret(clientSecret);
+                }
+            }*/
             applicationToCreate.setJsonString(oAuthApplicationInfo.getJsonString());
             info = createOAuthApplicationbyApplicationInfo(applicationToCreate);
         } catch (Exception e) {
