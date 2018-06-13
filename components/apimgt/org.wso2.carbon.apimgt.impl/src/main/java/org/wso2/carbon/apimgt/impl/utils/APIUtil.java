@@ -1321,7 +1321,7 @@ public final class APIUtil {
         return artifactManager;
     }
 
-    private static void handleException(String msg) throws APIManagementException {
+    public static void handleException(String msg) throws APIManagementException {
         log.error(msg);
         throw new APIManagementException(msg);
     }
