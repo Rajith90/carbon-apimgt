@@ -122,6 +122,17 @@ public class API implements Serializable {
     private String accessControl;
     private String accessControlRoles;
 
+    // Used for end point environments configured with non empty URLs
+    private Set<String> environmentList;
+
+    public void setEnvironmentList(Set<String> environmentList) {
+        this.environmentList = environmentList;
+    }
+
+    public Set<String> getEnvironmentList(){
+        return environmentList;
+    }
+
     public Set<String> getEnvironments() {
         return environments;
     }
