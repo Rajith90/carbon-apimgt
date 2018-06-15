@@ -638,6 +638,26 @@ public final class APIUtil {
             api.setEnvironments(extractEnvironmentsForAPI(environments));
             api.setCorsConfiguration(getCorsConfigurationFromArtifact(artifact));
 
+            Set<String> environmentList = new HashSet<String>();
+            String endpointConfigs = artifact.getAttribute(APIConstants.API_OVERVIEW_ENDPOINT_CONFIG);
+            if (endpointConfigs != null) {
+                JSONParser parser = new JSONParser();
+                JSONObject endpointConfigJson = null;
+                try {
+                    endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS)) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
+                    }
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
+                    }
+                } catch (ParseException e) {
+                    String msg = "Failed to parse endpoint config JSON of API: " + apiName + " " + apiVersion;
+                    throw new APIManagementException(msg, e);
+                }
+            }
+            api.setEnvironmentList(environmentList);
+
         } catch (GovernanceException e) {
             String msg = "Failed to get API for artifact ";
             throw new APIManagementException(msg, e);
