@@ -654,7 +654,7 @@ public final class APIUtil {
                     }
                     if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
                         JSONObject endpointJson =
-                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_PRODUCTION_ENDPOINTS);
+                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_SANDBOX_ENDPOINTS);
                         if (isEndpointConfigURLNotEmpty(endpointJson)) {
                             environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
                         }
