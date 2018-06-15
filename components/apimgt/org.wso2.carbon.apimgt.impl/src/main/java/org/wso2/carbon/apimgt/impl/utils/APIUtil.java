@@ -642,12 +642,19 @@ public final class APIUtil {
             String endpointConfigs = artifact.getAttribute(APIConstants.API_OVERVIEW_ENDPOINT_CONFIG);
             if (endpointConfigs != null) {
                 JSONParser parser = new JSONParser();
-                JSONObject endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
-                if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS)) {
-                    environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
-                }
-                if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
-                    environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
+                JSONObject endpointConfigJson = null;
+                try {
+                    endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS)) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
+                    }
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
+                    }
+                } catch (ParseException e) {
+                        String msg = "Failed to parse endpoint config JSON : "+ endpointConfigs + "of API: "
+                                    + apiName + apiVersion;
+                        throw new APIManagementException(msg, e);
                 }
             }
             api.setEnvironmentList(environmentList);
@@ -660,9 +667,6 @@ public final class APIUtil {
             throw new APIManagementException(msg, e);
         } catch (UserStoreException e) {
             String msg = "Failed to get User Realm of API Provider";
-            throw new APIManagementException(msg, e);
-        } catch (ParseException e) {
-            String msg = "Failed to parse endpoint configurations attribute of the API artifact";
             throw new APIManagementException(msg, e);
         }
         return api;
