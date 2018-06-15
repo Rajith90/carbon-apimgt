@@ -652,8 +652,7 @@ public final class APIUtil {
                         environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
                     }
                 } catch (ParseException e) {
-                        String msg = "Failed to parse endpoint config JSON : "+ endpointConfigs + "of API: "
-                                    + apiName + apiVersion;
+                        String msg = "Failed to parse endpoint config JSON of API: " + apiName + "-" + apiVersion;
                         throw new APIManagementException(msg, e);
                 }
             }
