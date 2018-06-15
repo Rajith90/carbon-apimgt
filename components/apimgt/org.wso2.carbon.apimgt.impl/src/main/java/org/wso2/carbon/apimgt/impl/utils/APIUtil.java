@@ -646,10 +646,18 @@ public final class APIUtil {
                 try {
                     endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
                     if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS)) {
-                        environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
+                        JSONObject endpointJson =
+                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_PRODUCTION_ENDPOINTS);
+                        if (isEndpointConfigURLNotEmpty(endpointJson)) {
+                            environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
+                        }
                     }
                     if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
-                        environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
+                        JSONObject endpointJson =
+                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_PRODUCTION_ENDPOINTS);
+                        if (isEndpointConfigURLNotEmpty(endpointJson)) {
+                            environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
+                        }
                     }
                 } catch (ParseException e) {
                     String msg = "Failed to parse endpoint config JSON of API: " + apiName + " " + apiVersion;
@@ -671,6 +679,21 @@ public final class APIUtil {
         return api;
     }
 
+    /**
+     * This method used to check whether the endpoint JSON object has a non empty URL.
+     *
+     * @param endpointJson (Eg: {"url":"http://www.test.com/v1/xxx","config":null,"template_not_supported":false})
+     * @return boolean
+     */
+    private static boolean isEndpointConfigURLNotEmpty(JSONObject endpointJson) {
+        if (endpointJson.containsKey(APIConstants.API_DATA_URL)) {
+            String url = (endpointJson.get(APIConstants.API_DATA_URL)).toString();
+            if (StringUtils.isNotBlank(url)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static API getAPI(GovernanceArtifact artifact)
             throws APIManagementException {
