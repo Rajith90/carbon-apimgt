@@ -642,25 +642,21 @@ public final class APIUtil {
             String endpointConfigs = artifact.getAttribute(APIConstants.API_OVERVIEW_ENDPOINT_CONFIG);
             if (endpointConfigs != null) {
                 JSONParser parser = new JSONParser();
-                JSONObject endpointConfigJson = null;
                 try {
-                    endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
-                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS)) {
-                        JSONObject endpointJson =
-                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_PRODUCTION_ENDPOINTS);
-                        if (isEndpointConfigURLNotEmpty(endpointJson)) {
-                            environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
-                        }
+                    JSONObject endpointConfigJson = (JSONObject) parser.parse(endpointConfigs);
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_PRODUCTION_ENDPOINTS) &&
+                            isEndpointURLNonEmpty(endpointConfigJson.get(APIConstants.API_DATA_PRODUCTION_ENDPOINTS))) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_PRODUCTION);
                     }
-                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS)) {
-                        JSONObject endpointJson =
-                                        (JSONObject) endpointConfigJson.get(APIConstants.API_DATA_SANDBOX_ENDPOINTS);
-                        if (isEndpointConfigURLNotEmpty(endpointJson)) {
-                            environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
-                        }
+                    if (endpointConfigJson.containsKey(APIConstants.API_DATA_SANDBOX_ENDPOINTS) &&
+                            isEndpointURLNonEmpty(endpointConfigJson.get(APIConstants.API_DATA_SANDBOX_ENDPOINTS))) {
+                        environmentList.add(APIConstants.API_KEY_TYPE_SANDBOX);
                     }
                 } catch (ParseException e) {
                     String msg = "Failed to parse endpoint config JSON of API: " + apiName + " " + apiVersion;
+                    throw new APIManagementException(msg, e);
+                } catch (ClassCastException e) {
+                    String msg = "Invalid endpoint config JSON found in API: " + apiName + " " + apiVersion;
                     throw new APIManagementException(msg, e);
                 }
             }
@@ -680,16 +676,27 @@ public final class APIUtil {
     }
 
     /**
-     * This method used to check whether the endpoint JSON object has a non empty URL.
+     * This method used to check whether the endpoints JSON object has a non empty URL.
      *
-     * @param endpointJson (Eg: {"url":"http://www.test.com/v1/xxx","config":null,"template_not_supported":false})
+     * @param endpoints (Eg: {"url":"http://www.test.com/v1/xxx","config":null,"template_not_supported":false})
      * @return boolean
      */
-    private static boolean isEndpointConfigURLNotEmpty(JSONObject endpointJson) {
-        if (endpointJson.containsKey(APIConstants.API_DATA_URL)) {
-            String url = (endpointJson.get(APIConstants.API_DATA_URL)).toString();
-            if (StringUtils.isNotBlank(url)) {
-                return true;
+    private static boolean isEndpointURLNonEmpty(Object endpoints) {
+        if (endpoints instanceof JSONObject) {
+            JSONObject endpointJson = (JSONObject) endpoints;
+            if (endpointJson.containsKey(APIConstants.API_DATA_URL) &&
+                    endpointJson.get(APIConstants.API_DATA_URL) != null) {
+                String url = (endpointJson.get(APIConstants.API_DATA_URL)).toString();
+                if (StringUtils.isNotBlank(url)) {
+                    return true;
+                }
+            }
+        } else if (endpoints instanceof JSONArray) {
+            JSONArray endpointsJson = (JSONArray) endpoints;
+            for (int i = 0; i < endpointsJson.size(); i++) {
+                if (isEndpointURLNonEmpty(endpointsJson.get(i))) {
+                    return true;
+                }
             }
         }
         return false;
