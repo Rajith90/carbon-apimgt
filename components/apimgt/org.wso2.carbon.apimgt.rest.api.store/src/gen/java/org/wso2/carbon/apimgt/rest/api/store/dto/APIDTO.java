@@ -65,6 +65,9 @@ public class APIDTO  {
   
   
   private APIBusinessInformationDTO businessInformation = null;
+  
+  
+  private List<String> environmentList = new ArrayList<String>();
 
   private String lastUpdatedTime = null;
 
@@ -297,6 +300,19 @@ public class APIDTO  {
   }
 
   
+  /**
+   * The environment list configured with non empty endpoint URLs for the particular API
+   **/
+  @ApiModelProperty(value = "The environment list configured with non empty endpoint URLs for the particular API")
+  @JsonProperty("environmentList")
+  public List<String> getEnvironmentList() {
+    return environmentList;
+  }
+  public void setEnvironmentList(List<String> environmentList) {
+    this.environmentList = environmentList;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -319,6 +335,7 @@ public class APIDTO  {
     sb.append("  thumbnailUrl: ").append(thumbnailUrl).append("\n");
     sb.append("  endpointURLs: ").append(endpointURLs).append("\n");
     sb.append("  businessInformation: ").append(businessInformation).append("\n");
+    sb.append("  environmentList: ").append(environmentList).append("\n");
     sb.append("}\n");
     return sb.toString();
   }
