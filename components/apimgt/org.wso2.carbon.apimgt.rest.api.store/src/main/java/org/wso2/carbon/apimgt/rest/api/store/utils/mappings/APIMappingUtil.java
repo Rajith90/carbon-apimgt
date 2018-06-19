@@ -121,6 +121,12 @@ public class APIMappingUtil {
         apiBusinessInformationDTO.setTechnicalOwner(model.getTechnicalOwner());
         apiBusinessInformationDTO.setTechnicalOwnerEmail(model.getTechnicalOwnerEmail());
         dto.setBusinessInformation(apiBusinessInformationDTO);
+
+        Set<String> environmentList = model.getEnvironmentList();
+        List<String> environmentListToReturn = new ArrayList<>();
+        environmentListToReturn.addAll(environmentList);
+        dto.setEnvironmentList(environmentListToReturn);
+
         if (!StringUtils.isBlank(model.getThumbnailUrl())) {
             dto.setThumbnailUrl(getThumbnailUri(model.getUUID()));
         }

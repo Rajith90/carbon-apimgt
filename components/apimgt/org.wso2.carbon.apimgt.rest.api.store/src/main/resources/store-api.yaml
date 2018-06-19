@@ -2091,6 +2091,12 @@ definitions:
           technicalOwnerEmail:
             type: string
             example: technicalowner@wso2.com
+      environmentList:
+        type: array
+        description: The environment list configured with non empty endpoint URLs for the particular API
+        items:
+          type: string
+        example: ["PRODUCTION","SANDBOX"]
 
 #-----------------------------------------------------
 # The Application List resource

@@ -1663,6 +1663,20 @@ public class APIStoreHostObject extends ScriptableObject {
                         }
                         row.put("tags", row, tagsSet.toString());
                     }
+
+                    NativeArray environmentArr = new NativeArray(0);
+                    Set<String> environmentSet = api.getEnvironmentList();
+                    if (environmentSet != null) {
+                        Iterator environmentSetIt = environmentSet.iterator();
+                        int j = 0;
+                        while (environmentSetIt.hasNext()) {
+                            Object envObj = environmentSetIt.next();
+                            String environment = (String) envObj;
+                            environmentArr.put(j, environmentArr, environment);
+                            j++;
+                        }
+                    }
+                    row.put("environmentList", row, environmentArr);
                     myn.put(i, myn, row);
                     i++;
                 }
@@ -1914,7 +1928,6 @@ public class APIStoreHostObject extends ScriptableObject {
                         row.put("isDefaultVersion", row,api.isDefaultVersion());
                         row.put("transports", row,api.getTransports());
                         row.put("type", row, api.getType());
-                        row.put("environmentList", row, api.getEnvironmentList());
                         myn.put(0, myn, row);
 
                     } else {

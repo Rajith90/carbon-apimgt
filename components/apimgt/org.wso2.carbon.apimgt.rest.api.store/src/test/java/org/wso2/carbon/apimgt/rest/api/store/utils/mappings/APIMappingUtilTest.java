@@ -93,6 +93,10 @@ public class APIMappingUtilTest {
         api.setThumbnailUrl("ThumbnailUrl");
         api.setUUID(UUID.randomUUID().toString());
 
+        Set<String> environmentList = new HashSet<>();
+        environmentList.add("SANDBOX");
+        api.setEnvironmentList(environmentList);
+
         APIDTO apidto = APIMappingUtil.fromAPItoDTO(api, tenantDomain);
         Assert.assertNotNull("APIDto is returned", apidto);
     }
