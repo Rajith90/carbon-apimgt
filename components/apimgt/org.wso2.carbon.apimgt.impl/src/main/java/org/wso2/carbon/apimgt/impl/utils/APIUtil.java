@@ -834,9 +834,11 @@ public final class APIUtil {
                         artifact.getAttribute(APIConstants.API_OVERVIEW_ENDPOINT_CONFIG)));
             } catch (ParseException e) {
                 String msg = "Failed to parse endpoint config JSON of API: " + apiName + " " + apiVersion;
+                log.error(msg, e);
                 throw new APIManagementException(msg, e);
             } catch (ClassCastException e) {
                 String msg = "Invalid endpoint config JSON found in API: " + apiName + " " + apiVersion;
+                log.error(msg, e);
                 throw new APIManagementException(msg, e);
             }
 
