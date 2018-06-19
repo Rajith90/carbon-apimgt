@@ -1664,7 +1664,9 @@ public class APIStoreHostObject extends ScriptableObject {
                         row.put("tags", row, tagsSet.toString());
                     }
 
-                    row.put("environmentList", row, new NativeArray(api.getEnvironmentList().toArray()));
+                    NativeArray envArr = api.getEnvironmentList() != null ?
+                            new NativeArray(api.getEnvironmentList().toArray()) : new NativeArray(0);
+                    row.put("environmentList", row, envArr);
                     myn.put(i, myn, row);
                     i++;
                 }
