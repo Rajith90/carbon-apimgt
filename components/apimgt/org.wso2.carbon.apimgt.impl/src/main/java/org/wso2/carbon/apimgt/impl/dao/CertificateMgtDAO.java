@@ -246,7 +246,6 @@ public class CertificateMgtDAO {
                 connection.commit();
                 preparedStatement = connection.prepareStatement(getCertQuery);
                 preparedStatement.setString(1, alias);
-                preparedStatement.setString(2, endpoint);
                 resultSet = preparedStatement.executeQuery();
 
                 while (resultSet.next()) {
