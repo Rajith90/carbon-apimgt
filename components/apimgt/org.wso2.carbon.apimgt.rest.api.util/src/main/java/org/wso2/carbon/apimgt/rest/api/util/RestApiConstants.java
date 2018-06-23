@@ -161,4 +161,5 @@ public final class RestApiConstants {
     public static final String ETAG = "ETag";
     public static final String PUT = "PUT";
     public static final String DELETE = "DELETE";
+    public static final String AUTHENTICATION_ADMIN_SERVICE_ENDPOINT = "AuthenticationAdmin";
 }
