@@ -27,7 +27,10 @@ public class ApplicationKeyGenerateRequestDTO  {
   
   
   private List<String> supportedGrantTypes = new ArrayList<String>();
-  
+
+  private String clientId;
+
+  private String clientSecret;
   
   private String callbackUrl = null;
   
@@ -140,7 +143,16 @@ public class ApplicationKeyGenerateRequestDTO  {
     this.scopes = scopes;
   }
 
-  
+
+  @ApiModelProperty(value = "Client ID")
+  @JsonProperty("clientId")
+  public String getClientId() { return clientId; }
+  public void setClientId(String clientId) { this.clientId = clientId;  }
+
+  @ApiModelProperty(value = "Client Secret")
+  @JsonProperty("clientSecret")
+  public String getClientSecret() {  return clientSecret; }
+  public void setClientSecret(String clientSecret) {this.clientSecret = clientSecret;  }
 
   @Override
   public String toString()  {
@@ -150,6 +162,8 @@ public class ApplicationKeyGenerateRequestDTO  {
     sb.append("  keyType: ").append(keyType).append("\n");
     sb.append("  validityTime: ").append(validityTime).append("\n");
     sb.append("  supportedGrantTypes: ").append(supportedGrantTypes).append("\n");
+    sb.append("  clientId: ").append(clientId).append("\n");
+    sb.append("  clientSecret: ").append(clientSecret).append("\n");
     sb.append("  callbackUrl: ").append(callbackUrl).append("\n");
     sb.append("  accessAllowDomains: ").append(accessAllowDomains).append("\n");
     sb.append("  scopes: ").append(scopes).append("\n");

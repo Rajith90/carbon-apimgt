@@ -195,6 +195,15 @@ public class ApplicationsApiServiceImpl extends ApplicationsApiService {
                     if (!StringUtils.isEmpty(grantTypes)) {
                         jsonParamObj.put(APIConstants.JSON_GRANT_TYPES, grantTypes);
                     }
+                    //Read client_id and client_secret from the ApplicationKeyGenerateRequestDTO object.
+                    //Either client_id & client_secret both must be available or only client_id will be accepted.
+                    //Only client_secret will not be accepted.
+                    if(StringUtils.isNotEmpty(body.getClientId())){
+                        jsonParamObj.put(APIConstants.JSON_CLIENT_ID, body.getClientId());
+                        if(StringUtils.isNotEmpty(body.getClientSecret())) {
+                            jsonParamObj.put(APIConstants.JSON_CLIENT_SECRET, body.getClientSecret());
+                        }
+                    }
                     String jsonParams = jsonParamObj.toString();
                     String tokenScopes = StringUtils.join(body.getScopes(), " ");
 

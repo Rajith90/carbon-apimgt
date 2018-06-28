@@ -20,6 +20,7 @@ package org.wso2.carbon.apimgt.keymgt.service;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.util.URL;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -191,7 +192,21 @@ public class APIKeyMgtSubscriberService extends AbstractAdmin {
                   //set allowed grant types if grant types are not provided
                     allowedGrantTypes = oAuthAdminService.getAllowedGrantTypes();
                 }
-                
+
+                if (jsonObj != null && jsonObj.has(APIConstants.JSON_CLIENT_ID)) {
+                    String clientId = (String) jsonObj.get(APIConstants.JSON_CLIENT_ID);
+                    if (StringUtils.isNotEmpty(clientId)) {
+                        oAuthConsumerAppDTO.setOauthConsumerKey(clientId);
+                        if (jsonObj.has(APIConstants.JSON_CLIENT_SECRET)) {
+                            String clientSecret = (String) jsonObj
+                                    .get(APIConstants.JSON_CLIENT_SECRET);
+                            if (StringUtils.isNotEmpty(clientSecret)) {
+                                oAuthConsumerAppDTO.setOauthConsumerSecret(clientSecret);
+                            }
+                        }
+                    }
+                }
+
             } else {
                 //set allowed grant types if grant types are not provided
                 allowedGrantTypes = oAuthAdminService.getAllowedGrantTypes();
