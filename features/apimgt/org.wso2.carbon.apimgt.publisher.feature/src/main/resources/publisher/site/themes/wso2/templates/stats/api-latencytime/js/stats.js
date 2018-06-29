@@ -221,7 +221,7 @@ function renderGraph(fromDate,toDate,drillDown){
             var data1 = {};
                 if (json.usage && json.usage.length > 0) {
                   $('#apiLatencyTimeNote').removeClass('hide');
-                    for (var usage1 in json.usage) {
+                  for (var usage1 in json.usage) {
                       if (json.usage[usage1].values) {
                           var apiResponseTimeData = (data1["Total Time"]) ? data1["Total Time"] : [];
                           var backendLatencyData = (data1["BackEnd"]) ? data1["BackEnd"] : [];
@@ -252,7 +252,7 @@ function renderGraph(fromDate,toDate,drillDown){
                           data1["Authentication"] = securityLatencyData;
                           data1["Throttling"] = throttlingLatencyData;
                       }
-                    }
+                  }
                     populateMediations(data1);
                     drawGraphInArea(data1,drillDown);
                 }
