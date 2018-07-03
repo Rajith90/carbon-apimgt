@@ -476,8 +476,8 @@ public final class APIUtil {
             Resource apiResource = registry.get(artifactPath);
             api.setAccessControl(apiResource.getProperty(APIConstants.ACCESS_CONTROL));
             api.setAccessControlRoles(
-                    APIConstants.NULL_USER_ROLE_LIST.equals(apiResource.getProperty(APIConstants.PUBLISHER_ROLES)) ?
-                            null : apiResource.getProperty(APIConstants.PUBLISHER_ROLES));
+                    APIConstants.NULL_USER_ROLE_LIST.equals(apiResource.getProperty(APIConstants.DISPLAY_PUBLISHER_ROLES)) ?
+                            null : apiResource.getProperty(APIConstants.DISPLAY_PUBLISHER_ROLES));
             api.setRating(getAverageRating(apiId));
             //set description
             api.setDescription(artifact.getAttribute(APIConstants.API_OVERVIEW_DESCRIPTION));
