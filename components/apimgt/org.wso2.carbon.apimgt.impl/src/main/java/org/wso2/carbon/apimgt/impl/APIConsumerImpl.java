@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.solr.client.solrj.util.ClientUtils;
-import org.json.JSONException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -2320,7 +2319,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             handleApplicationNameContainSpacesException("Application name " +
                                                             "cannot contain leading or trailing white spaces");
         }
-
+        if (application.getName() != null &&
+                !ApplicationUtils.isApplicationNameValid(application.getName())) {
+            handleApplicationNameContainIllegalCharactersException("Application name contain one or more illegal" +
+                    " characters");
+        }
         if (APIUtil.isApplicationExist(userId, application.getName(), application.getGroupId())) {
             handleResourceAlreadyExistsException(
                     "A duplicate application already exists by the name - " + application.getName());
@@ -2412,7 +2415,11 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             handleApplicationNameContainSpacesException("Application name " +
                     "cannot contain leading or trailing white spaces");
         }
-
+        if (application.getName() != null &&
+                !ApplicationUtils.isApplicationNameValid(application.getName())) {
+            handleApplicationNameContainIllegalCharactersException("Application name contain one or more illegal" +
+                    " characters");
+        }
         apiMgtDAO.updateApplication(application);
         if (log.isDebugEnabled()) {
             log.debug("Successfully updated the Application: " + application.getId() +" in the database.");

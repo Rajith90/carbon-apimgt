@@ -32,14 +32,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.wso2.carbon.CarbonConstants;
-import org.wso2.carbon.apimgt.api.APIDefinition;
-import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.APIManager;
-import org.wso2.carbon.apimgt.api.APIMgtResourceAlreadyExistsException;
-import org.wso2.carbon.apimgt.api.APIMgtResourceNotFoundException;
-import org.wso2.carbon.apimgt.api.ApplicationNameWhiteSpaceValidationException;
-import org.wso2.carbon.apimgt.api.BlockConditionNotFoundException;
-import org.wso2.carbon.apimgt.api.PolicyNotFoundException;
+import org.wso2.carbon.apimgt.api.*;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
 import org.wso2.carbon.apimgt.api.model.APIKey;
@@ -1633,6 +1626,11 @@ public abstract class AbstractAPIManager implements APIManager {
                                                                 throws ApplicationNameWhiteSpaceValidationException {
         log.error(msg);
         throw new ApplicationNameWhiteSpaceValidationException(msg);
+    }
+    protected final void handleApplicationNameContainIllegalCharactersException(String msg)
+            throws ApplicationNameIllegalCharacterValidationException {
+        log.error(msg);
+        throw new ApplicationNameIllegalCharacterValidationException(msg);
     }
 
     public boolean isApplicationTokenExists(String accessToken) throws APIManagementException {
