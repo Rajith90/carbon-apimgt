@@ -32,7 +32,6 @@ import org.wso2.carbon.apimgt.impl.factory.KeyManagerHolder;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 
 import java.util.regex.Pattern;
-
 /**
  * Utility class for performing Operations related to Applications, OAuth clients.
  */
@@ -153,7 +152,6 @@ public class ApplicationUtils {
         application.addOAuthApp(keyType,oAuthApplication);
         dao.updateApplicationKeyTypeMapping(application,keyType);
     }
-
     /**
      * This method checks whether the Application name have only valid characters
      *
@@ -170,6 +168,5 @@ public class ApplicationUtils {
         } else {
             return false;
         }
-
     }
 }
