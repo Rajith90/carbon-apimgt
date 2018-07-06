@@ -40,7 +40,7 @@ public class ApplicationUtils {
     private static ApiMgtDAO dao = ApiMgtDAO.getInstance();
 
     private static Log log = LogFactory.getLog(ApplicationUtils.class);
-    private static String APP_NAME_VALIDATING_REGEX = "^[a-zA-Z0-9._-]*$";
+    private static String APP_NAME_VALIDATING_REGEX = "^[a-zA-Z0-9 ._-]*$";
 
 
     /**
