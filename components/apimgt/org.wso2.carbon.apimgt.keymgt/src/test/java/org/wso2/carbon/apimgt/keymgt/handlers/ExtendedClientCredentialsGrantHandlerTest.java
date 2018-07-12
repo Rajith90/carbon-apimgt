@@ -51,7 +51,7 @@ public class ExtendedClientCredentialsGrantHandlerTest {
 
         OAuthTokenReqMessageContext authTokenReqMessageContext2 = new OAuthTokenReqMessageContext(oAuth2AccessTokenReqDTO);
         Mockito.when(oAuth2AccessTokenReqDTO.getRequestParameters()).thenReturn(null);
-        Assert.assertTrue(eccGrantHandler.authorizeAccessDelegation(authTokenReqMessageContext1));
+        Assert.assertTrue(eccGrantHandler.authorizeAccessDelegation(authTokenReqMessageContext2));
         Assert.assertEquals(-1L, authTokenReqMessageContext2.getValidityPeriod());
     }
 
