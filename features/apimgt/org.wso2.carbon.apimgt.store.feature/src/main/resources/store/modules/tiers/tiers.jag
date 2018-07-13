@@ -66,13 +66,13 @@ var getApplicationTiers = function () {
     }
 };
 
-var getDeniedTiers = function () {
+var getDeniedTiers = function (providerTenantDomain) {
     var tiers,
             log = new Log(),
             store = jagg.module("manager").getAPIStoreObj();
 
     try {
-        tiers = store.getDeniedTiers();
+        tiers = store.getDeniedTiers(providerTenantDomain);
         if (log.isDebugEnabled()) {
             log.debug("getDeniedTiers : " + stringify(tiers));
         }
