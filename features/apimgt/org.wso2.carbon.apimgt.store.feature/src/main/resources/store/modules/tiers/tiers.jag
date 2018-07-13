@@ -72,7 +72,11 @@ var getDeniedTiers = function (providerTenantDomain) {
             store = jagg.module("manager").getAPIStoreObj();
 
     try {
-        tiers = store.getDeniedTiers(providerTenantDomain);
+        if (providerTenantDomain) {
+            tiers = store.getDeniedTiers(providerTenantDomain);
+        } else {
+            tiers = store.getDeniedTiers();
+        }
         if (log.isDebugEnabled()) {
             log.debug("getDeniedTiers : " + stringify(tiers));
         }
