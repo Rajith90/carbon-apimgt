@@ -2,6 +2,7 @@
 var i18n = require("i18n");
 var localeResourcesBasePath = "/site/conf/locales/jaggery/";
 var tenantDomain = jagg.getTenantDomain();
+var urlPrefix = jagg.getTenantURLPrefix("&");
 var site = require("/site/conf/site.json");
 i18n.init(request, localeResourcesBasePath);
 jagg.block("api/api-info", {
@@ -71,7 +72,13 @@ jagg.block("api/api-info", {
                         }
                         list.push(application);
                     }
-            result = jagg.module("tiers").getDeniedTiers();
+            if (urlPrefix) {
+                var providerTenantDomain = urlPrefix.split("=")[1];
+                result = jagg.module("tiers").getDeniedTiers(providerTenantDomain);
+            } else {
+                result = jagg.module("tiers").getDeniedTiers();
+            }
+
             deniedTiers = result.tiers;
             isGlobalCEPEnabled = jagg.module("tiers").isGlobalCEPThrottlingEnabled();
 
