@@ -2911,24 +2911,26 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      */
     @Override
     public Set<String> getDeniedTiers() throws APIManagementException {
+
         return getDeniedTiers(0);
     }
 
     /**
      * Returns a list of tiers denied
      *
+     * @param apiProviderTenantId tenantId of API Provider
      * @return Set<Tier>
      */
     @Override
     public Set<String> getDeniedTiers(int apiProviderTenantId) throws APIManagementException {
+
         Set<String> deniedTiers = new HashSet<String>();
         String[] currentUserRoles;
-
         if (apiProviderTenantId == 0) {
             apiProviderTenantId = tenantId;
         }
         try {
-            if (apiProviderTenantId !=0) {
+            if (apiProviderTenantId != 0) {
                 /* Get the roles of the Current User */
                 currentUserRoles = ((UserRegistry) ((UserAwareAPIConsumer) this).registry).
                         getUserRealm().getUserStoreManager().getRoleListOfUser(((UserRegistry) this.registry)
@@ -2936,9 +2938,9 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
                 Set<TierPermissionDTO> tierPermissions;
 
-                if(APIUtil.isAdvanceThrottlingEnabled()){
+                if (APIUtil.isAdvanceThrottlingEnabled()) {
                     tierPermissions = apiMgtDAO.getThrottleTierPermissions(apiProviderTenantId);
-                }else{
+                } else {
                     tierPermissions = apiMgtDAO.getTierPermissions(apiProviderTenantId);
                 }
 

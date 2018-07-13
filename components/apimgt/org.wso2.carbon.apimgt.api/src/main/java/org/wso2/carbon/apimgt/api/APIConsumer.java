@@ -516,7 +516,7 @@ public interface APIConsumer extends APIManager {
      */
     Set<String> getDeniedTiers()throws APIManagementException;
 
-    Set<String> getDeniedTiers(int providerTenantDomain)throws APIManagementException;
+    Set<String> getDeniedTiers(int providerTenantDomain) throws APIManagementException;
     
     /**
      * Check whether given Tier is denied for the user
