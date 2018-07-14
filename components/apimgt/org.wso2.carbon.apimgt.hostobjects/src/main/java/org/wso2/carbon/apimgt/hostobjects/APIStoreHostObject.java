@@ -4269,7 +4269,7 @@ public class APIStoreHostObject extends ScriptableObject {
                 int providerTenantId = 0;
                 try {
                     RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
-                    if ( realmService!= null && realmService.getTenantManager() !=null) {
+                    if (realmService != null && realmService.getTenantManager() != null) {
                         providerTenantId = realmService.getTenantManager().getTenantId(providerTenantDomain);
                     }
                 } catch (UserStoreException exception) {
