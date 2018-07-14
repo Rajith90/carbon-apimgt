@@ -4271,6 +4271,8 @@ public class APIStoreHostObject extends ScriptableObject {
                     RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
                     if (realmService != null && realmService.getTenantManager() != null) {
                         providerTenantId = realmService.getTenantManager().getTenantId(providerTenantDomain);
+                    } else {
+                        handleException("Error while retrieving tenant information of " + providerTenantDomain);
                     }
                 } catch (UserStoreException exception) {
                     handleException("Error while getting tenant information " + providerTenantDomain, exception);
