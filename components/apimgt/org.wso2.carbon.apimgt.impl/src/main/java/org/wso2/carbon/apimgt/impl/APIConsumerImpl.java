@@ -2911,7 +2911,7 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      */
     @Override
     public Set<String> getDeniedTiers() throws APIManagementException {
-
+        // '0' is passed as argument whenever tenant id of user is needed
         return getDeniedTiers(0);
     }
 
@@ -2923,7 +2923,6 @@ class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
      */
     @Override
     public Set<String> getDeniedTiers(int apiProviderTenantId) throws APIManagementException {
-
         Set<String> deniedTiers = new HashSet<String>();
         String[] currentUserRoles;
         if (apiProviderTenantId == 0) {
